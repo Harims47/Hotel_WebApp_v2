@@ -30,6 +30,8 @@ const ROLE_NAV = {
     { name: 'Orders', path: '/gm/orders', icon: Receipt },
     { name: 'KOT', path: '/gm/kot', icon: ChefHat },
     { name: 'Tables', path: '/gm/tables', icon: UtensilsCrossed },
+    { name: 'Bills', path: '/gm/bills', icon: Receipt },
+    { name: 'Delivery', path: '/gm/delivery', icon: Truck },
   ],
   WAITER: [
     { name: 'Dashboard', path: '/waiter/dashboard', icon: LayoutDashboard },

@@ -6,6 +6,11 @@ import { Login } from '../../pages/login';
 // Dashboards & Waiter
 import { AdminDashboard } from '../../pages/admin/AdminDashboard';
 import { GMDashboard } from '../../pages/gm/GMDashboard';
+import { GMOrders } from '../../pages/gm/GMOrders';
+import { GMKOT } from '../../pages/gm/GMKOT';
+import { GMTables } from '../../pages/gm/GMTables';
+import { GMBills } from '../../pages/gm/GMBills';
+import { GMDelivery } from '../../pages/gm/GMDelivery';
 import { WaiterDashboard } from '../../pages/waiter/WaiterDashboard';
 import { WaiterTables } from '../../pages/waiter/WaiterTables';
 import { WaiterOrderScreen } from '../../pages/waiter/WaiterOrderScreen';
@@ -50,9 +55,11 @@ const router = createBrowserRouter([
       
       // GM Routes
       { path: 'gm/dashboard', element: <GMDashboard /> },
-      { path: 'gm/orders', element: <Placeholder title="GM Orders" /> },
-      { path: 'gm/kot', element: <Placeholder title="GM KOT" /> },
-      { path: 'gm/tables', element: <Placeholder title="GM Tables" /> },
+      { path: 'gm/orders', element: <GMOrders /> },
+      { path: 'gm/kot', element: <GMKOT /> },
+      { path: 'gm/tables', element: <GMTables /> },
+      { path: 'gm/bills', element: <GMBills /> },
+      { path: 'gm/delivery', element: <GMDelivery /> },
       
       // Waiter Routes
       { path: 'waiter/dashboard', element: <WaiterDashboard /> },
