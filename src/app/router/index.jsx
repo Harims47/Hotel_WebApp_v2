@@ -21,7 +21,10 @@ import { CashierBillDetails } from '../../pages/cashier/CashierBillDetails';
 import { CashierPayments } from '../../pages/cashier/CashierPayments';
 import { CashierTakeaway } from '../../pages/cashier/CashierTakeaway';
 import { NewTakeawayOrder } from '../../pages/cashier/NewTakeawayOrder';
+import { CashierDelivery } from '../../pages/cashier/CashierDelivery';
 import { DeliveryDashboard } from '../../pages/delivery/DeliveryDashboard';
+import { DeliveryOrders } from '../../pages/delivery/DeliveryOrders';
+import { DeliveryOrderDetails } from '../../pages/delivery/DeliveryOrderDetails';
 
 // Placeholders for other routes so there are no broken links in Sidebar
 const Placeholder = ({ title }) => <div className="p-6 text-text-main font-semibold text-xl">{title} Placeholder</div>;
@@ -72,10 +75,12 @@ const router = createBrowserRouter([
       { path: 'cashier/payments', element: <CashierPayments /> },
       { path: 'cashier/takeaway', element: <CashierTakeaway /> },
       { path: 'cashier/takeaway/new', element: <NewTakeawayOrder /> },
+      { path: 'cashier/delivery', element: <CashierDelivery /> },
       
       // Delivery Routes
       { path: 'delivery/dashboard', element: <DeliveryDashboard /> },
-      { path: 'delivery/orders', element: <Placeholder title="Delivery Orders" /> },
+      { path: 'delivery/orders', element: <DeliveryOrders /> },
+      { path: 'delivery/orders/:id', element: <DeliveryOrderDetails /> },
       
       // Catch-all
       { path: '*', element: <Navigate to="/login" replace /> },

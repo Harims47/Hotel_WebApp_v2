@@ -21,6 +21,12 @@ export function NewTakeawayOrder() {
   const [source, setSource] = useState('OFFLINE');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [fulfillmentType, setFulfillmentType] = useState('CUSTOMER_PICKUP');
+  const [addressLine, setAddressLine] = useState('');
+  const [area, setArea] = useState('');
+  const [city, setCity] = useState('Coimbatore');
+  const [pincode, setPincode] = useState('');
+  const [landmark, setLandmark] = useState('');
   const [notes, setNotes] = useState('');
 
   const filteredMenuItems = useMemo(() => {
@@ -53,6 +59,14 @@ export function NewTakeawayOrder() {
       alert("Customer Name and Phone are required for takeaway orders.");
       return;
     }
+    if (fulfillmentType === 'DELIVERY' && (!addressLine || !area || !city)) {
+      alert("Address Line, Area, and City are required for delivery.");
+      return;
+    }
+
+    const address = fulfillmentType === 'DELIVERY' ? {
+      addressLine, area, city, pincode, landmark
+    } : null;
     
     dispatch(createTakeawayOrder(
       source,
@@ -60,7 +74,9 @@ export function NewTakeawayOrder() {
       customerPhone,
       notes,
       cart,
-      currentUser.id
+      currentUser.id,
+      fulfillmentType,
+      address
     ));
     
     navigate('/cashier/takeaway');
@@ -164,6 +180,71 @@ export function NewTakeawayOrder() {
                   placeholder="9876543210"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-medium text-text-muted mb-1">Fulfillment</label>
+                <div className="flex space-x-2">
+                  <button 
+                    className={cn("flex-1 py-1.5 border rounded text-sm transition-colors", fulfillmentType === 'CUSTOMER_PICKUP' ? "bg-primary text-white border-primary" : "bg-white text-text-main border-border")}
+                    onClick={() => setFulfillmentType('CUSTOMER_PICKUP')}
+                  >
+                    CUSTOMER PICKUP
+                  </button>
+                  <button 
+                    className={cn("flex-1 py-1.5 border rounded text-sm transition-colors", fulfillmentType === 'DELIVERY' ? "bg-primary text-white border-primary" : "bg-white text-text-main border-border")}
+                    onClick={() => setFulfillmentType('DELIVERY')}
+                  >
+                    DELIVERY
+                  </button>
+                </div>
+              </div>
+
+              {fulfillmentType === 'DELIVERY' && (
+                <div className="space-y-3 p-3 bg-white border border-border rounded">
+                  <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Delivery Address</h3>
+                  <div>
+                    <input 
+                      type="text" 
+                      value={addressLine}
+                      onChange={e => setAddressLine(e.target.value)}
+                      className="w-full border border-border rounded px-3 py-1.5 text-sm mb-2"
+                      placeholder="Address Line"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={area}
+                      onChange={e => setArea(e.target.value)}
+                      className="w-1/2 border border-border rounded px-3 py-1.5 text-sm"
+                      placeholder="Area / Locality"
+                    />
+                    <input 
+                      type="text" 
+                      value={city}
+                      onChange={e => setCity(e.target.value)}
+                      className="w-1/2 border border-border rounded px-3 py-1.5 text-sm"
+                      placeholder="City"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={pincode}
+                      onChange={e => setPincode(e.target.value)}
+                      className="w-1/3 border border-border rounded px-3 py-1.5 text-sm"
+                      placeholder="Pincode"
+                    />
+                    <input 
+                      type="text" 
+                      value={landmark}
+                      onChange={e => setLandmark(e.target.value)}
+                      className="w-2/3 border border-border rounded px-3 py-1.5 text-sm"
+                      placeholder="Landmark"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-text-muted mb-1">Notes</label>

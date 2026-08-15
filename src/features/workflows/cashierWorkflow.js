@@ -6,6 +6,7 @@ import { createPayment } from '../payments/paymentsSlice';
 import { updateTableStatus } from '../tables/tablesSlice';
 import { addNotification } from '../notifications/notificationsSlice';
 import { logAction } from '../audit/auditSlice';
+import { createDelivery } from '../delivery/deliverySlice';
 
 /**
  * Initiated by the Waiter when all food has been served.
@@ -240,7 +241,7 @@ export const recordPayment = (billId, method, amount, cashierId) => (dispatch, g
   }));
 };
 
-export const createTakeawayOrder = (source, customerName, customerPhone, notes, cartItems, cashierId) => (dispatch, getState) => {
+export const createTakeawayOrder = (source, customerName, customerPhone, notes, cartItems, cashierId, fulfillmentType = 'CUSTOMER_PICKUP', address = null) => (dispatch, getState) => {
   const state = getState();
   const now = new Date().toISOString();
   const orderId = `ord-${uuidv4()}`;
@@ -266,6 +267,7 @@ export const createTakeawayOrder = (source, customerName, customerPhone, notes, 
     source, // 'OFFLINE' | 'PHONE'
     customerName,
     customerPhone,
+    fulfillmentType,
     status: 'IN_PROGRESS',
     items: orderItems,
     createdAt: now,
@@ -294,7 +296,9 @@ export const createTakeawayOrder = (source, customerName, customerPhone, notes, 
     orderType: 'TAKEAWAY',
     source,
     customerName,
+    customerName,
     customerPhone,
+    fulfillmentType,
     status: 'NEW',
     items: kotItems,
     createdAt: now
@@ -323,6 +327,25 @@ export const createTakeawayOrder = (source, customerName, customerPhone, notes, 
     description: `Takeaway order created via ${source}`,
     createdAt: now
   }));
+
+  if (fulfillmentType === 'DELIVERY') {
+    const deliveryId = `del-${uuidv4()}`;
+    dispatch(createDelivery({
+      id: deliveryId,
+      orderId,
+      assignedDeliveryUserId: null,
+      customerName,
+      customerPhone,
+      address: address?.addressLine || '',
+      area: address?.area || '',
+      city: address?.city || '',
+      pincode: address?.pincode || '',
+      landmark: address?.landmark || '',
+      status: 'PENDING',
+      paymentMethod: null,
+      createdAt: now
+    }));
+  }
 };
 
 export const handoverTakeawayOrder = (orderId, cashierId) => (dispatch, getState) => {

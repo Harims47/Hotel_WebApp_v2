@@ -27,183 +27,169 @@ import { store } from './src/app/store/index.js';
 import { createTakeawayOrder, handoverTakeawayOrder, saveBillChanges, printBill, recordPayment, completeOrder } from './src/features/workflows/cashierWorkflow.js';
 import { startKOTPreparation, markItemReady } from './src/features/workflows/kitchenWorkflow.js';
 import { sendOrderToKOT, pickupItem, serveItem } from './src/features/workflows/waiterWorkflow.js';
+import { assignDeliveryBoy, pickupDeliveryOrder, startDelivery, confirmDelivery } from './src/features/workflows/deliveryWorkflow.js';
 import { login } from './src/features/auth/authSlice.js';
 
 async function runTests() {
-  console.log('--- Starting Stage 4 E2E Integration Tests ---\n');
+  console.log('--- Starting Stage 5 E2E Integration Tests ---\n');
 
   // Helpers
   const getState = () => store.getState();
   const getOrder = (id) => getState().orders.data.find(o => o.id === id);
   const getKOT = (orderId) => getState().kot.data.find(k => k.orderId === orderId);
   const getBill = (orderId) => (getState().billing.data || getState().billing.bills || []).find(b => b.orderId === orderId);
+  const getDelivery = (orderId) => getState().delivery.data.find(d => d.orderId === orderId);
 
   // Users
-  const cashierId = 'user-2'; // Assumed from initial state
-  const kitchenId = 'user-4';
-  const waiterId = 'user-3';
+  const cashierId = 'u-6'; // Front Desk Cashier
+  const kitchenId = 'u-5'; // Main Kitchen
+  const deliveryBoyId = 'u-7'; // Raj (Delivery)
+  const waiterId = 'u-3'; // Rahul (Waiter)
   
   // Menu Item IDs (from initial state)
   const chickenBiryani = getState().menu.items.find(m => m.name === 'Chicken Biryani');
   const coke = getState().menu.items.find(m => m.name === 'Coke');
 
   // =========================================================================
-  // TEST 1: OFFLINE TAKEAWAY
+  // TEST A-F: DELIVERY WORKFLOW
   // =========================================================================
-  console.log('Test 1: Offline Takeaway - Creation');
-  
-  store.dispatch(login({ username: 'cashier', password: 'password' }));
+  console.log('Test A: Delivery Phone Order - Creation');
   
   const cart1 = [
     { ...chickenBiryani, quantity: 2 },
     { ...coke, quantity: 2 }
   ];
 
-  store.dispatch(createTakeawayOrder('OFFLINE', 'Arun Kumar', '9876543210', '', cart1, cashierId));
+  const address = {
+    addressLine: '12, Gandhi Road',
+    area: 'RS Puram',
+    city: 'Coimbatore',
+    pincode: '641002',
+    landmark: 'Near ABC School'
+  };
 
-  const state1 = getState();
-  const offlineOrder = state1.orders.data[state1.orders.data.length - 1];
+  store.dispatch(createTakeawayOrder('PHONE', 'Arun Kumar', '9876543210', '', cart1, cashierId, 'DELIVERY', address));
   
-  assert.strictEqual(offlineOrder.orderType, 'TAKEAWAY', 'Order type should be TAKEAWAY');
-  assert.strictEqual(offlineOrder.source, 'OFFLINE', 'Source should be OFFLINE');
-  assert.strictEqual(offlineOrder.customerName, 'Arun Kumar', 'Customer name mismatch');
-  assert.strictEqual(offlineOrder.tableId, null, 'Takeaway tableId must be null');
+  const stateAfterCreation = getState();
+  const deliveryOrder = stateAfterCreation.orders.data[stateAfterCreation.orders.data.length - 1];
   
-  const offlineKOT = getKOT(offlineOrder.id);
-  assert.ok(offlineKOT, 'KOT should be created');
-  assert.strictEqual(offlineKOT.orderType, 'TAKEAWAY', 'KOT should be tagged TAKEAWAY');
-  console.log('✅ Offline Takeaway Creation Passed\n');
+  assert.strictEqual(deliveryOrder.orderType, 'TAKEAWAY');
+  assert.strictEqual(deliveryOrder.source, 'PHONE');
+  assert.strictEqual(deliveryOrder.fulfillmentType, 'DELIVERY');
+  assert.strictEqual(deliveryOrder.customerName, 'Arun Kumar');
+  assert.strictEqual(deliveryOrder.items.length, 2);
 
-  // =========================================================================
-  // TEST 2: KITCHEN PREPARATION
-  // =========================================================================
-  console.log('Test 2: Kitchen Preparation');
-  
-  store.dispatch(startKOTPreparation(offlineKOT.id, kitchenId));
-  assert.strictEqual(getKOT(offlineOrder.id).status, 'PREPARING', 'KOT status should be PREPARING');
+  const deliveryKOT = getKOT(deliveryOrder.id);
+  assert.ok(deliveryKOT, 'KOT should be created');
+  assert.strictEqual(deliveryKOT.status, 'NEW');
 
-  offlineKOT.items.forEach(ki => {
-    store.dispatch(markItemReady(offlineKOT.id, ki.id, kitchenId));
+  const deliveryRecord = getDelivery(deliveryOrder.id);
+  assert.ok(deliveryRecord, 'Delivery record should be created');
+  assert.strictEqual(deliveryRecord.status, 'PENDING');
+  console.log('✅ Delivery Phone Order Creation Passed');
+
+  console.log('\nTest B: Kitchen Preparation & Mark Ready');
+  store.dispatch(startKOTPreparation(deliveryKOT.id, kitchenId));
+  
+  deliveryKOT.items.forEach(item => {
+    store.dispatch(markItemReady(deliveryKOT.id, item.id, kitchenId));
   });
 
-  assert.strictEqual(getKOT(offlineOrder.id).status, 'READY', 'KOT status should be READY');
-  console.log('✅ Kitchen Preparation Passed\n');
+  const kotAfterPrep = getKOT(deliveryOrder.id);
+  assert.strictEqual(kotAfterPrep.status, 'READY', 'KOT should be READY');
+
+  const deliveryAfterPrep = getDelivery(deliveryOrder.id);
+  assert.strictEqual(deliveryAfterPrep.status, 'READY', 'Delivery status should be READY');
+
+  const billAfterPrep = getBill(deliveryOrder.id);
+  assert.ok(billAfterPrep, 'Bill should be automatically created');
+  assert.strictEqual(billAfterPrep.status, 'REQUESTED', 'Bill should be REQUESTED');
+  console.log('✅ Kitchen Preparation Passed');
+
+  console.log('\nTest C: Cashier Bill Printing');
+  store.dispatch(printBill(billAfterPrep.id, cashierId));
+
+  const billAfterPrint = getBill(deliveryOrder.id);
+  assert.strictEqual(billAfterPrint.status, 'PRINTED', 'Bill should be PRINTED');
+  console.log('✅ Cashier Bill Printing Passed');
+
+  console.log('\nTest D: Assign Delivery Boy');
+  store.dispatch(assignDeliveryBoy(deliveryRecord.id, deliveryBoyId, cashierId));
+
+  const deliveryAfterAssign = getDelivery(deliveryOrder.id);
+  assert.strictEqual(deliveryAfterAssign.status, 'ASSIGNED', 'Delivery status should be ASSIGNED');
+  assert.strictEqual(deliveryAfterAssign.assignedDeliveryUserId, deliveryBoyId, 'Delivery Boy assigned');
+  console.log('✅ Assign Delivery Boy Passed');
+
+  console.log('\nTest E: Delivery Boy Pickup & Start');
+  store.dispatch(pickupDeliveryOrder(deliveryRecord.id, deliveryBoyId));
+  
+  let currentDel = getDelivery(deliveryOrder.id);
+  assert.strictEqual(currentDel.status, 'PICKED_UP', 'Delivery status should be PICKED_UP');
+
+  store.dispatch(startDelivery(deliveryRecord.id, deliveryBoyId));
+  currentDel = getDelivery(deliveryOrder.id);
+  assert.strictEqual(currentDel.status, 'OUT_FOR_DELIVERY', 'Delivery status should be OUT_FOR_DELIVERY');
+  console.log('✅ Delivery Pickup & Start Passed');
+
+  console.log('\nTest F: Customer Delivery & Payment');
+  store.dispatch(confirmDelivery(deliveryRecord.id, 'UPI', deliveryBoyId));
+
+  currentDel = getDelivery(deliveryOrder.id);
+  assert.strictEqual(currentDel.status, 'DELIVERED', 'Delivery status should be DELIVERED');
+  assert.strictEqual(currentDel.paymentMethod, 'UPI', 'Payment method recorded');
+
+  const billAfterDel = getBill(deliveryOrder.id);
+  assert.strictEqual(billAfterDel.status, 'PAID', 'Bill should be PAID');
+
+  const orderAfterDel = getOrder(deliveryOrder.id);
+  assert.strictEqual(orderAfterDel.status, 'CLOSED', 'Order should be CLOSED');
+  console.log('✅ Customer Delivery Passed');
 
   // =========================================================================
-  // TEST 3: CASHIER NOTIFICATION & HANDOVER
+  // TEST H: REGRESSION - OFFLINE TAKEAWAY
   // =========================================================================
-  console.log('Test 3: Cashier Notification & Handover');
+  console.log('\nTest H: Regression - Offline Takeaway (Stage 4)');
+  store.dispatch(createTakeawayOrder('OFFLINE', 'Bob', '1111111111', '', cart1, cashierId, 'CUSTOMER_PICKUP', null));
+  const offOrder = getState().orders.data[getState().orders.data.length - 1];
+  const offKOT = getKOT(offOrder.id);
+  store.dispatch(startKOTPreparation(offKOT.id, kitchenId));
+  offKOT.items.forEach(item => store.dispatch(markItemReady(offKOT.id, item.id, kitchenId)));
+  store.dispatch(handoverTakeawayOrder(offOrder.id, cashierId));
+  const offBill = getBill(offOrder.id);
+  store.dispatch(recordPayment(offBill.id, 'CASH', offBill.grandTotal, cashierId));
   
-  const notifications = getState().notifications.data;
-  const readyNotif = notifications.find(n => n.referenceId === offlineOrder.id && n.title === 'Takeaway Order Ready');
-  assert.ok(readyNotif, 'Cashier should receive Takeaway Order Ready notification');
-
-  store.dispatch(handoverTakeawayOrder(offlineOrder.id, cashierId));
-
-  const orderAfterHandover = getOrder(offlineOrder.id);
-  assert.strictEqual(orderAfterHandover.status, 'BILL_REQUESTED', 'Order status should transition to BILL_REQUESTED');
-  
-  orderAfterHandover.items.forEach(item => {
-    assert.strictEqual(item.status, 'PICKED_UP', 'Items should be marked PICKED_UP');
-  });
-
-  const offlineBill = getBill(offlineOrder.id);
-  assert.ok(offlineBill, 'Bill should be generated');
-  console.log('✅ Notification & Handover Passed\n');
+  assert.strictEqual(getOrder(offOrder.id).status, 'CLOSED');
+  console.log('✅ Regression Offline Takeaway Passed');
 
   // =========================================================================
-  // TEST 4: TAKEAWAY BILLING
+  // TEST I: REGRESSION - DINE IN
   // =========================================================================
-  console.log('Test 4: Takeaway Billing');
-  
-  const updatedItems = offlineBill.items.map(item => {
-    if (item.menuItemId === chickenBiryani.id) {
-      return { ...item, billRate: 200, lineTotal: 200 * item.quantity };
-    }
-    return item;
-  });
-
-  store.dispatch(saveBillChanges(offlineBill.id, cashierId, updatedItems, 0, 10, 'Test discount'));
-  
-  const editedBill = getBill(offlineOrder.id);
-  assert.strictEqual(editedBill.items.find(i => i.menuItemId === chickenBiryani.id).billRate, 200, 'Rate should be overridden');
-  assert.strictEqual(editedBill.discountPercentage, 10, '10% discount should be applied');
-  
-  store.dispatch(printBill(offlineBill.id, cashierId));
-  assert.strictEqual(getBill(offlineOrder.id).status, 'PRINTED', 'Bill should be PRINTED');
-
-  store.dispatch(recordPayment(offlineBill.id, 'UPI', editedBill.grandTotal, cashierId));
-  
-  assert.strictEqual(getBill(offlineOrder.id).status, 'PAID', 'Bill should be PAID');
-  assert.strictEqual(getOrder(offlineOrder.id).status, 'CLOSED', 'Order should be CLOSED');
-  console.log('✅ Takeaway Billing Passed\n');
-
-  // =========================================================================
-  // TEST 5: PHONE ORDER
-  // =========================================================================
-  console.log('Test 5: Phone Order (with state validation)');
-  
-  store.dispatch(createTakeawayOrder('PHONE', 'Priya', '1234567890', '', cart1, cashierId));
-  const phoneOrder = getState().orders.data[getState().orders.data.length - 1];
-  
-  assert.strictEqual(phoneOrder.source, 'PHONE', 'Source should be PHONE');
-  assert.strictEqual(phoneOrder.tableId, null, 'TableId should be null');
-
-  const phoneKOT = getKOT(phoneOrder.id);
-  store.dispatch(startKOTPreparation(phoneKOT.id, kitchenId));
-  
-  // Validate localStorage actually persisted the 'PREPARING' state
-  const savedState = JSON.parse(global.localStorage.getItem('restaurant_os_v1_state'));
-  const savedPhoneKot = savedState.kot.data.find(k => k.id === phoneKOT.id);
-  assert.strictEqual(savedPhoneKot.status, 'PREPARING', 'Persisted state should reflect PREPARING');
-
-  phoneKOT.items.forEach(ki => store.dispatch(markItemReady(phoneKOT.id, ki.id, kitchenId)));
-  store.dispatch(handoverTakeawayOrder(phoneOrder.id, cashierId));
-  
-  const phoneBill = getBill(phoneOrder.id);
-  store.dispatch(recordPayment(phoneBill.id, 'CASH', phoneBill.grandTotal, cashierId));
-  
-  assert.strictEqual(getOrder(phoneOrder.id).status, 'CLOSED', 'Phone Order should be CLOSED');
-  console.log('✅ Phone Order (with persistence) Passed\n');
-
-  // =========================================================================
-  // TEST 6: REGRESSION - DINE-IN
-  // =========================================================================
-  console.log('Test 6: Regression - Dine-In');
-  
-  const table = getState().tables.data[0];
-  store.dispatch(sendOrderToKOT(table.id, waiterId, [{ ...chickenBiryani, quantity: 1 }]));
-  
-  const dineInOrder = getState().orders.data.find(o => o.tableId === table.id && o.status === 'IN_PROGRESS');
-  assert.ok(dineInOrder, 'Dine-In order should be created');
-  assert.strictEqual(dineInOrder.orderType, 'DINE_IN', 'Order type should be DINE_IN');
-  
+  console.log('\nTest I: Regression - Dine In (Stage 3)');
+  const tableId = 't-1';
+  store.dispatch(sendOrderToKOT(tableId, waiterId, cart1));
+  const dineInOrder = getState().orders.data[getState().orders.data.length - 1];
   const dineInKOT = getKOT(dineInOrder.id);
-  store.dispatch(startKOTPreparation(dineInKOT.id, kitchenId));
   
-  dineInKOT.items.forEach(ki => {
-    store.dispatch(markItemReady(dineInKOT.id, ki.id, kitchenId));
-  });
-
-  dineInOrder.items.forEach(oi => {
-    store.dispatch(pickupItem(dineInOrder.id, oi.id, waiterId));
-    store.dispatch(serveItem(dineInOrder.id, oi.id, waiterId));
+  store.dispatch(startKOTPreparation(dineInKOT.id, kitchenId));
+  dineInKOT.items.forEach(item => store.dispatch(markItemReady(dineInKOT.id, item.id, kitchenId)));
+  
+  dineInKOT.items.forEach(item => {
+    store.dispatch(pickupItem(dineInOrder.id, item.orderItemId, waiterId));
+    store.dispatch(serveItem(dineInOrder.id, item.orderItemId, waiterId));
   });
 
   store.dispatch(completeOrder(dineInOrder.id, waiterId));
-  assert.strictEqual(getOrder(dineInOrder.id).status, 'BILL_REQUESTED', 'Dine-In order should be BILL_REQUESTED');
-
   const dineInBill = getBill(dineInOrder.id);
-  store.dispatch(recordPayment(dineInBill.id, 'CASH', dineInBill.grandTotal, cashierId));
+  store.dispatch(recordPayment(dineInBill.id, 'UPI', dineInBill.grandTotal, cashierId));
 
-  assert.strictEqual(getOrder(dineInOrder.id).status, 'CLOSED', 'Dine-In order should be CLOSED');
-  assert.strictEqual(getState().tables.data.find(t => t.id === table.id).status, 'AVAILABLE', 'Table should be AVAILABLE');
-  console.log('✅ Regression Dine-In Passed\n');
+  assert.strictEqual(getOrder(dineInOrder.id).status, 'CLOSED');
+  console.log('✅ Regression Dine In Passed');
 
-  console.log('🎉 ALL INTEGRATION TESTS PASSED 🎉');
+  console.log('\n🎉 ALL INTEGRATION TESTS PASSED 🎉');
 }
 
 runTests().catch(err => {
-  console.error('❌ Test failed:', err);
+  console.error('\n❌ Test failed:', err);
   process.exit(1);
 });

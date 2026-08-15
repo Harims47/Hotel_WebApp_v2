@@ -48,6 +48,7 @@ const ROLE_NAV = {
     { name: 'Dashboard', path: '/cashier/dashboard', icon: LayoutDashboard },
     { name: 'Bills', path: '/cashier/bills', icon: Receipt },
     { name: 'Takeaway', path: '/cashier/takeaway', icon: ShoppingBag },
+    { name: 'Delivery', path: '/cashier/delivery', icon: Truck },
     { name: 'Payments', path: '/cashier/payments', icon: Receipt },
   ],
   DELIVERY_BOY: [

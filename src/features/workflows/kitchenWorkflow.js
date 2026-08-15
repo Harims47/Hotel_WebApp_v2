@@ -3,6 +3,8 @@ import { updateKOTStatus, updateKOTItemStatus } from '../kot/kotSlice';
 import { updateOrderItemStatus } from '../orders/ordersSlice';
 import { addNotification } from '../notifications/notificationsSlice';
 import { logAction } from '../audit/auditSlice';
+import { updateDeliveryStatus } from '../delivery/deliverySlice';
+import { completeOrder } from './cashierWorkflow';
 
 export const startKOTPreparation = (kotId, kitchenUserId) => (dispatch, getState) => {
   const state = getState();
@@ -82,6 +84,29 @@ export const markItemReady = (kotId, kotItemId, kitchenUserId) => (dispatch, get
   const allReady = updatedKot.items.every(i => i.status === 'READY' || i.status === 'CANCELLED');
   if (allReady) {
     dispatch(updateKOTStatus({ kotId, status: 'READY' }));
+    
+    if (order && order.fulfillmentType === 'DELIVERY') {
+      const delivery = getState().delivery.data.find(d => d.orderId === order.id);
+      if (delivery) {
+        dispatch(updateDeliveryStatus({ deliveryId: delivery.id, status: 'READY' }));
+        
+        // Auto-generate bill for cashier review
+        dispatch(completeOrder(order.id, kitchenUserId));
+        
+        // Notify Cashier
+        dispatch(addNotification({
+          id: `notif-${uuidv4()}`,
+          userId: null,
+          role: 'CASHIER',
+          title: 'Delivery Order Ready for Billing',
+          message: `Order: ${order.orderNumber} - ${order.customerName}. Bill is ready for Cashier review.`,
+          type: 'INFO',
+          referenceId: delivery.id,
+          isRead: false,
+          createdAt: now
+        }));
+      }
+    }
   }
 
   dispatch(logAction({
