@@ -4,6 +4,7 @@ import { Bell, User, X } from 'lucide-react';
 import { resetDemoData } from '../../services/persistence/localStorage';
 import { Button } from '../ui/Button';
 import { markNotificationRead } from '../../features/notifications/notificationsSlice';
+import { updateOrderItem } from '../../features/orders/ordersSlice';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -44,10 +45,19 @@ export function Header() {
     dispatch(markNotificationRead(n.id));
     setShowDropdown(false);
     if (n.referenceId && currentUser?.role === 'WAITER') {
-      // Find the table for this order to navigate to it
-      // For simplicity, just going to tables list works as they can find it easily
       navigate('/waiter/tables');
     }
+  };
+
+  const handleSnooze = (e, n) => {
+    e.stopPropagation();
+    dispatch(markNotificationRead(n.id));
+    dispatch(updateOrderItem({
+      orderId: n.referenceId,
+      orderItemId: n.orderItemId,
+      updates: { snoozedUntil: new Date(Date.now() + 5 * 60 * 1000).toISOString() }
+    }));
+    toast.success("Reminder snoozed for 5 minutes");
   };
 
   return (
@@ -95,6 +105,13 @@ export function Header() {
                         {!n.isRead && <span className="h-2 w-2 rounded-full bg-primary mt-1.5"></span>}
                       </div>
                       <p className="text-xs text-text-muted mt-1">{n.message}</p>
+                      {n.actionRequired === 'SNOOZE' && !n.isRead && (
+                        <div className="mt-2">
+                          <Button size="sm" variant="outline" className="w-full text-xs h-7" onClick={(e) => handleSnooze(e, n)}>
+                            Snooze 5 min
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}

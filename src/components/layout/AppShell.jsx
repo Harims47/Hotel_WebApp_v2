@@ -4,6 +4,8 @@ import { useSelector } from 'react-redux';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Toaster } from 'sonner';
+import { AudioNotifier } from '../AudioNotifier';
+import { TimerEngine } from '../TimerEngine';
 
 export function AppShell() {
   const { isAuthenticated, currentUser } = useSelector(state => state.auth);
@@ -26,6 +28,8 @@ export function AppShell() {
   return (
     <div className="flex h-screen bg-peach-soft overflow-hidden">
       <Toaster position="top-right" richColors />
+      <AudioNotifier />
+      <TimerEngine />
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Header />

@@ -4,24 +4,32 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 
 export function GMOrders() {
   const orders = useSelector(state => state.orders.data) || [];
+  const users = useSelector(state => state.users.data) || [];
+  const tables = useSelector(state => state.tables.data) || [];
+  const customers = useSelector(state => state.customers.data) || [];
   
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
+  const getTableName = (id) => tables.find(t => t.id === id)?.tableNumber || id;
+  const getCustomerName = (id) => customers.find(c => c.id === id)?.name || id;
+  const getUserName = (id) => users.find(u => u.id === id)?.name || id;
+  const shortId = (id) => id ? (id.length > 12 ? id.substring(0, 12) + '...' : id) : '-';
+
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
       const matchesSearch = 
         o.id?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        o.tableId?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        o.customerId?.toLowerCase().includes(searchTerm.toLowerCase());
+        getTableName(o.tableId)?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        getCustomerName(o.customerId)?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesType = typeFilter === 'ALL' || o.type === typeFilter;
       const matchesStatus = statusFilter === 'ALL' || o.status === statusFilter;
       
       return matchesSearch && matchesType && matchesStatus;
     });
-  }, [orders, searchTerm, typeFilter, statusFilter]);
+  }, [orders, searchTerm, typeFilter, statusFilter, tables, customers]);
 
   return (
     <div className="space-y-6">
@@ -81,10 +89,10 @@ export function GMOrders() {
               ) : (
                 filteredOrders.map(order => (
                   <tr key={order.id} className="border-b hover:bg-gray-50">
-                    <td className="p-4 text-sm">{order.id}</td>
+                    <td className="p-4 text-sm font-mono text-gray-600" title={order.id}>{shortId(order.id)}</td>
                     <td className="p-4 text-sm">{order.type}</td>
-                    <td className="p-4 text-sm">{order.type === 'DINE_IN' ? `Table ${order.tableId}` : (order.customerId || 'Walk-in')}</td>
-                    <td className="p-4 text-sm">{order.waiterId || order.cashierId || '-'}</td>
+                    <td className="p-4 text-sm">{order.type === 'DINE_IN' ? `Table ${getTableName(order.tableId)}` : (order.customerId ? getCustomerName(order.customerId) : 'Walk-in')}</td>
+                    <td className="p-4 text-sm">{getUserName(order.waiterId || order.cashierId) || '-'}</td>
                     <td className="p-4 text-sm">
                       <span className="px-2 py-1 rounded bg-gray-100 text-xs font-medium">
                         {order.status}

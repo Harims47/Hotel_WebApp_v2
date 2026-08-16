@@ -17,7 +17,7 @@ export function WaiterTables() {
       <h1 className="text-2xl font-bold text-text-main">Tables</h1>
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-        {tables.map(table => {
+        {tables.filter(t => t.configStatus !== 'INACTIVE' || t.status === 'OCCUPIED').map(table => {
           const isOccupied = table.status === 'OCCUPIED';
           
           // Find if there's an active order for this table

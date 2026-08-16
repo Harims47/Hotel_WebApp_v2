@@ -24,6 +24,16 @@ const ordersSlice = createSlice({
         }
       }
     },
+    updateOrderItem: (state, action) => {
+      const { orderId, orderItemId, updates } = action.payload;
+      const order = state.data.find(o => o.id === orderId);
+      if (order) {
+        const item = order.items.find(i => i.id === orderItemId);
+        if (item) {
+          Object.assign(item, updates);
+        }
+      }
+    },
     addOrderItems: (state, action) => {
       const { orderId, items } = action.payload;
       const order = state.data.find(o => o.id === orderId);
@@ -34,5 +44,5 @@ const ordersSlice = createSlice({
   },
 });
 
-export const { createOrder, updateOrderStatus, updateOrderItemStatus, addOrderItems } = ordersSlice.actions;
+export const { createOrder, updateOrderStatus, updateOrderItemStatus, updateOrderItem, addOrderItems } = ordersSlice.actions;
 export default ordersSlice.reducer;

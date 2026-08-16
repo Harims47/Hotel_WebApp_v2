@@ -28,6 +28,14 @@ export function CashierBillDetails() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   
+  const settings = useSelector(state => state.restaurant.data?.settings) || {};
+  const activePaymentMethods = settings.paymentMethods || { CASH: true, UPI: true };
+  
+  useEffect(() => {
+    if (activePaymentMethods.CASH) setPaymentMethod('CASH');
+    else if (activePaymentMethods.UPI) setPaymentMethod('UPI');
+  }, [activePaymentMethods.CASH, activePaymentMethods.UPI]);
+  
   const receiptRef = useRef();
 
   useEffect(() => {
@@ -353,18 +361,22 @@ export function CashierBillDetails() {
                 
                 <label className="block text-sm font-medium text-text-main mt-4">Payment Method</label>
                 <div className="grid grid-cols-2 gap-4">
-                  <button 
-                    className={`p-3 rounded-lg border-2 font-semibold transition-colors ${paymentMethod === 'CASH' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-text-muted hover:border-gray-300'}`}
-                    onClick={() => setPaymentMethod('CASH')}
-                  >
-                    CASH
-                  </button>
-                  <button 
-                    className={`p-3 rounded-lg border-2 font-semibold transition-colors ${paymentMethod === 'UPI' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-text-muted hover:border-gray-300'}`}
-                    onClick={() => setPaymentMethod('UPI')}
-                  >
-                    UPI
-                  </button>
+                  {activePaymentMethods?.CASH && (
+                    <button 
+                      className={`p-3 rounded-lg border-2 font-semibold transition-colors ${paymentMethod === 'CASH' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-text-muted hover:border-gray-300'}`}
+                      onClick={() => setPaymentMethod('CASH')}
+                    >
+                      CASH
+                    </button>
+                  )}
+                  {activePaymentMethods?.UPI && (
+                    <button 
+                      className={`p-3 rounded-lg border-2 font-semibold transition-colors ${paymentMethod === 'UPI' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-text-muted hover:border-gray-300'}`}
+                      onClick={() => setPaymentMethod('UPI')}
+                    >
+                      UPI
+                    </button>
+                  )}
                 </div>
               </div>
 

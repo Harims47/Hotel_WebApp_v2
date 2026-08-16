@@ -5,9 +5,10 @@ import { ArrowLeft, Plus, Minus, Send, CheckCircle, Receipt } from 'lucide-react
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { sendOrderToKOT, pickupItem, serveItem } from '../../features/workflows/waiterWorkflow';
+import { sendOrderToKOT, pickupItem, serveItem, cancelItem, cancelOrder } from '../../features/workflows/waiterWorkflow';
 import { completeOrder } from '../../features/workflows/cashierWorkflow';
 import { cn } from '../../utils/cn';
+import { X } from 'lucide-react';
 
 export function WaiterOrderScreen() {
   const { tableId } = useParams();
@@ -22,15 +23,22 @@ export function WaiterOrderScreen() {
   // Find active order for this table (anything not CLOSED)
   const activeOrder = useSelector(state => state.orders.data.find(o => o.tableId === tableId && o.status !== 'CLOSED'));
   
-  const [activeCategory, setActiveCategory] = useState(menuCategories[0]?.id);
+  const activeCategories = useMemo(() => menuCategories.filter(c => !c.status || c.status === 'ACTIVE'), [menuCategories]);
+  
+  const [activeCategory, setActiveCategory] = useState(activeCategories[0]?.id);
   const [cart, setCart] = useState([]);
   
   // For static pickup code
   const [pickupCode, setPickupCode] = useState('');
   const [activePickupItemId, setActivePickupItemId] = useState(null);
 
+  // For cancellation
+  const [itemToCancel, setItemToCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [showCancelOrderModal, setShowCancelOrderModal] = useState(false);
+
   const filteredMenuItems = useMemo(() => {
-    return menuItems.filter(item => item.categoryId === activeCategory && item.isAvailable);
+    return menuItems.filter(item => item.categoryId === activeCategory && item.isAvailable !== false && (!item.status || item.status === 'ACTIVE'));
   }, [menuItems, activeCategory]);
 
   const handleAddToCart = (menuItem) => {
@@ -87,6 +95,37 @@ export function WaiterOrderScreen() {
     dispatch(completeOrder(activeOrder.id, currentUser.id));
   };
 
+  const confirmCancelItem = () => {
+    if (!cancelReason.trim()) {
+      alert("Please provide a cancellation reason.");
+      return;
+    }
+    dispatch(cancelItem(activeOrder.id, itemToCancel.id, currentUser.id, cancelReason));
+    setItemToCancel(null);
+    setCancelReason('');
+  };
+
+  const handleCancelOrderClick = () => {
+    const hasServedItems = activeOrder.items.some(i => ['SERVED', 'PICKED_UP'].includes(i.status));
+    if (hasServedItems) {
+      alert("This order contains picked up or served items and cannot be completely cancelled. You can cancel remaining active items individually.");
+      return;
+    }
+    setCancelReason('');
+    setShowCancelOrderModal(true);
+  };
+
+  const confirmCancelOrder = () => {
+    if (!cancelReason.trim()) {
+      alert("Please provide a cancellation reason.");
+      return;
+    }
+    dispatch(cancelOrder(activeOrder.id, currentUser.id, cancelReason));
+    setShowCancelOrderModal(false);
+    setCancelReason('');
+    navigate('/waiter/tables');
+  };
+
   if (!table) return <div>Table not found</div>;
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -116,7 +155,7 @@ export function WaiterOrderScreen() {
             <>
               {/* Categories */}
               <div className="flex overflow-x-auto p-4 border-b border-border space-x-2">
-                {menuCategories.map(cat => (
+                {activeCategories.map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
@@ -222,6 +261,21 @@ export function WaiterOrderScreen() {
                             Serve to Customer
                           </Button>
                         )}
+                        
+                        {/* Cancel Action */}
+                        {isOrderInProgress && ['ORDERED', 'PREPARING'].includes(oi.status) && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="w-full mt-2 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700" 
+                            onClick={() => {
+                              setItemToCancel({ id: oi.id, name: menuItem?.name || 'Item' });
+                              setCancelReason('');
+                            }}
+                          >
+                            Cancel Item
+                          </Button>
+                        )}
                       </div>
                     );
                   })}
@@ -265,27 +319,105 @@ export function WaiterOrderScreen() {
             
           </div>
           
-          {isOrderInProgress && cart.length > 0 && (
-            <div className="p-4 border-t border-border bg-gray-50">
-              <div className="flex justify-between items-center mb-4">
-                <span className="font-bold text-text-main">Subtotal</span>
-                <span className="font-bold text-lg text-primary">₹{cartTotal}</span>
-              </div>
-              <Button className="w-full h-12 text-lg" onClick={handleSendToKOT}>
-                <Send className="w-5 h-5 mr-2" /> Send to KOT
-              </Button>
-            </div>
-          )}
+                  {/* Action Buttons Container */}
+                  <div className="p-4 border-t border-border bg-gray-50 space-y-3">
+                    {/* Send to KOT */}
+                    {isOrderInProgress && cart.length > 0 && (
+                      <div>
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="font-bold text-text-main">Subtotal</span>
+                          <span className="font-bold text-lg text-primary">₹{cartTotal}</span>
+                        </div>
+                        <Button className="w-full h-12 text-lg" onClick={handleSendToKOT}>
+                          <Send className="w-5 h-5 mr-2" /> Send to KOT
+                        </Button>
+                      </div>
+                    )}
+          
+                    {/* Complete Order */}
+                    {isOrderInProgress && cart.length === 0 && allItemsFinished && (
+                      <Button className="w-full h-12 text-lg bg-status-success hover:bg-green-600 text-white" onClick={handleCompleteOrder}>
+                        <CheckCircle className="w-5 h-5 mr-2" /> Complete Order
+                      </Button>
+                    )}
 
-          {isOrderInProgress && cart.length === 0 && allItemsFinished && (
-            <div className="p-4 border-t border-border bg-gray-50">
-              <Button className="w-full h-12 text-lg bg-status-success hover:bg-green-600 text-white" onClick={handleCompleteOrder}>
-                <CheckCircle className="w-5 h-5 mr-2" /> Complete Order
-              </Button>
-            </div>
-          )}
+                    {/* Cancel Whole Order */}
+                    {isOrderInProgress && activeOrder && activeOrder.items.length > 0 && (
+                      <Button variant="outline" className="w-full h-10 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700" onClick={handleCancelOrderClick}>
+                        Cancel Order
+                      </Button>
+                    )}
+                  </div>
         </div>
       </div>
+
+      {/* Cancel Item Modal */}
+      {itemToCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-xl w-96 max-w-[90%] overflow-hidden">
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+              <h3 className="font-bold text-text-main">Cancel Item</h3>
+              <button onClick={() => setItemToCancel(null)} className="text-text-muted hover:text-text-main">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-text-main">Cancel <strong>{itemToCancel.name}</strong>?</p>
+              <div>
+                <label className="block text-sm font-medium text-text-main mb-1">Reason:</label>
+                <input 
+                  type="text" 
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="e.g. Customer changed order"
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">
+              <Button variant="outline" onClick={() => setItemToCancel(null)}>Keep Item</Button>
+              <Button variant="danger" className="bg-red-500 hover:bg-red-600 text-white border-red-600" onClick={confirmCancelItem}>
+                Confirm Cancellation
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Order Modal */}
+      {showCancelOrderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-xl w-96 max-w-[90%] overflow-hidden">
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+              <h3 className="font-bold text-text-main">Cancel Order</h3>
+              <button onClick={() => setShowCancelOrderModal(false)} className="text-text-muted hover:text-text-main">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-text-main">Are you sure you want to cancel the entire order?</p>
+              <div>
+                <label className="block text-sm font-medium text-text-main mb-1">Reason:</label>
+                <input 
+                  type="text" 
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="e.g. Customer left"
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">
+              <Button variant="outline" onClick={() => setShowCancelOrderModal(false)}>Keep Order</Button>
+              <Button variant="danger" className="bg-red-500 hover:bg-red-600 text-white border-red-600" onClick={confirmCancelOrder}>
+                Cancel Order
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

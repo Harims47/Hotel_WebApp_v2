@@ -15,7 +15,8 @@ export function NewTakeawayOrder() {
   const menuCategories = useSelector(state => state.menu.categories);
   const menuItems = useSelector(state => state.menu.items);
   
-  const [activeCategory, setActiveCategory] = useState(menuCategories[0]?.id);
+  const activeCategories = useMemo(() => menuCategories.filter(c => !c.status || c.status === 'ACTIVE'), [menuCategories]);
+  const [activeCategory, setActiveCategory] = useState(activeCategories[0]?.id);
   const [cart, setCart] = useState([]);
   
   const [source, setSource] = useState('OFFLINE');
@@ -30,7 +31,7 @@ export function NewTakeawayOrder() {
   const [notes, setNotes] = useState('');
 
   const filteredMenuItems = useMemo(() => {
-    return menuItems.filter(item => item.categoryId === activeCategory && item.isAvailable);
+    return menuItems.filter(item => item.categoryId === activeCategory && item.isAvailable !== false && (!item.status || item.status === 'ACTIVE'));
   }, [menuItems, activeCategory]);
 
   const handleAddToCart = (menuItem) => {
@@ -100,7 +101,7 @@ export function NewTakeawayOrder() {
         <div className="flex-1 flex flex-col bg-surface rounded-2xl border border-border overflow-hidden">
           {/* Categories */}
           <div className="flex overflow-x-auto p-4 border-b border-border space-x-2">
-            {menuCategories.map(cat => (
+            {activeCategories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}

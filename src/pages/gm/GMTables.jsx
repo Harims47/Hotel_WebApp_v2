@@ -25,6 +25,7 @@ export function GMTables() {
       items: activeOrder.items || []
     };
   };
+  const shortId = (id) => id ? (id.length > 8 ? id.substring(0, 8) + '...' : id) : '-';
 
   return (
     <div className="space-y-6">
@@ -40,7 +41,7 @@ export function GMTables() {
               onClick={() => setSelectedTable(table.id)}
             >
               <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-2">
-                <span className="text-xl font-bold text-text-main">{table.number}</span>
+                <span className="text-xl font-bold text-text-main">{table.tableNumber || table.id}</span>
                 <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
                   table.status === 'OCCUPIED' ? 'bg-orange-100 text-primary' : 'bg-green-100 text-green-700'
                 }`}>
@@ -49,7 +50,7 @@ export function GMTables() {
                 
                 {details && (
                   <div className="text-xs text-gray-500 mt-2 space-y-1 w-full text-left bg-gray-50 p-2 rounded">
-                    <div className="flex justify-between"><span>Ord:</span> <span>{details.orderId}</span></div>
+                    <div className="flex justify-between"><span>Ord:</span> <span className="font-mono" title={details.orderId}>{shortId(details.orderId)}</span></div>
                     <div className="flex justify-between"><span>Wtr:</span> <span>{details.waiterName}</span></div>
                     <div className="flex justify-between font-medium"><span>₹</span> <span>{details.orderValue}</span></div>
                   </div>
@@ -70,14 +71,14 @@ export function GMTables() {
                 const details = getTableDetails(table);
                 
                 if (table.status !== 'OCCUPIED' || !details) {
-                  return <p className="text-gray-500">Table {table.number} is currently Available.</p>;
+                  return <p className="text-gray-500">Table {table.tableNumber || table.id} is currently Available.</p>;
                 }
 
                 return (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center border-b pb-4">
                       <div>
-                        <h3 className="text-lg font-bold">Table {table.number}</h3>
+                        <h3 className="text-lg font-bold">Table {table.tableNumber || table.id}</h3>
                         <p className="text-sm text-gray-500">Order: {details.orderId}</p>
                       </div>
                       <div className="text-right">

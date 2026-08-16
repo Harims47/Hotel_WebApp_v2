@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 
 export function GMDelivery() {
   const deliveries = useSelector(state => state.delivery.data) || [];
+  const users = useSelector(state => state.users.data) || [];
+  const customers = useSelector(state => state.customers.data) || [];
   
   const ready = deliveries.filter(d => d.status === 'READY');
   const assigned = deliveries.filter(d => d.status === 'ASSIGNED');
@@ -11,17 +13,21 @@ export function GMDelivery() {
   const outForDelivery = deliveries.filter(d => d.status === 'OUT_FOR_DELIVERY');
   const delivered = deliveries.filter(d => d.status === 'DELIVERED');
 
+  const getCustomerName = (id) => customers.find(c => c.id === id)?.name || id;
+  const getUserName = (id) => users.find(u => u.id === id)?.name || id;
+  const shortId = (id) => id ? (id.length > 8 ? id.substring(0, 8) + '...' : id) : '-';
+
   const renderDeliveryCard = (delivery) => (
-    <Card key={delivery.id} className="mb-4 text-sm border-l-4 border-l-primary">
+    <Card key={delivery.id} className="mb-4 text-sm border-l-4 border-l-primary hover:shadow-sm transition-shadow">
       <CardContent className="p-4">
         <div className="flex justify-between items-center mb-2 border-b pb-2">
-          <span className="font-bold">{delivery.id}</span>
-          <span className="text-gray-500">{delivery.orderId}</span>
+          <span className="font-bold font-mono text-gray-700" title={delivery.id}>{shortId(delivery.id)}</span>
+          <span className="text-gray-500 font-mono text-xs" title={delivery.orderId}>{shortId(delivery.orderId)}</span>
         </div>
         <div className="space-y-1 mt-2 text-xs text-gray-600">
-          <div className="flex justify-between"><span>Customer:</span> <span>{delivery.customerId || 'Unknown'}</span></div>
-          <div className="flex justify-between"><span>Address:</span> <span className="truncate w-32 text-right">{delivery.address || '-'}</span></div>
-          <div className="flex justify-between"><span>Boy:</span> <span className="font-medium">{delivery.deliveryBoyId || 'Unassigned'}</span></div>
+          <div className="flex justify-between"><span>Customer:</span> <span>{delivery.customerId ? getCustomerName(delivery.customerId) : 'Unknown'}</span></div>
+          <div className="flex justify-between"><span>Address:</span> <span className="truncate w-32 text-right" title={delivery.address}>{delivery.address || '-'}</span></div>
+          <div className="flex justify-between mt-2 pt-1 border-t border-dashed"><span>Boy:</span> <span className="font-medium text-primary">{delivery.deliveryBoyId ? getUserName(delivery.deliveryBoyId) : 'Unassigned'}</span></div>
         </div>
       </CardContent>
     </Card>

@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { updateKOTStatus, updateKOTItemStatus } from '../kot/kotSlice';
-import { updateOrderItemStatus } from '../orders/ordersSlice';
+import { updateOrderItemStatus, updateOrderItem } from '../orders/ordersSlice';
 import { addNotification } from '../notifications/notificationsSlice';
 import { logAction } from '../audit/auditSlice';
 import { updateDeliveryStatus } from '../delivery/deliverySlice';
@@ -49,7 +49,14 @@ export const markItemReady = (kotId, kotItemId, kitchenUserId) => (dispatch, get
 
   // Mark item ready
   dispatch(updateKOTItemStatus({ kotId, kotItemId, status: 'READY' }));
-  dispatch(updateOrderItemStatus({ orderId: kot.orderId, orderItemId: kotItem.orderItemId, status: 'READY' }));
+  dispatch(updateOrderItem({
+    orderId: kot.orderId,
+    orderItemId: kotItem.orderItemId,
+    updates: {
+      status: 'READY',
+      readyAt: now
+    }
+  }));
   
   // Notify Waiter or Cashier
   if (order) {

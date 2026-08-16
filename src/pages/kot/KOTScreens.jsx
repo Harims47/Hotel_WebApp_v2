@@ -116,8 +116,20 @@ export function KOTScreen({ statusFilter, title }) {
                             </Button>
                           )}
                           
-                          {(ki.status === 'READY' || ki.status === 'PICKED_UP' || ki.status === 'SERVED') && (
+                          {ki.status === 'READY' && (
                             <Badge variant="success">READY</Badge>
+                          )}
+                          
+                          {ki.status === 'PICKED_UP' && (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-700">PICKED UP</Badge>
+                          )}
+                          
+                          {ki.status === 'SERVED' && (
+                            <Badge variant="default" className="bg-gray-100 text-gray-700">SERVED</Badge>
+                          )}
+
+                          {ki.status === 'CANCELLED' && (
+                            <Badge variant="danger" className="bg-red-100 text-red-700">CANCELLED</Badge>
                           )}
                         </div>
                       );

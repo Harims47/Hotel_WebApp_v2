@@ -31,6 +31,14 @@ import { DeliveryDashboard } from '../../pages/delivery/DeliveryDashboard';
 import { DeliveryOrders } from '../../pages/delivery/DeliveryOrders';
 import { DeliveryOrderDetails } from '../../pages/delivery/DeliveryOrderDetails';
 
+// Admin Routes
+import { AdminRestaurant } from '../../pages/admin/AdminRestaurant';
+import { AdminUsers } from '../../pages/admin/AdminUsers';
+import { AdminTables } from '../../pages/admin/AdminTables';
+import { AdminMenu } from '../../pages/admin/AdminMenu';
+import { AdminTax } from '../../pages/admin/AdminTax';
+import { AdminPayments } from '../../pages/admin/AdminPayments';
+
 // Placeholders for other routes so there are no broken links in Sidebar
 const Placeholder = ({ title }) => <div className="p-6 text-text-main font-semibold text-xl">{title} Placeholder</div>;
 
@@ -47,11 +55,12 @@ const router = createBrowserRouter([
       
       // Admin Routes
       { path: 'admin/dashboard', element: <AdminDashboard /> },
-      { path: 'admin/users', element: <Placeholder title="Admin Users" /> },
-      { path: 'admin/tables', element: <Placeholder title="Admin Tables" /> },
-      { path: 'admin/menu', element: <Placeholder title="Admin Menu" /> },
-      { path: 'admin/orders', element: <Placeholder title="Admin Orders" /> },
-      { path: 'admin/kot', element: <Placeholder title="Admin KOT" /> },
+      { path: 'admin/restaurant', element: <AdminRestaurant /> },
+      { path: 'admin/users', element: <AdminUsers /> },
+      { path: 'admin/tables', element: <AdminTables /> },
+      { path: 'admin/menu', element: <AdminMenu /> },
+      { path: 'admin/settings/tax', element: <AdminTax /> },
+      { path: 'admin/settings/payment-methods', element: <AdminPayments /> },
       
       // GM Routes
       { path: 'gm/dashboard', element: <GMDashboard /> },

@@ -15,8 +15,9 @@ export const completeOrder = (orderId, waiterId) => (dispatch, getState) => {
   const state = getState();
   const order = state.orders.data.find(o => o.id === orderId);
   const menuItems = state.menu.items;
-  const restaurantSettings = state.restaurant.data.settings;
-  const taxRate = restaurantSettings?.taxRate || 5;
+  const restaurantSettings = state.restaurant.data?.settings || {};
+  const isTaxEnabled = restaurantSettings.taxEnabled !== false; // Default true
+  const taxRate = isTaxEnabled ? (restaurantSettings.taxRate || 5) : 0;
 
   const now = new Date().toISOString();
 

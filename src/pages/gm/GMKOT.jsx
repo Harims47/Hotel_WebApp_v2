@@ -4,21 +4,25 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 
 export function GMKOT() {
   const kotItems = useSelector(state => state.kot.data) || [];
+  const tables = useSelector(state => state.tables.data) || [];
   
   const newKots = kotItems.filter(k => k.status === 'NEW');
   const preparingKots = kotItems.filter(k => k.status === 'PREPARING');
   const readyKots = kotItems.filter(k => k.status === 'READY');
 
+  const getTableName = (id) => tables.find(t => t.id === id)?.tableNumber || id;
+  const shortId = (id) => id ? (id.length > 8 ? id.substring(0, 8) + '...' : id) : '-';
+
   const renderKOTCard = (kot) => (
-    <Card key={kot.id} className="mb-4 text-sm">
+    <Card key={kot.id} className="mb-4 text-sm hover:shadow-sm transition-shadow">
       <CardContent className="p-4">
         <div className="flex justify-between items-center mb-2 border-b pb-2">
-          <span className="font-bold">{kot.id}</span>
-          <span className="text-gray-500">{kot.orderId}</span>
+          <span className="font-bold font-mono text-gray-700" title={kot.id}>{shortId(kot.id)}</span>
+          <span className="text-gray-500 font-mono text-xs" title={kot.orderId}>{shortId(kot.orderId)}</span>
         </div>
         <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
           <span>{kot.type}</span>
-          <span>{kot.type === 'DINE_IN' ? `Table ${kot.tableId}` : 'Takeaway'}</span>
+          <span>{kot.type === 'DINE_IN' ? `Table ${getTableName(kot.tableId)}` : 'Takeaway'}</span>
         </div>
         <div className="space-y-1 mt-2">
           {kot.items && kot.items.map((item, idx) => (

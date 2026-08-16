@@ -19,11 +19,15 @@ import { cn } from '../../utils/cn';
 const ROLE_NAV = {
   SUPER_ADMIN: [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Users', path: '/admin/users', icon: Users },
+    { section: 'OPERATIONS' },
     { name: 'Tables', path: '/admin/tables', icon: UtensilsCrossed },
     { name: 'Menu', path: '/admin/menu', icon: ListOrdered },
-    { name: 'Orders', path: '/admin/orders', icon: Receipt },
-    { name: 'KOT', path: '/admin/kot', icon: ChefHat },
+    { section: 'PEOPLE' },
+    { name: 'Users', path: '/admin/users', icon: Users },
+    { section: 'SETTINGS' },
+    { name: 'Restaurant', path: '/admin/restaurant', icon: Settings },
+    { name: 'Tax', path: '/admin/settings/tax', icon: Receipt },
+    { name: 'Payments', path: '/admin/settings/payment-methods', icon: Receipt },
   ],
   GM: [
     { name: 'Dashboard', path: '/gm/dashboard', icon: LayoutDashboard },
@@ -76,23 +80,34 @@ export function Sidebar() {
       
       <div className="flex-1 overflow-y-auto py-4">
         <nav className="space-y-1 px-3">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
-                  isActive 
-                    ? 'bg-primary/10 text-primary' 
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                )
-              }
-            >
-              <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-              {item.name}
-            </NavLink>
-          ))}
+          {navItems.map((item, index) => {
+            if (item.section) {
+              return (
+                <div key={`section-${index}`} className="px-3 pt-4 pb-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    {item.section}
+                  </p>
+                </div>
+              );
+            }
+            return (
+              <NavLink
+                key={item.name}
+                to={item.path}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+                    isActive 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  )
+                }
+              >
+                <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                {item.name}
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
 

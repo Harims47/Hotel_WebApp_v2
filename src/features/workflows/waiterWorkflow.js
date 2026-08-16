@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import { createOrder, updateOrderItemStatus, addOrderItems } from '../orders/ordersSlice';
-import { createKOT, updateKOTStatus } from '../kot/kotSlice';
+import { createOrder, updateOrderItemStatus, updateOrderItem, addOrderItems, updateOrderStatus } from '../orders/ordersSlice';
+import { createKOT, updateKOTStatus, updateKOTItemStatus } from '../kot/kotSlice';
 import { updateTableStatus } from '../tables/tablesSlice';
 import { logAction } from '../audit/auditSlice';
+import { addNotification } from '../notifications/notificationsSlice';
 
 // Waiter actions
 export const sendOrderToKOT = (tableId, waiterId, items) => (dispatch, getState) => {
@@ -111,15 +112,17 @@ export const pickupItem = (orderId, orderItemId, waiterId) => (dispatch, getStat
   const kots = state.kot.data.filter(k => k.orderId === orderId);
   
   kots.forEach(kot => {
+    const kotItem = kot.items.find(ki => ki.orderItemId === orderItemId);
+    if (kotItem) {
+      dispatch(updateKOTItemStatus({ kotId: kot.id, kotItemId: kotItem.id, status: 'PICKED_UP' }));
+    }
+
     if (kot.status === 'READY' || kot.status === 'PREPARING') {
       const hasItem = kot.items.some(ki => ki.orderItemId === orderItemId);
       if (hasItem) {
-        const allCompleted = kot.items.every(ki => {
-          const oi = order.items.find(i => i.id === ki.orderItemId);
-          // Check if oi is PICKED_UP, SERVED, or CANCELLED. We must handle the current item manually if getState is stale, but redux is sync so it's fine.
-          // Wait, state is grabbed BEFORE dispatch if we aren't careful.
-          // Let's just use the updated order. Wait, `order` was grabbed from state BEFORE dispatch? No, state = getState() is after dispatch.
-          return oi?.status === 'PICKED_UP' || oi?.status === 'SERVED' || oi?.status === 'CANCELLED' || ki.orderItemId === orderItemId;
+        const updatedKot = getState().kot.data.find(k => k.id === kot.id);
+        const allCompleted = updatedKot.items.every(ki => {
+          return ['PICKED_UP', 'SERVED', 'CANCELLED', 'COMPLETED'].includes(ki.status);
         });
         if (allCompleted) {
           dispatch(updateKOTStatus({ kotId: kot.id, status: 'COMPLETED' }));
@@ -150,12 +153,17 @@ export const serveItem = (orderId, orderItemId, waiterId) => (dispatch, getState
   const kots = state.kot.data.filter(k => k.orderId === orderId);
   
   kots.forEach(kot => {
+    const kotItem = kot.items.find(ki => ki.orderItemId === orderItemId);
+    if (kotItem) {
+      dispatch(updateKOTItemStatus({ kotId: kot.id, kotItemId: kotItem.id, status: 'SERVED' }));
+    }
+
     if (kot.status === 'READY' || kot.status === 'PREPARING') {
       const hasItem = kot.items.some(ki => ki.orderItemId === orderItemId);
       if (hasItem) {
-        const allCompleted = kot.items.every(ki => {
-          const oi = order.items.find(i => i.id === ki.orderItemId);
-          return oi?.status === 'PICKED_UP' || oi?.status === 'SERVED' || oi?.status === 'CANCELLED' || ki.orderItemId === orderItemId;
+        const updatedKot = getState().kot.data.find(k => k.id === kot.id);
+        const allCompleted = updatedKot.items.every(ki => {
+          return ['PICKED_UP', 'SERVED', 'CANCELLED', 'COMPLETED'].includes(ki.status);
         });
         if (allCompleted) {
           dispatch(updateKOTStatus({ kotId: kot.id, status: 'COMPLETED' }));
@@ -173,4 +181,99 @@ export const serveItem = (orderId, orderItemId, waiterId) => (dispatch, getState
     description: `Item served by waiter`,
     createdAt: now
   }));
+};
+
+export const cancelItem = (orderId, orderItemId, waiterId, reason) => (dispatch, getState) => {
+  const now = new Date().toISOString();
+  const state = getState();
+  const order = state.orders.data.find(o => o.id === orderId);
+  const orderItem = order?.items.find(i => i.id === orderItemId);
+  if (!orderItem || !['ORDERED', 'PREPARING'].includes(orderItem.status)) return;
+  
+  const menuItemId = orderItem.menuItemId;
+  const menuItem = state.menu.items.find(m => m.id === menuItemId);
+
+  // Update order item status & cancellation details
+  dispatch(updateOrderItem({
+    orderId,
+    orderItemId,
+    updates: {
+      status: 'CANCELLED',
+      cancelReason: reason,
+      cancelledBy: waiterId,
+      cancelledAt: now
+    }
+  }));
+
+  // Find associated KOT item and cancel it
+  const kots = state.kot.data.filter(k => k.orderId === orderId);
+  kots.forEach(kot => {
+    const kotItem = kot.items.find(ki => ki.orderItemId === orderItemId);
+    if (kotItem && ['NEW', 'PREPARING', 'ORDERED'].includes(kotItem.status)) {
+      dispatch(updateKOTItemStatus({ kotId: kot.id, kotItemId: kotItem.id, status: 'CANCELLED' }));
+      
+      // Notify kitchen
+      dispatch(addNotification({
+        id: `notif-${uuidv4()}`,
+        userId: null,
+        role: 'KITCHEN',
+        type: 'ITEM_CANCELLED',
+        title: 'Item Cancelled',
+        message: `Table ${order.tableId.replace('t', 'T')} (Order ${order.orderNumber}): ${menuItem?.name || 'Item'} cancelled. Reason: ${reason}`,
+        referenceId: kot.id,
+        isRead: false,
+        createdAt: now
+      }));
+      
+      // Check if this completes/cancels the whole KOT
+      const updatedKotItems = kot.items.map(ki => ki.id === kotItem.id ? { ...ki, status: 'CANCELLED' } : ki);
+      const allDone = updatedKotItems.every(ki => ki.status === 'COMPLETED' || ki.status === 'CANCELLED' || ki.status === 'READY');
+      if (allDone && !['COMPLETED', 'CANCELLED'].includes(kot.status)) {
+        dispatch(updateKOTStatus({ kotId: kot.id, status: 'COMPLETED' }));
+      }
+    }
+  });
+
+  dispatch(logAction({
+    id: `log-${uuidv4()}`,
+    userId: waiterId,
+    action: 'ITEM_CANCELLED',
+    entityType: 'ORDER_ITEM',
+    entityId: orderItemId,
+    description: `Item cancelled. Reason: ${reason}`,
+    createdAt: now
+  }));
+};
+
+export const cancelOrder = (orderId, waiterId, reason) => (dispatch, getState) => {
+  const now = new Date().toISOString();
+  const state = getState();
+  const order = state.orders.data.find(o => o.id === orderId);
+  if (!order || ['PAID', 'CLOSED', 'CANCELLED'].includes(order.status)) return;
+  
+  // Find all active items to cancel
+  const activeItems = order.items.filter(i => ['ORDERED', 'PREPARING', 'READY'].includes(i.status));
+  
+  activeItems.forEach(item => {
+    dispatch(cancelItem(orderId, item.id, waiterId, reason));
+  });
+  
+  // If no items were previously served or picked up, we can cancel the order
+  const hasServedItems = order.items.some(i => ['SERVED', 'PICKED_UP'].includes(i.status));
+  if (!hasServedItems) {
+    dispatch(updateOrderStatus({ orderId, status: 'CANCELLED' }));
+    if (order.tableId) {
+      dispatch(updateTableStatus({ tableId: order.tableId, status: 'AVAILABLE' }));
+    }
+    
+    dispatch(logAction({
+      id: `log-${uuidv4()}`,
+      userId: waiterId,
+      action: 'ORDER_CANCELLED',
+      entityType: 'ORDER',
+      entityId: orderId,
+      description: `Order cancelled. Reason: ${reason}`,
+      createdAt: now
+    }));
+  }
 };
