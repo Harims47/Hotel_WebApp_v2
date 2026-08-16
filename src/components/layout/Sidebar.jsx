@@ -28,7 +28,9 @@ import {
   Calculator,
   Bell,
   PieChart,
-  Banknote
+  Banknote,
+  BarChart2,
+  TrendingUp
 } from 'lucide-react';
 import { logout } from '../../features/auth/authSlice';
 import { cn } from '../../utils/cn';
@@ -36,6 +38,9 @@ import { cn } from '../../utils/cn';
 const ROLE_NAV = {
   SUPER_ADMIN: [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+    { section: 'MANAGEMENT' },
+    { name: 'Mgmt Dashboard', path: '/management/dashboard', icon: TrendingUp },
+    { name: 'Mgmt Reports', path: '/management/reports', icon: BarChart2 },
     { section: 'OPERATIONS' },
     { name: 'Tables', path: '/admin/tables', icon: UtensilsCrossed },
     { name: 'Menu', path: '/admin/menu', icon: ListOrdered },
@@ -46,7 +51,7 @@ const ROLE_NAV = {
     { name: 'Tax', path: '/admin/settings/tax', icon: Receipt },
     { name: 'Payments', path: '/admin/settings/payment-methods', icon: Receipt },
     { section: 'INVENTORY' },
-    { name: 'Dashboard', path: '/inventory/dashboard', icon: LayoutDashboard },
+    { name: 'Inv Dashboard', path: '/inventory/dashboard', icon: LayoutDashboard },
     { section: 'INV OPERATIONS' },
     { name: 'Low Stock', path: '/inventory/low-stock', icon: AlertCircle },
     { name: 'Purchase Orders', path: '/inventory/purchase-orders', icon: ShoppingCart },
@@ -61,8 +66,7 @@ const ROLE_NAV = {
     { name: 'Stock Ledger', path: '/inventory/stock-ledger', icon: FileText },
     { name: 'Valuation', path: '/inventory/valuation', icon: Calculator },
     { name: 'Alerts', path: '/inventory/alerts', icon: Bell },
-    { name: 'Reports', path: '/inventory/reports', icon: PieChart },
-    { name: 'Inventory Masters', path: '/inventory/masters', icon: Settings },
+    { name: 'Inv Reports', path: '/inventory/reports', icon: PieChart },
     { section: 'INV MASTER DATA' },
     { name: 'Items Master', path: '/inventory/items', icon: Package },
     { name: 'Categories', path: '/inventory/categories', icon: Tags },
@@ -71,7 +75,10 @@ const ROLE_NAV = {
     { name: 'UOM', path: '/inventory/uom', icon: Scale },
   ],
   GM: [
-    { name: 'Dashboard', path: '/gm/dashboard', icon: LayoutDashboard },
+    { name: 'Dashboard', path: '/management/dashboard', icon: TrendingUp },
+    { section: 'MANAGEMENT' },
+    { name: 'Mgmt Reports', path: '/management/reports', icon: BarChart2 },
+    { section: 'RESTAURANT OPS' },
     { name: 'Orders', path: '/gm/orders', icon: Receipt },
     { name: 'KOT', path: '/gm/kot', icon: ChefHat },
     { name: 'Tables', path: '/gm/tables', icon: UtensilsCrossed },
@@ -93,7 +100,7 @@ const ROLE_NAV = {
     { name: 'Stock Ledger', path: '/inventory/stock-ledger', icon: FileText },
     { name: 'Valuation', path: '/inventory/valuation', icon: Calculator },
     { name: 'Alerts', path: '/inventory/alerts', icon: Bell },
-    { name: 'Reports', path: '/inventory/reports', icon: PieChart },
+    { name: 'Inv Reports', path: '/inventory/reports', icon: PieChart },
     { section: 'INV MASTER DATA' },
     { name: 'Items', path: '/inventory/items', icon: Package },
     { name: 'Categories', path: '/inventory/categories', icon: Tags },

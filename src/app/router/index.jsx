@@ -78,6 +78,10 @@ import { ReimbursementList } from '../../pages/inventory/ReimbursementList';
 import { ReimbursementNew } from '../../pages/inventory/ReimbursementNew';
 import { ReimbursementDetails } from '../../pages/inventory/ReimbursementDetails';
 
+// Management Routes
+import { ManagementDashboard } from '../../pages/management/ManagementDashboard';
+import { ManagementReports } from '../../pages/management/ManagementReports';
+
 // Placeholders for other routes so there are no broken links in Sidebar
 const Placeholder = ({ title }) => <div className="p-6 text-text-main font-semibold text-xl">{title} Placeholder</div>;
 
@@ -178,6 +182,10 @@ const router = createBrowserRouter([
       { path: 'inventory/reimbursements', element: <ReimbursementList /> },
       { path: 'inventory/reimbursements/new', element: <ReimbursementNew /> },
       { path: 'inventory/reimbursements/:id', element: <ReimbursementDetails /> },
+      
+      // Management Routes
+      { path: 'management/dashboard', element: <ManagementDashboard /> },
+      { path: 'management/reports', element: <ManagementReports /> },
       
       // Catch-all
       { path: '*', element: <Navigate to="/login" replace /> },

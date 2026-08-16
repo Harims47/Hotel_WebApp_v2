@@ -70,7 +70,7 @@ export function AppShell() {
     let allowedPrefixes = [];
     if (currentUser.role === 'DELIVERY_BOY') allowedPrefixes = ['/delivery'];
     else if (currentUser.role === 'INVENTORY_MANAGER') allowedPrefixes = ['/inventory'];
-    else if (currentUser.role === 'GM') allowedPrefixes = ['/gm', '/inventory'];
+    else if (currentUser.role === 'GM') allowedPrefixes = ['/gm', '/inventory', '/management'];
     else allowedPrefixes = [`/${currentUser.role.toLowerCase()}`];
 
     const isAllowed = allowedPrefixes.some(prefix => path.startsWith(prefix));
