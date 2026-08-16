@@ -15,6 +15,7 @@ import { WaiterDashboard } from '../../pages/waiter/WaiterDashboard';
 import { WaiterTables } from '../../pages/waiter/WaiterTables';
 import { WaiterOrderScreen } from '../../pages/waiter/WaiterOrderScreen';
 import { WaiterOrders } from '../../pages/waiter/WaiterOrders';
+import { WaiterMenu } from '../../pages/waiter/WaiterMenu';
 
 // KOT
 import { KOTDashboard } from '../../pages/kot/KOTDashboard';
@@ -74,7 +75,7 @@ const router = createBrowserRouter([
       { path: 'waiter/dashboard', element: <WaiterDashboard /> },
       { path: 'waiter/tables', element: <WaiterTables /> },
       { path: 'waiter/tables/:tableId', element: <WaiterOrderScreen /> },
-      { path: 'waiter/menu', element: <Navigate to="/waiter/tables" replace /> },
+      { path: 'waiter/menu', element: <WaiterMenu /> },
       { path: 'waiter/orders', element: <WaiterOrders /> },
       
       // KOT Routes

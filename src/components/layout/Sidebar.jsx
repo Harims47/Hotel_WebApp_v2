@@ -63,8 +63,9 @@ const ROLE_NAV = {
   ]
 };
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }) {
   const { currentUser } = useSelector(state => state.auth);
+  const restaurant = useSelector(state => state.restaurant.data);
   const dispatch = useDispatch();
   const navItems = currentUser ? ROLE_NAV[currentUser.role] || [] : [];
 
@@ -73,53 +74,77 @@ export function Sidebar() {
   };
 
   return (
-    <div className="flex flex-col w-64 bg-sidebar-dark h-full text-gray-300">
-      <div className="flex items-center justify-center h-16 border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white tracking-wider text-primary">Resto<span className="text-white">OS</span></h1>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto py-4">
-        <nav className="space-y-1 px-3">
-          {navItems.map((item, index) => {
-            if (item.section) {
-              return (
-                <div key={`section-${index}`} className="px-3 pt-4 pb-2">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    {item.section}
-                  </p>
-                </div>
-              );
-            }
-            return (
-              <NavLink
-                key={item.name}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
-                    isActive 
-                      ? 'bg-primary/10 text-primary' 
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  )
-                }
-              >
-                <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                {item.name}
-              </NavLink>
-            );
-          })}
-        </nav>
-      </div>
+    <>
+      {/* Overlay for mobile/tablet when sidebar is open */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 xl:hidden"
+          onClick={onClose}
+        />
+      )}
 
-      <div className="p-4 border-t border-gray-800">
-        <button 
-          onClick={handleLogout}
-          className="flex w-full items-center px-3 py-2.5 text-sm font-medium rounded-md text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-        >
-          <LogOut className="mr-3 h-5 w-5" />
-          Logout
-        </button>
+      {/* Sidebar Content */}
+      <div 
+        className={cn(
+          "fixed xl:static inset-y-0 left-0 flex flex-col w-[260px] bg-sidebar-dark h-full text-gray-300 border-r border-sidebar-dark shadow-2xl z-50 transition-transform duration-300 ease-in-out shrink-0",
+          isOpen ? "translate-x-0" : "-translate-x-full xl:translate-x-0"
+        )}
+      >
+        <div className="flex flex-col items-start justify-center h-16 px-6 border-b border-gray-800/50 bg-black/20 shrink-0">
+          <h1 className="text-xl font-bold text-white truncate w-full">
+            {restaurant?.name || 'Sri Annapoorna'}
+          </h1>
+          <p className="text-[10px] font-semibold text-primary tracking-[0.2em] uppercase mt-1">
+            Restaurant OS
+          </p>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto py-6 custom-scrollbar">
+          <nav className="space-y-1.5 px-4">
+            {navItems.map((item, index) => {
+              if (item.section) {
+                return (
+                  <div key={`section-${index}`} className="px-3 pt-6 pb-2">
+                    <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                      {item.section}
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <NavLink
+                  key={item.name}
+                  to={item.path}
+                  onClick={() => {
+                    if (window.innerWidth < 1280) onClose();
+                  }}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+                      isActive 
+                        ? 'bg-primary text-white shadow-lg shadow-primary/25 translate-x-1' 
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                    )
+                  }
+                >
+                  <item.icon className={cn("mr-3 flex-shrink-0", "h-5 w-5")} />
+                  {item.name}
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="p-4 border-t border-gray-800/50 bg-black/10 shrink-0">
+          <button 
+            onClick={handleLogout}
+            className="flex w-full items-center px-4 py-3 text-sm font-medium rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+          >
+            <LogOut className="mr-3 h-5 w-5" />
+            Logout
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

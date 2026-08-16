@@ -1,7 +1,9 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { Card, CardContent } from '../../components/ui/Card';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { MetricCard } from '../../components/ui/MetricCard';
 import { UtensilsCrossed, Receipt, ChefHat, Truck, IndianRupee, ShoppingBag, Clock } from 'lucide-react';
 
 export function GMDashboard() {
@@ -31,128 +33,141 @@ export function GMDashboard() {
   const totalPaid = payments.filter(p => p.status === 'PAID').reduce((sum, p) => sum + (p.amount || 0), 0);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-main">GM Command Center</h1>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <PageHeader 
+        title="GM Command Center" 
+        description="Comprehensive overview of restaurant operations."
+      />
       
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <Link to="/gm/tables">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Tables</CardTitle>
-              <UtensilsCrossed className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-text-main">{occupiedTables} <span className="text-sm font-normal text-gray-500">/ {totalTables}</span></div>
-              <p className="text-xs text-gray-500 mt-1">Occupied currently</p>
-            </CardContent>
-          </Card>
+        <Link to="/gm/tables" className="block">
+          <MetricCard
+            title="Tables Occupied"
+            value={`${occupiedTables} / ${totalTables}`}
+            icon={UtensilsCrossed}
+            className="hover:border-primary/50 cursor-pointer transition-colors border-l-4 border-l-primary"
+            subtext="Currently occupied"
+          />
         </Link>
 
-        <Link to="/gm/orders">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Active Orders</CardTitle>
-              <Receipt className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-text-main">{activeOrdersCount}</div>
-              <p className="text-xs text-gray-500 mt-1">In progress</p>
-            </CardContent>
-          </Card>
+        <Link to="/gm/orders" className="block">
+          <MetricCard
+            title="Active Orders"
+            value={activeOrdersCount.toString()}
+            icon={Receipt}
+            className="hover:border-blue-500/50 cursor-pointer transition-colors border-l-4 border-l-blue-500"
+            subtext="In progress"
+          />
         </Link>
 
-        <Link to="/gm/bills">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Pending Bills</CardTitle>
-              <Clock className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-text-main">{pendingBills}</div>
-              <p className="text-xs text-gray-500 mt-1">Awaiting payment</p>
-            </CardContent>
-          </Card>
+        <Link to="/gm/bills" className="block">
+          <MetricCard
+            title="Pending Bills"
+            value={pendingBills.toString()}
+            icon={Clock}
+            className="hover:border-orange-500/50 cursor-pointer transition-colors border-l-4 border-l-orange-500"
+            subtext="Awaiting payment"
+          />
         </Link>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Revenue</CardTitle>
-            <IndianRupee className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-text-main">₹{totalPaid}</div>
-            <p className="text-xs text-gray-500 mt-1">Total Available Paid</p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Revenue (Paid)"
+          value={`₹${totalPaid.toFixed(2)}`}
+          icon={IndianRupee}
+          className="border-l-4 border-l-green-500"
+          subtext="Total collected"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Kitchen Status */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Kitchen Operations (KOT)</CardTitle>
-            <ChefHat className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 mt-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">New</span>
-                <span className="font-medium text-text-main">{kotNew}</span>
+        <Card>
+          <div className="p-5 border-b border-border/60 bg-gray-50/50 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-text-main flex items-center">
+              <ChefHat className="w-5 h-5 mr-2 text-primary" /> Kitchen KOT
+            </h2>
+          </div>
+          <CardContent className="p-6">
+            <div className="space-y-5">
+              <div className="flex justify-between items-center p-3 bg-white border border-border/50 rounded-lg shadow-sm">
+                <span className="text-sm font-semibold text-text-muted">New</span>
+                <span className="text-xl font-black text-text-main">{kotNew}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Preparing</span>
-                <span className="font-medium text-orange-600">{kotPreparing}</span>
+              <div className="flex justify-between items-center p-3 bg-orange-50 border border-orange-100 rounded-lg shadow-sm">
+                <span className="text-sm font-semibold text-orange-800">Preparing</span>
+                <span className="text-xl font-black text-orange-600">{kotPreparing}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Ready</span>
-                <span className="font-medium text-green-600">{kotReady}</span>
+              <div className="flex justify-between items-center p-3 bg-green-50 border border-green-100 rounded-lg shadow-sm">
+                <span className="text-sm font-semibold text-green-800">Ready</span>
+                <span className="text-xl font-black text-green-600">{kotReady}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Fulfillment Status */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Fulfillment</CardTitle>
-            <Truck className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 mt-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500 flex items-center"><ShoppingBag className="w-3 h-3 mr-1"/> Takeaway Ready</span>
-                <span className="font-medium text-green-600">{takeawayReady}</span>
+        <Card>
+          <div className="p-5 border-b border-border/60 bg-gray-50/50 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-text-main flex items-center">
+              <Truck className="w-5 h-5 mr-2 text-primary" /> Fulfillment
+            </h2>
+          </div>
+          <CardContent className="p-6">
+            <div className="space-y-5">
+              <div className="flex justify-between items-center p-4 bg-white border border-border/50 rounded-xl shadow-sm">
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-text-main flex items-center">
+                    <ShoppingBag className="w-4 h-4 mr-1.5 text-status-success"/> Takeaway Ready
+                  </span>
+                  <span className="text-xs text-text-muted mt-1">Waiting for customer</span>
+                </div>
+                <span className="text-2xl font-black text-status-success">{takeawayReady}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500 flex items-center"><Truck className="w-3 h-3 mr-1"/> Deliveries Out</span>
-                <span className="font-medium text-text-main">{deliveriesOut}</span>
+              
+              <div className="flex justify-between items-center p-4 bg-white border border-border/50 rounded-xl shadow-sm">
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-text-main flex items-center">
+                    <Truck className="w-4 h-4 mr-1.5 text-blue-500"/> Deliveries Out
+                  </span>
+                  <span className="text-xs text-text-muted mt-1">En route to customer</span>
+                </div>
+                <span className="text-2xl font-black text-blue-600">{deliveriesOut}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Recent Activity */}
-        <Card className="lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Recent Activity</CardTitle>
-            <Clock className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 mt-2 h-40 overflow-y-auto pr-2">
+        <Card>
+          <div className="p-5 border-b border-border/60 bg-gray-50/50 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-text-main flex items-center">
+              <Clock className="w-5 h-5 mr-2 text-primary" /> Recent Activity
+            </h2>
+          </div>
+          <CardContent className="p-0">
+            <div className="divide-y divide-border/50 h-[300px] overflow-y-auto custom-scrollbar">
               {logs.slice(0, 10).map((log, i) => (
-                <div key={i} className="text-sm border-b border-gray-100 pb-2 last:border-0">
-                  <div className="flex justify-between">
-                    <span className="font-medium text-text-main">{log.action}</span>
-                    <span className="text-xs text-gray-400">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                <div key={i} className="p-4 hover:bg-gray-50/50 transition-colors">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-bold text-text-main text-sm">{log.action}</span>
+                    <span className="text-xs font-semibold text-text-muted bg-gray-100 px-2 py-0.5 rounded">
+                      {new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500 flex justify-between mt-1">
-                    <span>{log.entityType} {log.entityId}</span>
-                    <span>{log.userRole || log.userId}</span>
+                  <div className="text-xs text-text-muted flex justify-between items-center mt-2">
+                    <span className="bg-gray-100 px-2 py-1 rounded text-text-main font-medium border border-border/50">
+                      {log.entityType} #{log.entityId}
+                    </span>
+                    <span className="font-semibold">{log.userRole || log.userId}</span>
                   </div>
                 </div>
               ))}
-              {logs.length === 0 && <div className="text-sm text-gray-500 text-center mt-4">No recent activity</div>}
+              {logs.length === 0 && (
+                <div className="p-8 text-center text-text-muted">
+                  <p>No recent activity</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

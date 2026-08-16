@@ -47,102 +47,136 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-peach-soft flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-primary">
-          Resto<span className="text-text-main">OS</span>
-        </h2>
-        <p className="mt-2 text-center text-sm text-text-muted">
-          Restaurant Management System V1
-        </p>
+    <div className="min-h-screen flex">
+      {/* LEFT PANEL - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-sidebar-dark flex-col justify-between p-12 text-white relative overflow-hidden">
+        {/* Subtle background pattern/gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50" />
+        
+        <div className="relative z-10">
+          <h2 className="text-3xl font-extrabold tracking-tight">
+            <span className="text-primary">Resto</span>OS
+          </h2>
+          <p className="mt-2 text-sm text-gray-400 font-medium tracking-widest uppercase">
+            Restaurant Management System
+          </p>
+        </div>
+
+        <div className="relative z-10 max-w-md">
+          <h1 className="text-5xl font-bold leading-tight mb-6">
+            Fine Dining,<br/>
+            <span className="text-primary">Orchestrated.</span>
+          </h1>
+          <p className="text-lg text-gray-400 leading-relaxed">
+            The premium operating system designed for modern restaurants. Streamline your operations, empower your staff, and deliver exceptional experiences.
+          </p>
+        </div>
+
+        <div className="relative z-10 text-sm text-gray-500">
+          &copy; {new Date().getFullYear()} RestoOS. All rights reserved.
+        </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card className="py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-1">
-                Username
-              </label>
-              <Input
-                type="text"
-                {...register('username')}
-                error={errors.username?.message}
-                placeholder="superadmin"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-1">
-                Password
-              </label>
-              <Input
-                type="password"
-                {...register('password')}
-                error={errors.password?.message}
-                placeholder="123456"
-              />
-            </div>
-
-            {errors.root && (
-              <div className="text-status-danger text-sm text-center">
-                {errors.root.message}
-              </div>
-            )}
-
-            <Button type="submit" className="w-full">
-              Sign in
-            </Button>
-          </form>
-
-          <div className="mt-8 border-t border-border pt-6">
-            <h3 className="text-sm font-medium text-text-muted text-center mb-4">Demo Accounts (Password: 123456)</h3>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div 
-                className="bg-gray-50 p-2 rounded border border-border cursor-pointer hover:bg-orange-50 hover:border-primary transition-colors"
-                onClick={() => handleDemoClick('superadmin')}
-              >
-                <span className="font-semibold block text-primary">Super Admin</span>
-                <span className="text-text-muted">superadmin</span>
-              </div>
-              <div 
-                className="bg-gray-50 p-2 rounded border border-border cursor-pointer hover:bg-orange-50 hover:border-primary transition-colors"
-                onClick={() => handleDemoClick('gm')}
-              >
-                <span className="font-semibold block text-primary">General Manager</span>
-                <span className="text-text-muted">gm</span>
-              </div>
-              <div 
-                className="bg-gray-50 p-2 rounded border border-border cursor-pointer hover:bg-orange-50 hover:border-primary transition-colors"
-                onClick={() => handleDemoClick('waiter1')}
-              >
-                <span className="font-semibold block text-primary">Waiter</span>
-                <span className="text-text-muted">waiter1</span>
-              </div>
-              <div 
-                className="bg-gray-50 p-2 rounded border border-border cursor-pointer hover:bg-orange-50 hover:border-primary transition-colors"
-                onClick={() => handleDemoClick('kitchen')}
-              >
-                <span className="font-semibold block text-primary">KOT</span>
-                <span className="text-text-muted">kitchen</span>
-              </div>
-              <div 
-                className="bg-gray-50 p-2 rounded border border-border cursor-pointer hover:bg-orange-50 hover:border-primary transition-colors"
-                onClick={() => handleDemoClick('cashier')}
-              >
-                <span className="font-semibold block text-primary">Cashier</span>
-                <span className="text-text-muted">cashier</span>
-              </div>
-              <div 
-                className="bg-gray-50 p-2 rounded border border-border cursor-pointer hover:bg-orange-50 hover:border-primary transition-colors"
-                onClick={() => handleDemoClick('delivery')}
-              >
-                <span className="font-semibold block text-primary">Delivery</span>
-                <span className="text-text-muted">delivery</span>
-              </div>
-            </div>
+      {/* RIGHT PANEL - Login */}
+      <div className="w-full lg:w-1/2 bg-peach-soft flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-20 xl:px-32">
+        <div className="mx-auto w-full max-w-sm lg:max-w-md">
+          <div className="mb-10 text-center lg:text-left">
+            <h2 className="text-3xl font-bold text-text-main">
+              Sign In
+            </h2>
+            <p className="mt-2 text-sm text-text-muted">
+              Welcome back! Please enter your details.
+            </p>
           </div>
-        </Card>
+
+          <Card className="p-8 shadow-xl border-0 ring-1 ring-border/50">
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              <div>
+                <label className="block text-sm font-semibold text-text-main mb-2">
+                  Username
+                </label>
+                <Input
+                  type="text"
+                  {...register('username')}
+                  error={errors.username?.message}
+                  placeholder="e.g., superadmin"
+                  className="bg-gray-50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-text-main mb-2">
+                  Password
+                </label>
+                <Input
+                  type="password"
+                  {...register('password')}
+                  error={errors.password?.message}
+                  placeholder="••••••••"
+                  className="bg-gray-50"
+                />
+              </div>
+
+              {errors.root && (
+                <div className="p-3 bg-red-50 border border-red-200 text-status-danger text-sm rounded-lg text-center font-medium">
+                  {errors.root.message}
+                </div>
+              )}
+
+              <Button type="submit" size="lg" className="w-full font-bold text-base mt-2">
+                SIGN IN TO POS
+              </Button>
+            </form>
+
+            <div className="mt-10 pt-8 border-t border-border/60">
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4">Quick Demo Access</h3>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div 
+                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
+                  onClick={() => handleDemoClick('superadmin')}
+                >
+                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Super Admin</span>
+                  <span className="text-text-muted mt-0.5 block">superadmin</span>
+                </div>
+                <div 
+                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
+                  onClick={() => handleDemoClick('gm')}
+                >
+                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Manager</span>
+                  <span className="text-text-muted mt-0.5 block">gm</span>
+                </div>
+                <div 
+                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
+                  onClick={() => handleDemoClick('waiter1')}
+                >
+                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Waiter</span>
+                  <span className="text-text-muted mt-0.5 block">waiter1</span>
+                </div>
+                <div 
+                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
+                  onClick={() => handleDemoClick('kitchen')}
+                >
+                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Kitchen</span>
+                  <span className="text-text-muted mt-0.5 block">kitchen</span>
+                </div>
+                <div 
+                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
+                  onClick={() => handleDemoClick('cashier')}
+                >
+                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Cashier</span>
+                  <span className="text-text-muted mt-0.5 block">cashier</span>
+                </div>
+                <div 
+                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
+                  onClick={() => handleDemoClick('delivery')}
+                >
+                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Delivery</span>
+                  <span className="text-text-muted mt-0.5 block">delivery</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );

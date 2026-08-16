@@ -4,7 +4,15 @@ import { createCategory, updateCategory, updateCategoryStatus, createMenuItem, u
 import { logAction } from '../../features/audit/auditSlice';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Plus, Power, PowerOff } from 'lucide-react';
+import { Table } from '../../components/ui/Table';
+import { Badge } from '../../components/ui/Badge';
+import { Tabs } from '../../components/ui/Tabs';
+import { SearchInput } from '../../components/ui/SearchInput';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { Plus, Power, PowerOff, ListOrdered, Utensils } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 
@@ -16,11 +24,9 @@ export function AdminMenu() {
   const [activeTab, setActiveTab] = useState('ITEMS');
   const [search, setSearch] = useState('');
 
-  // Categories
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', displayOrder: categories.length + 1 });
 
-  // Items
   const [showCreateItem, setShowCreateItem] = useState(false);
   const [newItem, setNewItem] = useState({ name: '', categoryId: categories[0]?.id || '', price: '', description: '' });
 
@@ -110,34 +116,35 @@ export function AdminMenu() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-text-main">Menu Management</h1>
-        <Button onClick={() => activeTab === 'CATEGORIES' ? setShowCreateCategory(!showCreateCategory) : setShowCreateItem(!showCreateItem)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add {activeTab === 'CATEGORIES' ? 'Category' : 'Item'}
-        </Button>
-      </div>
+      <PageHeader 
+        title="Menu Management" 
+        breadcrumbs="Admin / Menu"
+        actions={
+          <Button onClick={() => activeTab === 'CATEGORIES' ? setShowCreateCategory(!showCreateCategory) : setShowCreateItem(!showCreateItem)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add {activeTab === 'CATEGORIES' ? 'Category' : 'Item'}
+          </Button>
+        }
+      />
 
-      <div className="flex space-x-4 border-b">
-        <button className={`py-2 px-4 border-b-2 font-medium ${activeTab === 'ITEMS' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('ITEMS')}>Menu Items</button>
-        <button className={`py-2 px-4 border-b-2 font-medium ${activeTab === 'CATEGORIES' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('CATEGORIES')}>Categories</button>
-      </div>
+      <Tabs 
+        tabs={[
+          { id: 'ITEMS', label: 'Menu Items' },
+          { id: 'CATEGORIES', label: 'Categories' }
+        ]} 
+        activeTab={activeTab} 
+        onChange={setActiveTab} 
+      />
 
       {activeTab === 'CATEGORIES' && showCreateCategory && (
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-top-4">
           <CardHeader><CardTitle>Create New Category</CardTitle></CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
-                <input type="text" value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} className="w-full border p-2 rounded" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
-                <input type="number" value={newCategory.displayOrder} onChange={e => setNewCategory({...newCategory, displayOrder: Number(e.target.value)})} className="w-full border p-2 rounded" />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input label="Category Name" value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} />
+              <Input type="number" label="Display Order" value={newCategory.displayOrder} onChange={e => setNewCategory({...newCategory, displayOrder: Number(e.target.value)})} />
             </div>
-            <div className="mt-4 flex justify-end space-x-2">
+            <div className="mt-6 flex justify-end space-x-3">
               <Button variant="outline" onClick={() => setShowCreateCategory(false)}>Cancel</Button>
               <Button onClick={handleCreateCategory}>Save Category</Button>
             </div>
@@ -146,30 +153,21 @@ export function AdminMenu() {
       )}
 
       {activeTab === 'ITEMS' && showCreateItem && (
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-top-4">
           <CardHeader><CardTitle>Create New Menu Item</CardTitle></CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
-                <input type="text" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} className="w-full border p-2 rounded" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select value={newItem.categoryId} onChange={e => setNewItem({...newItem, categoryId: e.target.value})} className="w-full border p-2 rounded bg-white">
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
-                <input type="number" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} className="w-full border p-2 rounded" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <input type="text" value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} className="w-full border p-2 rounded" />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Input label="Item Name" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} />
+              <Select 
+                label="Category" 
+                value={newItem.categoryId} 
+                onChange={e => setNewItem({...newItem, categoryId: e.target.value})}
+                options={categories.map(c => ({ value: c.id, label: c.name }))}
+              />
+              <Input type="number" label="Price (₹)" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} />
+              <Input label="Description" value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} />
             </div>
-            <div className="mt-4 flex justify-end space-x-2">
+            <div className="mt-6 flex justify-end space-x-3">
               <Button variant="outline" onClick={() => setShowCreateItem(false)}>Cancel</Button>
               <Button onClick={handleCreateItem}>Save Item</Button>
             </div>
@@ -178,96 +176,109 @@ export function AdminMenu() {
       )}
 
       <Card>
-        <CardContent className="p-0">
-          <div className="p-4 border-b bg-gray-50">
-            <input type="text" placeholder={`Search ${activeTab.toLowerCase()}...`} value={search} onChange={e => setSearch(e.target.value)} className="border p-2 rounded w-64" />
+        <div className="p-4 border-b border-border bg-gray-50/50">
+          <div className="w-72">
+            <SearchInput 
+              placeholder={`Search ${activeTab.toLowerCase()}...`} 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              onClear={() => setSearch('')}
+            />
           </div>
-          
-          {activeTab === 'CATEGORIES' ? (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="p-4 font-semibold text-sm">Order</th>
-                  <th className="p-4 font-semibold text-sm">Category Name</th>
-                  <th className="p-4 font-semibold text-sm">Status</th>
-                  <th className="p-4 font-semibold text-sm text-right">Actions</th>
+        </div>
+        
+        {activeTab === 'CATEGORIES' ? (
+          <Table>
+            <thead>
+              <tr>
+                <Table.Th>Order</Table.Th>
+                <Table.Th>Category Name</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th align="right">Actions</Table.Th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCategories.length === 0 ? (
+                <tr>
+                  <td colSpan="4">
+                    <EmptyState icon={ListOrdered} title="No categories found" description="Try adjusting your search criteria or add a new category." />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredCategories.length === 0 ? (
-                  <tr><td colSpan="4" className="p-4 text-center text-gray-500">No categories found.</td></tr>
-                ) : (
-                  filteredCategories.map(cat => (
-                    <tr key={cat.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4 text-sm font-medium w-24">
-                        <input type="number" value={cat.displayOrder} onChange={(e) => dispatch(updateCategory({id: cat.id, displayOrder: Number(e.target.value)}))} className="border p-1 rounded w-16" />
-                      </td>
-                      <td className="p-4 text-sm font-medium">{cat.name}</td>
-                      <td className="p-4 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${(!cat.status || cat.status === 'ACTIVE') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {(!cat.status || cat.status === 'ACTIVE') ? 'ACTIVE' : 'INACTIVE'}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        <Button variant="ghost" size="sm" onClick={() => toggleCategoryStatus(cat)} className={(!cat.status || cat.status === 'ACTIVE') ? 'text-red-500' : 'text-green-500'}>
-                          {(!cat.status || cat.status === 'ACTIVE') ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="p-4 font-semibold text-sm">Item Name</th>
-                  <th className="p-4 font-semibold text-sm">Category</th>
-                  <th className="p-4 font-semibold text-sm">Price (₹)</th>
-                  <th className="p-4 font-semibold text-sm">Status</th>
-                  <th className="p-4 font-semibold text-sm text-right">Actions</th>
+              ) : (
+                filteredCategories.map(cat => (
+                  <tr key={cat.id}>
+                    <Table.Td>
+                      <input type="number" value={cat.displayOrder} onChange={(e) => dispatch(updateCategory({id: cat.id, displayOrder: Number(e.target.value)}))} className="border border-border p-1 rounded-lg w-16 text-sm outline-none focus:border-primary" />
+                    </Table.Td>
+                    <Table.Td className="font-bold text-text-main">{cat.name}</Table.Td>
+                    <Table.Td>
+                      <Badge variant={(!cat.status || cat.status === 'ACTIVE') ? 'success' : 'danger'}>
+                        {(!cat.status || cat.status === 'ACTIVE') ? 'ACTIVE' : 'INACTIVE'}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td align="right">
+                      <Button variant="ghost" size="sm" onClick={() => toggleCategoryStatus(cat)} className={(!cat.status || cat.status === 'ACTIVE') ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-green-500 hover:text-green-600 hover:bg-green-50'}>
+                        {(!cat.status || cat.status === 'ACTIVE') ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                      </Button>
+                    </Table.Td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <Table.Th>Item Name</Table.Th>
+                <Table.Th>Category</Table.Th>
+                <Table.Th>Price (₹)</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th align="right">Actions</Table.Th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan="5">
+                    <EmptyState icon={Utensils} title="No menu items found" description="Try adjusting your search criteria or add a new menu item." />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredItems.length === 0 ? (
-                  <tr><td colSpan="5" className="p-4 text-center text-gray-500">No menu items found.</td></tr>
-                ) : (
-                  filteredItems.map(item => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4 text-sm font-medium">
-                        {item.name}
-                        {item.description && <p className="text-xs text-gray-500 font-normal mt-0.5">{item.description}</p>}
-                      </td>
-                      <td className="p-4 text-sm">
-                        <select 
-                          value={item.categoryId} 
-                          onChange={(e) => dispatch(updateMenuItem({id: item.id, categoryId: e.target.value}))}
-                          className="border p-1 rounded text-sm bg-white"
-                        >
-                          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
-                      </td>
-                      <td className="p-4 text-sm font-medium text-orange-600">
-                        ₹ <input type="number" value={item.price} onBlur={(e) => changeItemPrice(item, e.target.value)} onChange={(e) => {}} onKeyDown={(e) => {if(e.key==='Enter') changeItemPrice(item, e.target.value)}} className="border p-1 rounded w-20 ml-1 text-gray-900" placeholder={item.price} />
-                      </td>
-                      <td className="p-4 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${(!item.status || item.status === 'ACTIVE') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {(!item.status || item.status === 'ACTIVE') ? 'ACTIVE' : 'INACTIVE'}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        <Button variant="ghost" size="sm" onClick={() => toggleItemStatus(item)} className={(!item.status || item.status === 'ACTIVE') ? 'text-red-500' : 'text-green-500'}>
-                          {(!item.status || item.status === 'ACTIVE') ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          )}
-        </CardContent>
+              ) : (
+                filteredItems.map(item => (
+                  <tr key={item.id}>
+                    <Table.Td>
+                      <p className="font-bold text-text-main">{item.name}</p>
+                      {item.description && <p className="text-xs text-text-muted mt-0.5">{item.description}</p>}
+                    </Table.Td>
+                    <Table.Td>
+                      <select 
+                        value={item.categoryId} 
+                        onChange={(e) => dispatch(updateMenuItem({id: item.id, categoryId: e.target.value}))}
+                        className="border border-border p-1.5 rounded-lg text-sm bg-white outline-none focus:border-primary"
+                      >
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </Table.Td>
+                    <Table.Td className="font-bold text-primary">
+                      ₹ <input type="number" value={item.price} onBlur={(e) => changeItemPrice(item, e.target.value)} onChange={(e) => {}} onKeyDown={(e) => {if(e.key==='Enter') changeItemPrice(item, e.target.value)}} className="border border-border p-1 rounded-lg w-20 text-text-main ml-1 outline-none focus:border-primary" placeholder={item.price} />
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge variant={(!item.status || item.status === 'ACTIVE') ? 'success' : 'danger'}>
+                        {(!item.status || item.status === 'ACTIVE') ? 'ACTIVE' : 'INACTIVE'}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td align="right">
+                      <Button variant="ghost" size="sm" onClick={() => toggleItemStatus(item)} className={(!item.status || item.status === 'ACTIVE') ? 'text-red-500 hover:text-red-600 hover:bg-red-50' : 'text-green-500 hover:text-green-600 hover:bg-green-50'}>
+                        {(!item.status || item.status === 'ACTIVE') ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                      </Button>
+                    </Table.Td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+        )}
       </Card>
     </div>
   );

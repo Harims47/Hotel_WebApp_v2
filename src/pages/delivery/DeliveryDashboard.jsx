@@ -1,7 +1,9 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { MetricCard } from '../../components/ui/MetricCard';
 import { Package, Truck, CheckCircle, Clock } from 'lucide-react';
+import { cn } from '../../utils/cn';
 
 export function DeliveryDashboard() {
   const { currentUser } = useSelector(state => state.auth);
@@ -14,38 +16,41 @@ export function DeliveryDashboard() {
   const outForDelivery = assignedToMe.filter(d => d.status === 'OUT_FOR_DELIVERY').length;
   const deliveredToday = assignedToMe.filter(d => d.status === 'DELIVERED').length;
 
-  const metrics = [
-    { label: 'Ready for Pickup', value: readyForPickup, icon: Package, color: 'text-orange-500', bg: 'bg-orange-100' },
-    { label: 'In Possession', value: inPossession, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-100' },
-    { label: 'Out for Delivery', value: outForDelivery, icon: Truck, color: 'text-indigo-500', bg: 'bg-indigo-100' },
-    { label: 'Delivered', value: deliveredToday, icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-100' },
-  ];
-
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-text-main">Delivery Dashboard</h1>
-        <p className="text-text-muted mt-1">Welcome back, {currentUser.name}</p>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <PageHeader 
+        title="Delivery Dashboard" 
+        description={`Welcome back, ${currentUser.name}. Here's your delivery overview.`}
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {metrics.map((metric, idx) => {
-          const Icon = metric.icon;
-          return (
-            <Card key={idx}>
-              <CardContent className="p-6 flex items-center">
-                <div className={`p-4 rounded-full ${metric.bg} ${metric.color} mr-4`}>
-                  <Icon className="w-8 h-8" />
-                </div>
-                <div>
-                  <p className="text-text-muted text-sm font-medium">{metric.label}</p>
-                  <p className="text-3xl font-bold text-text-main">{metric.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          title="Ready for Pickup"
+          value={readyForPickup.toString()}
+          icon={Package}
+          className={cn("border-l-4", readyForPickup > 0 ? "border-l-orange-500" : "border-l-border")}
+        />
+        <MetricCard
+          title="In Possession"
+          value={inPossession.toString()}
+          icon={Clock}
+          className="border-l-4 border-l-blue-500"
+        />
+        <MetricCard
+          title="Out for Delivery"
+          value={outForDelivery.toString()}
+          icon={Truck}
+          className="border-l-4 border-l-indigo-500"
+        />
+        <MetricCard
+          title="Delivered Today"
+          value={deliveredToday.toString()}
+          icon={CheckCircle}
+          className="border-l-4 border-l-green-500"
+        />
       </div>
+      
+      {/* Optional: Add a quick overview map or activity list in V2, left empty for now as in original */}
     </div>
   );
 }

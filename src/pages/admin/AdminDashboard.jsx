@@ -1,6 +1,9 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { MetricCard } from '../../components/ui/MetricCard';
+import { Users, Grid, UtensilsCrossed, Settings2, Receipt, CreditCard } from 'lucide-react';
+import { cn } from '../../utils/cn';
 
 export function AdminDashboard() {
   const users = useSelector(state => state.users.data) || [];
@@ -25,37 +28,60 @@ export function AdminDashboard() {
   const activePaymentMethods = paymentMethodsList.join(', ') || 'None';
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-main">Super Admin Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader><CardTitle>Active Users</CardTitle></CardHeader>
-          <CardContent><p className="text-3xl font-bold text-primary">{activeUsers}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>Active Tables</CardTitle></CardHeader>
-          <CardContent><p className="text-3xl font-bold text-primary">{activeTables}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>Active Menu Items</CardTitle></CardHeader>
-          <CardContent><p className="text-3xl font-bold text-primary">{activeItems}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>Menu Categories</CardTitle></CardHeader>
-          <CardContent><p className="text-3xl font-bold text-primary">{activeCategories}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>Tax %</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-primary">
-              {restaurantSettings.taxEnabled !== false ? `${restaurantSettings.taxRate}%` : 'Disabled'}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>Active Payment Methods</CardTitle></CardHeader>
-          <CardContent><p className="text-xl font-bold text-primary mt-2">{activePaymentMethods}</p></CardContent>
-        </Card>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <PageHeader 
+        title="Super Admin Dashboard" 
+        description="System configuration and global settings overview."
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <MetricCard
+          title="Active Users"
+          value={activeUsers.toString()}
+          icon={Users}
+          className="border-l-4 border-l-blue-500"
+          subtext={`Out of ${users.length} total`}
+        />
+        
+        <MetricCard
+          title="Active Tables"
+          value={activeTables.toString()}
+          icon={Grid}
+          className="border-l-4 border-l-green-500"
+          subtext={`Out of ${tables.length} total`}
+        />
+        
+        <MetricCard
+          title="Menu Items"
+          value={activeItems.toString()}
+          icon={UtensilsCrossed}
+          className="border-l-4 border-l-orange-500"
+          subtext={`Across ${activeCategories} categories`}
+        />
+        
+        <MetricCard
+          title="Tax Configuration"
+          value={restaurantSettings.taxEnabled !== false ? `${restaurantSettings.taxRate}%` : 'Disabled'}
+          icon={Receipt}
+          className={cn("border-l-4", restaurantSettings.taxEnabled !== false ? "border-l-purple-500" : "border-l-gray-400")}
+          subtext="Global tax rate"
+        />
+
+        <MetricCard
+          title="Payment Methods"
+          value={paymentMethodsList.length.toString()}
+          icon={CreditCard}
+          className="border-l-4 border-l-indigo-500"
+          subtext={activePaymentMethods}
+        />
+        
+        <MetricCard
+          title="System Settings"
+          value="Healthy"
+          icon={Settings2}
+          className="border-l-4 border-l-status-success"
+          subtext="All services running"
+        />
       </div>
     </div>
   );
