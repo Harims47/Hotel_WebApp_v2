@@ -22,6 +22,7 @@ import wasteReducer from '../../features/inventory/wasteSlice';
 import transferReducer from '../../features/inventory/transferSlice';
 import adjustmentReducer from '../../features/inventory/adjustmentSlice';
 import stockCountReducer from '../../features/inventory/stockCountSlice';
+import reimbursementsReducer from '../../features/inventory/reimbursementSlice';
 import { 
   invCategoriesReducer, 
   invUomReducer, 
@@ -44,6 +45,7 @@ const preloadedState = {
   invTransfers: rawPreloadedState.invTransfers || { data: [] },
   invAdjustments: rawPreloadedState.invAdjustments || { data: [] },
   invStockCounts: rawPreloadedState.invStockCounts || { data: [] },
+  reimbursements: rawPreloadedState.reimbursements || { data: [] },
 };
 
 export const store = configureStore({
@@ -75,6 +77,7 @@ export const store = configureStore({
     invTransfers: transferReducer,
     invAdjustments: adjustmentReducer,
     invStockCounts: stockCountReducer,
+    reimbursements: reimbursementsReducer,
   },
   preloadedState,
 });
@@ -108,5 +111,6 @@ store.subscribe(() => {
     invTransfers: store.getState().invTransfers,
     invAdjustments: store.getState().invAdjustments,
     invStockCounts: store.getState().invStockCounts,
+    reimbursements: store.getState().reimbursements,
   });
 });

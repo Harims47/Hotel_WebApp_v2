@@ -27,7 +27,8 @@ import {
   ClipboardList,
   Calculator,
   Bell,
-  PieChart
+  PieChart,
+  Banknote
 } from 'lucide-react';
 import { logout } from '../../features/auth/authSlice';
 import { cn } from '../../utils/cn';
@@ -55,6 +56,7 @@ const ROLE_NAV = {
     { name: 'Transfers', path: '/inventory/transfers', icon: ArrowRightLeft },
     { name: 'Adjustments', path: '/inventory/adjustments', icon: SlidersHorizontal },
     { name: 'Stock Counts', path: '/inventory/stock-counts', icon: ClipboardList },
+    { name: 'Reimbursements', path: '/inventory/reimbursements', icon: Banknote },
     { name: 'Current Stock', path: '/inventory/stock', icon: Box },
     { name: 'Stock Ledger', path: '/inventory/stock-ledger', icon: FileText },
     { name: 'Valuation', path: '/inventory/valuation', icon: Calculator },
@@ -86,6 +88,7 @@ const ROLE_NAV = {
     { name: 'Transfers', path: '/inventory/transfers', icon: ArrowRightLeft },
     { name: 'Adjustments', path: '/inventory/adjustments', icon: SlidersHorizontal },
     { name: 'Stock Counts', path: '/inventory/stock-counts', icon: ClipboardList },
+    { name: 'Reimbursements', path: '/inventory/reimbursements', icon: Banknote },
     { name: 'Current Stock', path: '/inventory/stock', icon: Box },
     { name: 'Stock Ledger', path: '/inventory/stock-ledger', icon: FileText },
     { name: 'Valuation', path: '/inventory/valuation', icon: Calculator },
@@ -109,6 +112,7 @@ const ROLE_NAV = {
     { name: 'Transfers', path: '/inventory/transfers', icon: ArrowRightLeft },
     { name: 'Adjustments', path: '/inventory/adjustments', icon: SlidersHorizontal },
     { name: 'Stock Counts', path: '/inventory/stock-counts', icon: ClipboardList },
+    { name: 'Reimbursements', path: '/inventory/reimbursements', icon: Banknote },
     { name: 'Current Stock', path: '/inventory/stock', icon: Box },
     { name: 'Stock Ledger', path: '/inventory/stock-ledger', icon: FileText },
     { name: 'Valuation', path: '/inventory/valuation', icon: Calculator },

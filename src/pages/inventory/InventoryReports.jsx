@@ -46,6 +46,7 @@ export function InventoryReports() {
   const transfers = useSelector(state => state.invTransfers.data) || [];
   const adjustments = useSelector(state => state.invAdjustments.data) || [];
   const stockCounts = useSelector(state => state.invStockCounts.data) || [];
+  const reimbursements = useSelector(state => state.reimbursements.data) || [];
   const users = useSelector(state => state.users.data) || [];
 
   const getUserName = id => users.find(u => u.id === id)?.name || 'System';
@@ -68,7 +69,8 @@ export function InventoryReports() {
     { id: 'transfers', label: 'Transfers' },
     { id: 'adjustments', label: 'Adjustments' },
     { id: 'stockCounts', label: 'Stock Counts' },
-    { id: 'supplierSummary', label: 'Supplier Summary' }
+    { id: 'supplierSummary', label: 'Supplier Summary' },
+    { id: 'reimbursements', label: 'Reimbursements' }
   ];
 
   // Helper to filter by date
@@ -432,6 +434,50 @@ export function InventoryReports() {
     );
   };
 
+  const renderReimbursements = () => {
+    let filteredReimb = reimbursements.filter(r => isWithinDateRange(r.reimbursementDate));
+    return (
+      <div className="overflow-x-auto">
+        <Table>
+          <thead>
+            <tr>
+              <Table.Th>Reimbursement No.</Table.Th>
+              <Table.Th>Date</Table.Th>
+              <Table.Th>Employee</Table.Th>
+              <Table.Th>Source</Table.Th>
+              <Table.Th>Amount</Table.Th>
+              <Table.Th>Status</Table.Th>
+              <Table.Th>Payment Ref</Table.Th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredReimb.map((r, idx) => (
+              <tr key={idx}>
+                <Table.Td>{r.reimbursementNo}</Table.Td>
+                <Table.Td>{new Date(r.reimbursementDate).toLocaleDateString()}</Table.Td>
+                <Table.Td>{r.employeeName}</Table.Td>
+                <Table.Td>
+                  {r.supplierName ? (
+                    <div className="text-sm text-text-muted">
+                      {r.supplierName} {r.poNo && ` / ${r.poNo}`}
+                    </div>
+                  ) : 'Direct Expense'}
+                </Table.Td>
+                <Table.Td className="font-bold">{formatCurrency(r.amount)}</Table.Td>
+                <Table.Td>
+                  <Badge variant={r.status === 'PAID' ? 'success' : r.status === 'APPROVED' ? 'primary' : 'secondary'}>
+                    {r.status}
+                  </Badge>
+                </Table.Td>
+                <Table.Td>{r.paymentReference || '-'}</Table.Td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader 
@@ -478,6 +524,7 @@ export function InventoryReports() {
             {activeTab === 'adjustments' && renderAdjustments()}
             {activeTab === 'stockCounts' && renderStockCounts()}
             {activeTab === 'supplierSummary' && renderSupplierSummary()}
+            {activeTab === 'reimbursements' && renderReimbursements()}
           </div>
         </CardContent>
       </Card>

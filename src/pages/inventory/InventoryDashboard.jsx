@@ -8,7 +8,7 @@ import { formatCurrency } from '../../utils/currency';
 import { 
   Package, Tags, Building2, AlertTriangle, ShoppingCart, FileText, 
   ArrowRightLeft, SlidersHorizontal, ClipboardList, TrendingUp, TrendingDown,
-  Bell, CheckCircle, Clock
+  Bell, CheckCircle, Clock, Banknote, DollarSign
 } from 'lucide-react';
 
 function MetricCard({ title, value, icon: Icon, colorClass, subtitle }) {
@@ -47,6 +47,7 @@ export function InventoryDashboard() {
   const adjustments = useSelector(state => state.invAdjustments.data) || [];
   const stockCounts = useSelector(state => state.invStockCounts.data) || [];
   const ledger = useSelector(state => state.stockLedger.data) || [];
+  const reimbursements = useSelector(state => state.reimbursements.data) || [];
   const audits = useSelector(state => state.audit.data) || [];
 
   // --- KPI ROW ---
@@ -85,6 +86,13 @@ export function InventoryDashboard() {
   const rejectedGoods = grns.reduce((sum, grn) => {
     return sum + (grn.items?.filter(i => i.rejectedQuantity > 0).length || 0);
   }, 0);
+
+  // --- REIMBURSEMENT KPIs ---
+  const currentMonthPrefix = new Date().toISOString().substring(0, 7); // YYYY-MM
+  const pendingReimbCount = reimbursements.filter(r => r.status === 'PENDING').length;
+  const pendingReimbAmount = reimbursements.filter(r => r.status === 'PENDING').reduce((sum, r) => sum + r.amount, 0);
+  const approvedUnpaidAmount = reimbursements.filter(r => r.status === 'APPROVED').reduce((sum, r) => sum + r.amount, 0);
+  const paidThisMonthAmount = reimbursements.filter(r => r.status === 'PAID' && r.paidAt?.startsWith(currentMonthPrefix)).reduce((sum, r) => sum + r.amount, 0);
 
   // --- RECENT ACTIVITY ---
   const inventoryActionTypes = [
@@ -178,6 +186,33 @@ export function InventoryDashboard() {
             <MetricCard title="Stock Out" value={todayStockOut} icon={TrendingDown} colorClass="bg-blue-50 text-blue-600" />
             <MetricCard title="Waste" value={todayWaste} icon={Tags} colorClass="bg-orange-50 text-orange-600" />
             <MetricCard title="Transfers" value={todayTransfers} icon={ArrowRightLeft} colorClass="bg-purple-50 text-purple-600" />
+          </div>
+
+          <h3 className="text-lg font-bold text-text-main flex items-center gap-2 mt-8">
+            <Banknote className="w-5 h-5 text-text-muted" /> Reimbursements
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-orange-50/50 border-orange-100 cursor-pointer hover:bg-orange-50" onClick={() => navigate('/inventory/reimbursements')}>
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                <Clock className="w-6 h-6 text-orange-600 mb-2" />
+                <span className="text-xl font-bold text-orange-700">{pendingReimbCount} / {formatCurrency(pendingReimbAmount)}</span>
+                <span className="text-xs font-medium text-orange-600 uppercase">Pending</span>
+              </CardContent>
+            </Card>
+            <Card className="bg-blue-50/50 border-blue-100 cursor-pointer hover:bg-blue-50" onClick={() => navigate('/inventory/reimbursements')}>
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                <AlertTriangle className="w-6 h-6 text-blue-600 mb-2" />
+                <span className="text-xl font-bold text-blue-700">{formatCurrency(approvedUnpaidAmount)}</span>
+                <span className="text-xs font-medium text-blue-600 uppercase">Approved / Unpaid</span>
+              </CardContent>
+            </Card>
+            <Card className="bg-emerald-50/50 border-emerald-100 cursor-pointer hover:bg-emerald-50" onClick={() => navigate('/inventory/reimbursements')}>
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                <DollarSign className="w-6 h-6 text-emerald-600 mb-2" />
+                <span className="text-xl font-bold text-emerald-700">{formatCurrency(paidThisMonthAmount)}</span>
+                <span className="text-xs font-medium text-emerald-600 uppercase">Paid This Month</span>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
