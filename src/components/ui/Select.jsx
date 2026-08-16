@@ -2,10 +2,10 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 import { ChevronDown } from 'lucide-react';
 
-export const Select = React.forwardRef(({ className, label, error, options = [], ...props }, ref) => {
+export const Select = React.forwardRef(({ className, label, hideLabel, error, options = [], ...props }, ref) => {
   return (
     <div className="w-full">
-      {label && <label className="block text-sm font-bold text-text-main mb-1.5">{label}</label>}
+      {label && !hideLabel && <label className="block text-sm font-bold text-text-main mb-1.5">{label}</label>}
       <div className="relative">
         <select
           ref={ref}

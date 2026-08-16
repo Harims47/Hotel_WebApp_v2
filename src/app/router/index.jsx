@@ -40,6 +40,41 @@ import { AdminMenu } from '../../pages/admin/AdminMenu';
 import { AdminTax } from '../../pages/admin/AdminTax';
 import { AdminPayments } from '../../pages/admin/AdminPayments';
 
+// Inventory Routes
+import { InventoryDashboard } from '../../pages/inventory/InventoryDashboard';
+import { ItemsMaster } from '../../pages/inventory/ItemsMaster';
+import { CategoriesMaster } from '../../pages/inventory/CategoriesMaster';
+import { SuppliersMaster } from '../../pages/inventory/SuppliersMaster';
+import { LocationsMaster } from '../../pages/inventory/LocationsMaster';
+import { UomMaster } from '../../pages/inventory/UomMaster';
+import { LowStock } from '../../pages/inventory/LowStock';
+import { PurchaseOrdersList } from '../../pages/inventory/PurchaseOrdersList';
+import { PurchaseOrderNew } from '../../pages/inventory/PurchaseOrderNew';
+import { PurchaseOrderDetails } from '../../pages/inventory/PurchaseOrderDetails';
+import { GRNList } from '../../pages/inventory/GRNList';
+import { GRNNew } from '../../pages/inventory/GRNNew';
+import { GRNDetails } from '../../pages/inventory/GRNDetails';
+import { CurrentStock } from '../../pages/inventory/CurrentStock';
+import { StockLedger } from '../../pages/inventory/StockLedger';
+import { IssueList } from '../../pages/inventory/IssueList';
+import { IssueNew } from '../../pages/inventory/IssueNew';
+import { IssueDetails } from '../../pages/inventory/IssueDetails';
+import { WasteList } from '../../pages/inventory/WasteList';
+import { WasteNew } from '../../pages/inventory/WasteNew';
+import { WasteDetails } from '../../pages/inventory/WasteDetails';
+import { TransferList } from '../../pages/inventory/TransferList';
+import { TransferNew } from '../../pages/inventory/TransferNew';
+import { TransferDetails } from '../../pages/inventory/TransferDetails';
+import { AdjustmentList } from '../../pages/inventory/AdjustmentList';
+import { AdjustmentNew } from '../../pages/inventory/AdjustmentNew';
+import { AdjustmentDetails } from '../../pages/inventory/AdjustmentDetails';
+import { StockCountList } from '../../pages/inventory/StockCountList';
+import { StockCountNew } from '../../pages/inventory/StockCountNew';
+import { StockCountDetails } from '../../pages/inventory/StockCountDetails';
+import { InventoryAlerts } from '../../pages/inventory/InventoryAlerts';
+import { StockValuation } from '../../pages/inventory/StockValuation';
+import { InventoryReports } from '../../pages/inventory/InventoryReports';
+
 // Placeholders for other routes so there are no broken links in Sidebar
 const Placeholder = ({ title }) => <div className="p-6 text-text-main font-semibold text-xl">{title} Placeholder</div>;
 
@@ -98,6 +133,45 @@ const router = createBrowserRouter([
       { path: 'delivery/dashboard', element: <DeliveryDashboard /> },
       { path: 'delivery/orders', element: <DeliveryOrders /> },
       { path: 'delivery/orders/:id', element: <DeliveryOrderDetails /> },
+      
+      // Inventory Routes
+      { path: 'inventory/dashboard', element: <InventoryDashboard /> },
+      { path: 'inventory/items', element: <ItemsMaster /> },
+      { path: 'inventory/categories', element: <CategoriesMaster /> },
+      { path: 'inventory/suppliers', element: <SuppliersMaster /> },
+      { path: 'inventory/locations', element: <LocationsMaster /> },
+      { path: 'inventory/uom', element: <UomMaster /> },
+      { path: 'inventory/low-stock', element: <LowStock /> },
+      { path: 'inventory/purchase-orders', element: <PurchaseOrdersList /> },
+      { path: 'inventory/purchase-orders/new', element: <PurchaseOrderNew /> },
+      { path: 'inventory/purchase-orders/:poId', element: <PurchaseOrderDetails /> },
+      { path: 'inventory/grn', element: <GRNList /> },
+      { path: 'inventory/grn/new', element: <GRNNew /> },
+      { path: 'inventory/grn/:grnId', element: <GRNDetails /> },
+      { path: 'inventory/stock', element: <CurrentStock /> },
+      { path: 'inventory/stock-ledger', element: <StockLedger /> },
+      
+      { path: 'inventory/issues', element: <IssueList /> },
+      { path: 'inventory/issues/new', element: <IssueNew /> },
+      { path: 'inventory/issues/:issueId', element: <IssueDetails /> },
+      
+      { path: 'inventory/waste', element: <WasteList /> },
+      { path: 'inventory/waste/new', element: <WasteNew /> },
+      { path: 'inventory/waste/:wasteId', element: <WasteDetails /> },
+      
+      { path: 'inventory/transfers', element: <TransferList /> },
+      { path: 'inventory/transfers/new', element: <TransferNew /> },
+      { path: 'inventory/transfers/:transferId', element: <TransferDetails /> },
+      
+      { path: 'inventory/adjustments', element: <AdjustmentList /> },
+      { path: 'inventory/adjustments/new', element: <AdjustmentNew /> },
+      { path: 'inventory/adjustments/:adjustmentId', element: <AdjustmentDetails /> },
+      { path: 'inventory/stock-counts', element: <StockCountList /> },
+      { path: 'inventory/stock-counts/new', element: <StockCountNew /> },
+      { path: 'inventory/stock-counts/:countId', element: <StockCountDetails /> },
+      { path: 'inventory/alerts', element: <InventoryAlerts /> },
+      { path: 'inventory/valuation', element: <StockValuation /> },
+      { path: 'inventory/reports', element: <InventoryReports /> },
       
       // Catch-all
       { path: '*', element: <Navigate to="/login" replace /> },

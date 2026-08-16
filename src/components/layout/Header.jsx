@@ -13,7 +13,11 @@ export function Header({ onToggleSidebar }) {
   const dispatch = useDispatch();
   const { currentUser } = useSelector(state => state.auth);
   const restaurant = useSelector(state => state.restaurant.data);
-  const notifications = useSelector(state => state.notifications.data.filter(n => n.userId === currentUser?.id || n.role === currentUser?.role));
+  const allNotifications = useSelector(state => state.notifications.data);
+  
+  const notifications = React.useMemo(() => {
+    return allNotifications.filter(n => n.userId === currentUser?.id || n.role === currentUser?.role);
+  }, [allNotifications, currentUser?.id, currentUser?.role]);
   
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const [showDropdown, setShowDropdown] = useState(false);

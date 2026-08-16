@@ -91,6 +91,7 @@ export function AdminUsers() {
     { value: 'CASHIER', label: 'Cashier' },
     { value: 'KOT', label: 'Kitchen (KOT)' },
     { value: 'DELIVERY_BOY', label: 'Delivery Boy' },
+    { value: 'INVENTORY_MANAGER', label: 'Inventory Manager' },
     { value: 'GM', label: 'General Manager' },
     { value: 'SUPER_ADMIN', label: 'Super Admin' }
   ];

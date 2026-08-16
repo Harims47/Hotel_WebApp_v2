@@ -1,9 +1,10 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 
-export const Input = React.forwardRef(({ className, type, error, ...props }, ref) => {
+export const Input = React.forwardRef(({ className, type, error, label, hideLabel, ...props }, ref) => {
   return (
     <div className="w-full">
+      {label && !hideLabel && <label className="block text-sm font-bold text-text-main mb-1.5">{label}</label>}
       <input
         type={type}
         className={cn(

@@ -25,7 +25,10 @@ export function Login() {
   });
 
   if (isAuthenticated && currentUser) {
-    const rolePrefix = currentUser.role === 'SUPER_ADMIN' ? 'admin' : currentUser.role === 'DELIVERY_BOY' ? 'delivery' : currentUser.role.toLowerCase();
+    const rolePrefix = currentUser.role === 'SUPER_ADMIN' ? 'admin' : 
+                       currentUser.role === 'DELIVERY_BOY' ? 'delivery' : 
+                       currentUser.role === 'INVENTORY_MANAGER' ? 'inventory' : 
+                       currentUser.role.toLowerCase();
     return <Navigate to={`/${rolePrefix}/dashboard`} replace />;
   }
 
@@ -34,7 +37,10 @@ export function Login() {
     
     if (user) {
       dispatch(login(user));
-      const rolePrefix = user.role === 'SUPER_ADMIN' ? 'admin' : user.role === 'DELIVERY_BOY' ? 'delivery' : user.role.toLowerCase();
+      const rolePrefix = user.role === 'SUPER_ADMIN' ? 'admin' : 
+                         user.role === 'DELIVERY_BOY' ? 'delivery' : 
+                         user.role === 'INVENTORY_MANAGER' ? 'inventory' : 
+                         user.role.toLowerCase();
       navigate(`/${rolePrefix}/dashboard`);
     } else {
       setError('root', { type: 'manual', message: 'Invalid username or password' });
@@ -172,6 +178,13 @@ export function Login() {
                 >
                   <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Delivery</span>
                   <span className="text-text-muted mt-0.5 block">delivery</span>
+                </div>
+                <div 
+                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group lg:col-span-2"
+                  onClick={() => handleDemoClick('inventory')}
+                >
+                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Inventory</span>
+                  <span className="text-text-muted mt-0.5 block">inventory</span>
                 </div>
               </div>
             </div>

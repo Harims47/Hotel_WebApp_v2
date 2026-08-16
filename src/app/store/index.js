@@ -14,8 +14,37 @@ import customersReducer from '../../features/customers/customersSlice';
 import deliveryReducer from '../../features/delivery/deliverySlice';
 import notificationsReducer from '../../features/notifications/notificationsSlice';
 import auditReducer from '../../features/audit/auditSlice';
+import purchaseOrdersReducer from '../../features/inventory/purchaseOrdersSlice';
+import grnReducer from '../../features/inventory/grnSlice';
+import stockLedgerReducer from '../../features/inventory/stockLedgerSlice';
+import issueReducer from '../../features/inventory/issueSlice';
+import wasteReducer from '../../features/inventory/wasteSlice';
+import transferReducer from '../../features/inventory/transferSlice';
+import adjustmentReducer from '../../features/inventory/adjustmentSlice';
+import stockCountReducer from '../../features/inventory/stockCountSlice';
+import { 
+  invCategoriesReducer, 
+  invUomReducer, 
+  invLocationsReducer, 
+  invSuppliersReducer, 
+  invItemsReducer,
+  invStockReducer
+} from '../../features/inventory/inventorySlices';
 
-const preloadedState = loadState();
+// A modified loadState that injects initial states for new modules
+const rawPreloadedState = loadState();
+const preloadedState = {
+  ...rawPreloadedState,
+  invStock: rawPreloadedState.invStock || { data: [] },
+  purchaseOrders: rawPreloadedState.purchaseOrders || { data: [] },
+  grn: rawPreloadedState.grn || { data: [] },
+  stockLedger: rawPreloadedState.stockLedger || { data: [] },
+  invIssues: rawPreloadedState.invIssues || { data: [] },
+  invWaste: rawPreloadedState.invWaste || { data: [] },
+  invTransfers: rawPreloadedState.invTransfers || { data: [] },
+  invAdjustments: rawPreloadedState.invAdjustments || { data: [] },
+  invStockCounts: rawPreloadedState.invStockCounts || { data: [] },
+};
 
 export const store = configureStore({
   reducer: {
@@ -32,6 +61,20 @@ export const store = configureStore({
     delivery: deliveryReducer,
     notifications: notificationsReducer,
     audit: auditReducer,
+    invCategories: invCategoriesReducer,
+    invUom: invUomReducer,
+    invLocations: invLocationsReducer,
+    invSuppliers: invSuppliersReducer,
+    invItems: invItemsReducer,
+    invStock: invStockReducer,
+    purchaseOrders: purchaseOrdersReducer,
+    grn: grnReducer,
+    stockLedger: stockLedgerReducer,
+    invIssues: issueReducer,
+    invWaste: wasteReducer,
+    invTransfers: transferReducer,
+    invAdjustments: adjustmentReducer,
+    invStockCounts: stockCountReducer,
   },
   preloadedState,
 });
@@ -51,5 +94,19 @@ store.subscribe(() => {
     delivery: store.getState().delivery,
     notifications: store.getState().notifications,
     audit: store.getState().audit,
+    invCategories: store.getState().invCategories,
+    invUom: store.getState().invUom,
+    invLocations: store.getState().invLocations,
+    invSuppliers: store.getState().invSuppliers,
+    invItems: store.getState().invItems,
+    invStock: store.getState().invStock,
+    purchaseOrders: store.getState().purchaseOrders,
+    grn: store.getState().grn,
+    stockLedger: store.getState().stockLedger,
+    invIssues: store.getState().invIssues,
+    invWaste: store.getState().invWaste,
+    invTransfers: store.getState().invTransfers,
+    invAdjustments: store.getState().invAdjustments,
+    invStockCounts: store.getState().invStockCounts,
   });
 });

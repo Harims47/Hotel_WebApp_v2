@@ -20,6 +20,7 @@ export const SEED_USERS = [
   { id: 'u-5', name: 'Main Kitchen', username: 'kitchen', password: '123456', role: 'KOT', phone: '9000000005', status: 'ACTIVE' },
   { id: 'u-6', name: 'Front Desk Cashier', username: 'cashier', password: '123456', role: 'CASHIER', phone: '9000000006', status: 'ACTIVE' },
   { id: 'u-7', name: 'Raj (Delivery)', username: 'delivery', password: '123456', role: 'DELIVERY_BOY', phone: '9000000007', status: 'ACTIVE' },
+  { id: 'u-8', name: 'Inventory Manager', username: 'inventory', password: '123456', role: 'INVENTORY_MANAGER', phone: '9000000008', status: 'ACTIVE' },
 ];
 
 export const SEED_TABLES = Array.from({ length: 12 }, (_, i) => ({
@@ -58,6 +59,52 @@ export const SEED_MENU_ITEMS = [
   { id: 'mi-17', categoryId: 'cat-5', name: 'Vanilla Ice Cream', description: 'Classic vanilla ice cream', price: 100, image: '', isAvailable: true },
 ];
 
+export const SEED_INV_CATEGORIES = [
+  { id: 'ic-1', code: 'CAT-GRO', name: 'Grocery', description: 'General groceries', status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'ic-2', code: 'CAT-VEG', name: 'Vegetables', description: 'Fresh vegetables', status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'ic-3', code: 'CAT-FRU', name: 'Fruits', description: 'Fresh fruits', status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'ic-4', code: 'CAT-MEA', name: 'Meat', description: 'Fresh meat & poultry', status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'ic-5', code: 'CAT-DAI', name: 'Dairy', description: 'Milk and milk products', status: 'ACTIVE', createdAt: new Date().toISOString() },
+];
+
+export const SEED_INV_UOM = [
+  { id: 'uom-1', code: 'KG', name: 'Kilogram', type: 'WEIGHT', status: 'ACTIVE' },
+  { id: 'uom-2', code: 'GM', name: 'Gram', type: 'WEIGHT', status: 'ACTIVE' },
+  { id: 'uom-3', code: 'LTR', name: 'Liter', type: 'VOLUME', status: 'ACTIVE' },
+  { id: 'uom-4', code: 'ML', name: 'Milliliter', type: 'VOLUME', status: 'ACTIVE' },
+  { id: 'uom-5', code: 'PCS', name: 'Pieces', type: 'COUNT', status: 'ACTIVE' },
+  { id: 'uom-6', code: 'BOX', name: 'Box', type: 'PACKAGING', status: 'ACTIVE' },
+  { id: 'uom-7', code: 'BAG', name: 'Bag', type: 'PACKAGING', status: 'ACTIVE' },
+];
+
+export const SEED_INV_LOCATIONS = [
+  { id: 'loc-1', code: 'LOC-MAIN', name: 'Main Store', type: 'STORE', description: 'Primary central store', status: 'ACTIVE' },
+  { id: 'loc-2', code: 'LOC-KIT', name: 'Kitchen Store', type: 'KITCHEN', description: 'Kitchen daily store', status: 'ACTIVE' },
+  { id: 'loc-3', code: 'LOC-COLD', name: 'Cold Storage', type: 'COLD_STORAGE', description: 'Refrigerated storage', status: 'ACTIVE' },
+];
+
+export const SEED_INV_SUPPLIERS = [
+  { id: 'sup-1', code: 'SUP-001', name: 'ABC Foods', contactPerson: 'John Doe', phone: '9876543210', email: 'john@abcfoods.com', address: '123 Market St', gstNumber: 'GST123456789', suppliedCategoryIds: ['ic-1'], status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'sup-2', code: 'SUP-002', name: 'Fresh Vegetables Supplier', contactPerson: 'Alice', phone: '9876543211', email: 'alice@freshveg.com', address: '456 Farm Road', gstNumber: 'GST987654321', suppliedCategoryIds: ['ic-2'], status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'sup-3', code: 'SUP-003', name: 'Sri Dairy Suppliers', contactPerson: 'Bob', phone: '9876543212', email: 'bob@sridairy.com', address: '789 Milk Ave', gstNumber: 'GST112233445', suppliedCategoryIds: ['ic-5'], status: 'ACTIVE', createdAt: new Date().toISOString() },
+];
+
+export const SEED_INV_ITEMS = [
+  { id: 'inv-1', code: 'ITEM-001', name: 'Basmati Rice', categoryId: 'ic-1', baseUomId: 'uom-1', purchaseUomId: 'uom-7', conversionFactor: 25, reorderLevel: 75, minimumStock: 25, maximumStock: 200, preferredSupplierId: 'sup-1', status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'inv-2', code: 'ITEM-002', name: 'Onion', categoryId: 'ic-2', baseUomId: 'uom-1', purchaseUomId: 'uom-1', conversionFactor: 1, reorderLevel: 50, minimumStock: 10, maximumStock: 100, preferredSupplierId: 'sup-2', status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'inv-3', code: 'ITEM-003', name: 'Milk', categoryId: 'ic-5', baseUomId: 'uom-3', purchaseUomId: 'uom-3', conversionFactor: 1, reorderLevel: 25, minimumStock: 5, maximumStock: 50, preferredSupplierId: 'sup-3', status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'inv-4', code: 'ITEM-004', name: 'Cooking Oil', categoryId: 'ic-1', baseUomId: 'uom-3', purchaseUomId: 'uom-3', conversionFactor: 1, reorderLevel: 30, minimumStock: 10, maximumStock: 100, preferredSupplierId: 'sup-1', status: 'ACTIVE', createdAt: new Date().toISOString() },
+  { id: 'inv-5', code: 'ITEM-005', name: 'Chicken', categoryId: 'ic-4', baseUomId: 'uom-1', purchaseUomId: 'uom-1', conversionFactor: 1, reorderLevel: 30, minimumStock: 15, maximumStock: 60, preferredSupplierId: 'sup-2', status: 'ACTIVE', createdAt: new Date().toISOString() },
+];
+
+export const SEED_INV_STOCK = [
+  { id: 'stk-1', itemId: 'inv-1', locationId: 'loc-1', quantity: 40, uomId: 'uom-1', updatedAt: new Date().toISOString() }, // Low Stock
+  { id: 'stk-2', itemId: 'inv-2', locationId: 'loc-1', quantity: 80, uomId: 'uom-1', updatedAt: new Date().toISOString() }, // Normal
+  { id: 'stk-3', itemId: 'inv-3', locationId: 'loc-2', quantity: 40, uomId: 'uom-3', updatedAt: new Date().toISOString() }, // Normal
+  { id: 'stk-4', itemId: 'inv-4', locationId: 'loc-1', quantity: 18, uomId: 'uom-3', updatedAt: new Date().toISOString() }, // Low Stock
+  { id: 'stk-5', itemId: 'inv-5', locationId: 'loc-3', quantity: 12, uomId: 'uom-1', updatedAt: new Date().toISOString() }, // Low Stock
+];
+
 export const INITIAL_STATE = {
   restaurant: { data: SEED_RESTAURANT },
   users: { data: SEED_USERS },
@@ -71,4 +118,11 @@ export const INITIAL_STATE = {
   delivery: { data: [] },
   notifications: { data: [] },
   audit: { data: [] },
+  invCategories: { data: SEED_INV_CATEGORIES },
+  invUom: { data: SEED_INV_UOM },
+  invLocations: { data: SEED_INV_LOCATIONS },
+  invSuppliers: { data: SEED_INV_SUPPLIERS },
+  invItems: { data: SEED_INV_ITEMS },
+  invStock: { data: SEED_INV_STOCK },
+  purchaseOrders: { data: [] },
 };
