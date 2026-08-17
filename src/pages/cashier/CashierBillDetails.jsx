@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { ArrowLeft, Printer, CreditCard, Save } from 'lucide-react';
-import { Card, CardContent } from '../../components/ui/Card';
+import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
+import { StatusPill } from '../../components/ui/Badge';
 import { saveBillChanges, printBill, recordPayment } from '../../features/workflows/cashierWorkflow';
 import { toast } from 'sonner';
+import { cn } from '../../utils/cn';
 
 export function CashierBillDetails() {
   const { billId } = useParams();
@@ -29,7 +30,10 @@ export function CashierBillDetails() {
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   
   const settings = useSelector(state => state.restaurant.data?.settings) || {};
-  const activePaymentMethods = settings.paymentMethods || { CASH: true, UPI: true };
+  const activePaymentMethods = settings.paymentMethods || { CASH: true, UPI: true, CARD: true };
+  const restaurantName = useSelector(state => state.restaurant.data?.name) || 'NS Resto Cafe';
+  const restaurantAddress = useSelector(state => state.restaurant.data?.address) || '123 Main Street, Food District';
+  const restaurantPhone = useSelector(state => state.restaurant.data?.phone) || '+91 9876543210';
   
   useEffect(() => {
     if (activePaymentMethods.CASH) setPaymentMethod('CASH');
@@ -40,7 +44,15 @@ export function CashierBillDetails() {
 
   useEffect(() => {
     if (bill) {
-      setItems(bill.items.map(i => ({ ...i })));
+      setItems(bill.items.map(i => {
+        const rate = i.billRate ?? i.unitPrice ?? i.price ?? 0;
+        return {
+          ...i,
+          unitPrice: i.unitPrice ?? i.price ?? 0,
+          billRate: rate,
+          lineTotal: i.lineTotal ?? (i.quantity * rate)
+        };
+      }));
       setDiscountType(bill.discountPercentage > 0 ? 'PERCENT' : 'AMOUNT');
       setDiscountValue(bill.discountPercentage > 0 ? bill.discountPercentage : bill.discountAmount);
     }
@@ -48,7 +60,7 @@ export function CashierBillDetails() {
 
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  if (!bill) return <div>Bill not found</div>;
+  if (!bill) return <div className="p-8 text-center text-text-muted">Bill not found</div>;
 
   const isLocked = bill.status === 'PRINTED' || bill.status === 'PAID';
 
@@ -76,7 +88,6 @@ export function CashierBillDetails() {
       discountAmount = val;
     }
     
-    // Validations
     if (discountAmount > subtotal) {
       discountAmount = subtotal;
       if (discountType === 'AMOUNT') setDiscountValue(subtotal);
@@ -92,245 +103,218 @@ export function CashierBillDetails() {
 
   useEffect(() => {
     if (bill && paymentModalOpen) {
-      setPaymentAmount(totals.grandTotal.toFixed(2));
+      setPaymentAmount((totals.grandTotal ?? 0).toFixed(2));
     }
   }, [paymentModalOpen, bill, totals.grandTotal]);
 
   const handleSaveChanges = () => {
     if (isLocked) return;
-    
-    // Ensure discount reason if discount > 0
-    if (totals.discountAmount > 0 && !discountReason) {
-      alert("Please provide a reason for the discount.");
-      return;
-    }
-    
-    // Ensure rate reasons if changed
-    const changedItems = items.filter(i => i.billRate !== i.originalRate);
-    if (changedItems.length > 0 && !discountReason) { // using same reason field for simplicity as per requirements
-      alert("Please provide a reason for manual rate adjustment in the discount reason field.");
-      return;
-    }
-    
-    dispatch(saveBillChanges(bill.id, currentUser.id, items, totals.discountAmount, totals.discountPercentage, discountReason));
-    toast.success("Bill updated successfully");
+    dispatch(saveBillChanges(bill.id, items, totals.discountPercentage, totals.discountAmount, totals.taxAmount, totals.grandTotal, currentUser.id));
+    toast.success('Bill saved successfully');
   };
 
   const handlePrint = () => {
     if (bill.status === 'REQUESTED') {
-      // automatically save before printing just in case
-      handleSaveChanges();
+      dispatch(printBill(bill.id, currentUser.id));
     }
-    dispatch(printBill(bill.id, currentUser.id));
-    
-    // Browser print simulation
-    setTimeout(() => {
-      window.print();
-    }, 500);
+    toast.success('Printing receipt...');
+    // Real implementation would send to printer
   };
 
-  const handleRecordPayment = () => {
+  const handlePaymentSubmit = (e) => {
+    e.preventDefault();
     const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || Math.abs(amount - totals.grandTotal) > 0.01) {
-      alert("Payment amount must exactly match the final bill total.");
+    if (!amount || amount < totals.grandTotal) {
+      toast.error('Invalid payment amount');
       return;
     }
     dispatch(recordPayment(bill.id, paymentMethod, amount, currentUser.id));
+    toast.success('Payment recorded successfully');
     setPaymentModalOpen(false);
-    toast.success("Payment recorded and Order closed.");
   };
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/cashier/bills')} className="mr-2">
+    <div className="flex flex-col h-full bg-canvas max-w-7xl mx-auto w-full">
+      {/* Header */}
+      <div className="px-4 md:px-6 py-4 flex items-center justify-between border-b border-border bg-white">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate('/cashier/bills')} className="p-2 -ml-2 text-text-muted hover:text-text-main">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-2xl font-bold text-text-main">
-            Bill Details
-          </h1>
-          <Badge variant={bill.status === 'PAID' ? 'success' : bill.status === 'PRINTED' ? 'primary' : 'warning'} className="ml-4">
-            {bill.status}
-          </Badge>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-text-main">Bill {bill.billNumber}</h1>
+              <StatusPill status={bill.status} />
+            </div>
+          </div>
         </div>
-        
-        <div className="flex space-x-3 hide-print">
+        <div className="flex gap-2">
           {!isLocked && (
-            <Button onClick={handleSaveChanges} variant="outline">
+            <Button variant="outline" onClick={handleSaveChanges} className="font-bold">
               <Save className="w-4 h-4 mr-2" /> Save Changes
             </Button>
           )}
-          
+          <Button variant="outline" onClick={handlePrint} className="font-bold">
+            <Printer className="w-4 h-4 mr-2" /> Print Receipt
+          </Button>
           {bill.status !== 'PAID' && (
-            <Button onClick={handlePrint} className={!isLocked ? "bg-primary text-white hover:bg-orange-600" : "bg-gray-200 text-gray-800 hover:bg-gray-300"}>
-              <Printer className="w-4 h-4 mr-2" /> Print Receipt
-            </Button>
-          )}
-          
-          {bill.status === 'PRINTED' && (
-            <Button onClick={() => setPaymentModalOpen(true)} className="bg-status-success hover:bg-green-600 text-white">
+            <Button onClick={() => setPaymentModalOpen(true)} className="font-bold shadow-md shadow-primary/20">
               <CreditCard className="w-4 h-4 mr-2" /> Record Payment
             </Button>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left Side: Editor (Hide when printing) */}
-        <div className="lg:col-span-2 space-y-6 hide-print">
-          <Card className="border border-border">
-            <CardContent className="p-6">
-              <h2 className="text-lg font-bold mb-4">Edit Items</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 text-text-muted">
-                    <tr>
-                      <th className="px-4 py-2 rounded-l-lg">Item</th>
-                      <th className="px-4 py-2">Qty</th>
-                      <th className="px-4 py-2">Original</th>
-                      <th className="px-4 py-2">Final Rate</th>
-                      <th className="px-4 py-2 rounded-r-lg text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item, index) => {
-                      const mItem = menuItems.find(m => m.id === item.menuItemId);
-                      return (
-                        <tr key={item.id} className="border-b border-gray-100 last:border-0">
-                          <td className="px-4 py-3 font-medium text-text-main">{mItem?.name}</td>
-                          <td className="px-4 py-3">{item.quantity}</td>
-                          <td className="px-4 py-3 text-text-muted">₹{item.originalRate}</td>
-                          <td className="px-4 py-3">
-                            <input 
-                              type="number"
-                              min="0"
-                              value={item.billRate}
-                              onChange={(e) => handleRateChange(index, e.target.value)}
-                              disabled={isLocked}
-                              className="w-24 border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-primary disabled:bg-gray-100"
-                            />
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium">₹{item.lineTotal.toFixed(2)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="flex flex-1 overflow-hidden">
+        {/* LEFT COLUMN: Billing Editor */}
+        <div className="w-full lg:w-3/5 p-4 md:p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6">
           
-          {!isLocked && (
-            <Card className="border border-border">
-              <CardContent className="p-6">
-                <h2 className="text-lg font-bold mb-4">Discounts & Adjustments</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">Discount Type</label>
-                    <select 
-                      value={discountType} 
-                      onChange={(e) => setDiscountType(e.target.value)}
-                      className="w-full border border-border rounded-lg px-3 py-2"
-                    >
-                      <option value="PERCENT">Percentage (%)</option>
-                      <option value="AMOUNT">Flat Amount (₹)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-muted mb-1">Discount Value</label>
-                    <input 
-                      type="number" 
-                      min="0"
-                      value={discountValue}
-                      onChange={(e) => setDiscountValue(e.target.value)}
-                      className="w-full border border-border rounded-lg px-3 py-2"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-text-muted mb-1">Adjustment Reason (Required if discounted/modified)</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Manager approved, Customer complaint"
-                      value={discountReason}
-                      onChange={(e) => setDiscountReason(e.target.value)}
-                      className="w-full border border-border rounded-lg px-3 py-2"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Right Side: Receipt Preview */}
-        <div className="lg:col-span-1 printable-area" ref={receiptRef}>
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 max-w-sm mx-auto font-mono text-sm">
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900">Sri Annapoorna</h2>
-              <p className="text-gray-500">123 Main Street, Food District</p>
-              <p className="text-gray-500">+91 9876543210</p>
+          <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border bg-surface/50">
+              <h2 className="text-sm font-bold text-text-main uppercase tracking-wider">Edit Items</h2>
             </div>
-            
-            <div className="border-t border-b border-gray-200 py-3 mb-4 space-y-1">
-              <div className="flex justify-between"><span className="text-gray-500">Bill:</span> <span className="font-medium">{bill.billNumber}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Order:</span> <span>{bill.orderId.substring(0, 12)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Table:</span> <span>{table?.tableNumber || '-'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Waiter:</span> <span>{waiter?.name || '-'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Date:</span> <span>{new Date(bill.createdAt).toLocaleDateString()} {new Date(bill.createdAt).toLocaleTimeString()}</span></div>
-            </div>
-
-            <div className="mb-4">
-              <table className="w-full">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-gray-500">
-                    <th className="text-left py-2">Item</th>
-                    <th className="text-center py-2">Qty</th>
-                    <th className="text-right py-2">Amt</th>
+                  <tr className="border-b border-border text-text-muted">
+                    <th className="font-semibold py-3 px-5">Item</th>
+                    <th className="font-semibold py-3 px-5 text-center">Qty</th>
+                    <th className="font-semibold py-3 px-5 text-right">Original</th>
+                    <th className="font-semibold py-3 px-5 text-right">Final Rate</th>
+                    <th className="font-semibold py-3 px-5 text-right">Amount</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {items.map(item => {
-                    const mItem = menuItems.find(m => m.id === item.menuItemId);
+                <tbody className="divide-y divide-border">
+                  {items.map((item, index) => {
+                    const menuItem = menuItems.find(m => m.id === item.menuItemId);
                     return (
-                      <tr key={item.id}>
-                        <td className="py-2 pr-2">{mItem?.name} {item.billRate !== item.originalRate && <span className="text-xs block text-gray-400">(Rate: ₹{item.billRate})</span>}</td>
-                        <td className="py-2 text-center align-top">{item.quantity}</td>
-                        <td className="py-2 text-right align-top">₹{item.lineTotal.toFixed(2)}</td>
+                      <tr key={item.id} className="hover:bg-surface/30">
+                        <td className="py-3 px-5 font-semibold text-text-main">{menuItem?.name}</td>
+                        <td className="py-3 px-5 text-center font-bold text-text-muted">{item.quantity}</td>
+                        <td className="py-3 px-5 text-right text-text-sub">₹{(item.unitPrice ?? item.price ?? 0).toFixed(2)}</td>
+                        <td className="py-3 px-5 text-right">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.billRate}
+                            onChange={(e) => handleRateChange(index, e.target.value)}
+                            disabled={isLocked}
+                            className="w-24 text-right border border-border rounded-lg px-2 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-surface disabled:text-text-muted"
+                          />
+                        </td>
+                        <td className="py-3 px-5 text-right font-bold text-text-main">
+                          ₹{(item.lineTotal ?? 0).toFixed(2)}
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
+          </div>
 
-            <div className="border-t border-gray-200 pt-3 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Subtotal</span>
-                <span>₹{totals.subtotal.toFixed(2)}</span>
+          <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border bg-surface/50">
+              <h2 className="text-sm font-bold text-text-main uppercase tracking-wider">Discounts & Adjustments</h2>
+            </div>
+            <div className="p-5 flex flex-col md:flex-row gap-4 items-end">
+              <div className="flex-1 space-y-1">
+                <label className="text-xs font-bold text-text-muted uppercase">Type</label>
+                <select
+                  value={discountType}
+                  onChange={(e) => {
+                    setDiscountType(e.target.value);
+                    setDiscountValue(0);
+                  }}
+                  disabled={isLocked}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-surface"
+                >
+                  <option value="PERCENT">Percentage (%)</option>
+                  <option value="AMOUNT">Flat Amount (₹)</option>
+                </select>
               </div>
-              
-              {totals.discountAmount > 0 && (
-                <div className="flex justify-between text-gray-900">
-                  <span>Discount {discountType === 'PERCENT' ? `(${totals.discountPercentage}%)` : ''}</span>
-                  <span>-₹{totals.discountAmount.toFixed(2)}</span>
-                </div>
-              )}
-              
-              <div className="flex justify-between">
-                <span className="text-gray-500">Tax ({bill.taxRate}%)</span>
-                <span>₹{totals.taxAmount.toFixed(2)}</span>
+              <div className="flex-1 space-y-1">
+                <label className="text-xs font-bold text-text-muted uppercase">Value</label>
+                <input
+                  type="number"
+                  min="0"
+                  max={discountType === 'PERCENT' ? '100' : totals.subtotal}
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(e.target.value)}
+                  disabled={isLocked}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-surface"
+                />
               </div>
-              
-              <div className="border-t border-gray-800 pt-3 mt-3 flex justify-between font-bold text-lg">
-                <span>TOTAL</span>
-                <span>₹{totals.grandTotal.toFixed(2)}</span>
+              <div className="flex-[2] space-y-1">
+                <label className="text-xs font-bold text-text-muted uppercase">Reason (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Staff Discount"
+                  value={discountReason}
+                  onChange={(e) => setDiscountReason(e.target.value)}
+                  disabled={isLocked}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-surface"
+                />
               </div>
             </div>
+          </div>
+          
+        </div>
 
-            <div className="mt-8 text-center text-gray-500 text-xs">
-              {bill.status === 'PAID' ? 'PAID - THANK YOU' : 'PLEASE PAY AT COUNTER'}
+        {/* RIGHT COLUMN: Receipt Preview */}
+        <div className="hidden lg:block w-2/5 border-l border-border bg-surface overflow-y-auto custom-scrollbar p-6">
+          <div className="bg-white border border-border rounded-xl shadow-sm p-8 max-w-sm mx-auto font-mono text-sm" ref={receiptRef}>
+            <div className="text-center mb-6 border-b border-dashed border-border pb-6">
+              <h2 className="text-xl font-bold text-text-main tracking-tight">{restaurantName}</h2>
+              <p className="text-text-muted text-xs mt-1">{restaurantAddress}</p>
+              <p className="text-text-muted text-xs">{restaurantPhone}</p>
+            </div>
+            
+            <div className="mb-6 space-y-1 text-xs">
+              <div className="flex justify-between"><span className="text-text-muted">Bill No:</span> <span className="font-bold">{bill.billNumber}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">Order No:</span> <span>{bill.orderId}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">Date:</span> <span>{new Date(bill.createdAt).toLocaleDateString()}</span></div>
+              <div className="flex justify-between"><span className="text-text-muted">Time:</span> <span>{new Date(bill.createdAt).toLocaleTimeString()}</span></div>
+              {table && <div className="flex justify-between"><span className="text-text-muted">Table:</span> <span>{table.tableNumber}</span></div>}
+              {waiter && <div className="flex justify-between"><span className="text-text-muted">Waiter:</span> <span>{waiter.name}</span></div>}
+            </div>
+            
+            <div className="border-t border-b border-dashed border-border py-3 mb-4">
+              <div className="flex justify-between text-xs font-bold mb-2 uppercase tracking-wider text-text-muted">
+                <span className="flex-1">Item</span>
+                <span className="w-12 text-center">Qty</span>
+                <span className="w-16 text-right">Amt</span>
+              </div>
+              <div className="space-y-2">
+                {items.map((item) => {
+                  const menuItem = menuItems.find(m => m.id === item.menuItemId);
+                  return (
+                    <div key={item.id} className="flex justify-between text-xs">
+                      <span className="flex-1 pr-2 truncate">{menuItem?.name}</span>
+                      <span className="w-12 text-center">{item.quantity}</span>
+                      <span className="w-16 text-right">{(item.lineTotal ?? 0).toFixed(2)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between"><span className="text-text-muted">Subtotal:</span> <span>{(totals.subtotal ?? 0).toFixed(2)}</span></div>
+              {totals.discountAmount > 0 && (
+                <div className="flex justify-between"><span className="text-text-muted">Discount:</span> <span>-{(totals.discountAmount ?? 0).toFixed(2)}</span></div>
+              )}
+              <div className="flex justify-between"><span className="text-text-muted">Tax (5%):</span> <span>{(totals.taxAmount ?? 0).toFixed(2)}</span></div>
+            </div>
+            
+            <div className="border-t border-dashed border-border mt-4 pt-4 flex justify-between items-center">
+              <span className="text-sm font-bold uppercase tracking-wider">Grand Total</span>
+              <span className="text-lg font-black tracking-tight text-text-main">₹{(totals.grandTotal ?? 0).toFixed(2)}</span>
+            </div>
+            
+            <div className="text-center mt-8 text-xs text-text-muted uppercase tracking-widest font-bold">
+              Thank You!
             </div>
           </div>
         </div>
@@ -338,79 +322,65 @@ export function CashierBillDetails() {
 
       {/* Payment Modal */}
       {paymentModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hide-print">
-          <Card className="w-[400px]">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-bold mb-4">Record Payment</h2>
-              <div className="bg-gray-50 p-4 rounded-lg mb-6 flex justify-between items-center border border-border">
-                <span className="font-semibold text-text-main">Amount to Pay:</span>
-                <span className="text-2xl font-bold text-primary">₹{totals.grandTotal.toFixed(2)}</span>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div className="px-6 py-5 border-b border-border flex justify-between items-center bg-surface/50">
+              <h2 className="text-lg font-bold text-text-main">Record Payment</h2>
+              <button onClick={() => setPaymentModalOpen(false)} className="text-text-faint hover:text-text-main transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-6 flex-1">
+              <div className="bg-primary/5 rounded-xl border border-primary/20 p-5 mb-6 text-center">
+                <p className="text-sm font-bold text-primary/80 uppercase tracking-wider mb-1">Amount Due</p>
+                <p className="text-4xl font-black text-primary tracking-tight">₹{(totals.grandTotal ?? 0).toFixed(2)}</p>
               </div>
-              
-              <div className="space-y-4 mb-6">
+
+              <form onSubmit={handlePaymentSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-text-main mb-1">Enter Amount Received</label>
-                  <input 
+                  <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Payment Method</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {Object.entries(activePaymentMethods).map(([method, isActive]) => {
+                      if (!isActive) return null;
+                      const selected = paymentMethod === method;
+                      return (
+                        <div 
+                          key={method}
+                          onClick={() => setPaymentMethod(method)}
+                          className={cn(
+                            "py-3 rounded-xl border-2 text-center cursor-pointer transition-all font-bold",
+                            selected ? "border-primary bg-primary/10 text-primary" : "border-border text-text-sub hover:border-border-strong"
+                          )}
+                        >
+                          {method}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Tendered Amount (₹)</label>
+                  <input
                     type="number"
+                    step="0.01"
+                    min={totals.grandTotal}
+                    required
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
-                    className="w-full border border-border rounded-lg px-3 py-2"
-                    step="0.01"
+                    className="w-full border-2 border-border rounded-xl px-4 py-3 text-lg font-bold focus:outline-none focus:border-primary focus:ring-0 transition-colors"
                   />
                 </div>
                 
-                <label className="block text-sm font-medium text-text-main mt-4">Payment Method</label>
-                <div className="grid grid-cols-2 gap-4">
-                  {activePaymentMethods?.CASH && (
-                    <button 
-                      className={`p-3 rounded-lg border-2 font-semibold transition-colors ${paymentMethod === 'CASH' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-text-muted hover:border-gray-300'}`}
-                      onClick={() => setPaymentMethod('CASH')}
-                    >
-                      CASH
-                    </button>
-                  )}
-                  {activePaymentMethods?.UPI && (
-                    <button 
-                      className={`p-3 rounded-lg border-2 font-semibold transition-colors ${paymentMethod === 'UPI' ? 'border-primary bg-primary/10 text-primary' : 'border-border text-text-muted hover:border-gray-300'}`}
-                      onClick={() => setPaymentMethod('UPI')}
-                    >
-                      UPI
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <Button variant="outline" onClick={() => setPaymentModalOpen(false)}>Cancel</Button>
-                <Button className="bg-status-success hover:bg-green-600 text-white" onClick={handleRecordPayment}>
+                <Button type="submit" className="w-full py-4 text-base font-bold shadow-md shadow-primary/20 rounded-xl">
                   Confirm Payment
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </form>
+            </div>
+          </div>
         </div>
       )}
-      
-      {/* Styles for printing */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          .printable-area, .printable-area * {
-            visibility: visible;
-          }
-          .printable-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          .hide-print {
-            display: none !important;
-          }
-        }
-      `}} />
     </div>
   );
 }

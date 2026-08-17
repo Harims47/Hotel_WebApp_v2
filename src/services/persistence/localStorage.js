@@ -1,7 +1,7 @@
 import { INITIAL_STATE } from '../../data/seed';
 
 const STATE_KEY = 'restaurant_os_v1_state';
-const STATE_VERSION = '1.0.1'; // Update this to clear stale data
+const STATE_VERSION = '1.0.3'; // Update this to clear stale data
 
 export const loadState = () => {
   try {

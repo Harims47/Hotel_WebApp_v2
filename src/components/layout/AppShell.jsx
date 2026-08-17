@@ -8,6 +8,7 @@ import { AudioNotifier } from '../AudioNotifier';
 import { TimerEngine } from '../TimerEngine';
 import { addNotification } from '../../features/notifications/notificationsSlice';
 import { v4 as uuidv4 } from 'uuid';
+import { cn } from '../../utils/cn';
 
 export function AppShell() {
   const dispatch = useDispatch();
@@ -79,6 +80,8 @@ export function AppShell() {
     }
   }
 
+  const isOrderEntry = path.startsWith('/waiter/tables/') && path !== '/waiter/tables';
+
   return (
     <div className="flex h-screen bg-canvas overflow-hidden relative">
       <Toaster position="top-right" richColors expand={false} gap={8} />
@@ -86,8 +89,11 @@ export function AppShell() {
       <TimerEngine />
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
+        {!isOrderEntry && <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />}
+        <main className={cn(
+          "flex-1 overflow-y-auto custom-scrollbar",
+          isOrderEntry ? "p-0" : "p-4 md:p-6"
+        )}>
           <Outlet />
         </main>
       </div>

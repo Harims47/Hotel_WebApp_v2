@@ -25,22 +25,22 @@ export function Login() {
   });
 
   if (isAuthenticated && currentUser) {
-    const rolePrefix = currentUser.role === 'SUPER_ADMIN' ? 'admin' : 
-                       currentUser.role === 'DELIVERY_BOY' ? 'delivery' : 
-                       currentUser.role === 'INVENTORY_MANAGER' ? 'inventory' : 
-                       currentUser.role.toLowerCase();
+    const rolePrefix = currentUser.role === 'SUPER_ADMIN' ? 'admin' :
+      currentUser.role === 'DELIVERY_BOY' ? 'delivery' :
+        currentUser.role === 'INVENTORY_MANAGER' ? 'inventory' :
+          currentUser.role.toLowerCase();
     return <Navigate to={`/${rolePrefix}/dashboard`} replace />;
   }
 
   const onSubmit = (data) => {
     const user = users.find(u => u.username === data.username && u.password === data.password);
-    
+
     if (user) {
       dispatch(login(user));
-      const rolePrefix = user.role === 'SUPER_ADMIN' ? 'admin' : 
-                         user.role === 'DELIVERY_BOY' ? 'delivery' : 
-                         user.role === 'INVENTORY_MANAGER' ? 'inventory' : 
-                         user.role.toLowerCase();
+      const rolePrefix = user.role === 'SUPER_ADMIN' ? 'admin' :
+        user.role === 'DELIVERY_BOY' ? 'delivery' :
+          user.role === 'INVENTORY_MANAGER' ? 'inventory' :
+            user.role.toLowerCase();
       navigate(`/${rolePrefix}/dashboard`);
     } else {
       setError('root', { type: 'manual', message: 'Invalid username or password' });
@@ -54,32 +54,35 @@ export function Login() {
 
   return (
     <div className="min-h-screen flex">
-      {/* LEFT PANEL - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-sidebar-dark flex-col justify-between p-12 text-white relative overflow-hidden">
-        {/* Subtle background pattern/gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50" />
-        
+      {/* LEFT PANEL - Branding with Owner Photo */}
+      <div
+        className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 text-white relative overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: 'url("/owner-photo.png")' }}
+      >
+        {/* Dark overlay to ensure text readability if needed */}
+        <div className="absolute inset-0 bg-black/40" />
+
         <div className="relative z-10">
-          <h2 className="text-3xl font-extrabold tracking-tight">
-            <span className="text-primary">Resto</span>OS
+          <h2 className="text-3xl font-extrabold tracking-tight drop-shadow-md">
+            <span className="text-primary">NS</span> Resto Cafe
           </h2>
-          <p className="mt-2 text-sm text-gray-400 font-medium tracking-widest uppercase">
-            Restaurant Management System
+          <p className="mt-2 text-sm text-gray-200 font-medium tracking-widest uppercase drop-shadow-md">
+            Serving Happiness
           </p>
         </div>
 
         <div className="relative z-10 max-w-md">
-          <h1 className="text-5xl font-bold leading-tight mb-6">
-            Fine Dining,<br/>
-            <span className="text-primary">Orchestrated.</span>
+          <h1 className="text-5xl font-bold leading-tight mb-6 drop-shadow-lg">
+            Welcome to <br />
+            <span className="text-primary">NS Resto Cafe.</span>
           </h1>
-          <p className="text-lg text-gray-400 leading-relaxed">
-            The premium operating system designed for modern restaurants. Streamline your operations, empower your staff, and deliver exceptional experiences.
+          <p className="text-lg text-gray-200 leading-relaxed drop-shadow-md">
+            Authentic taste, exceptional service, and a memorable dining experience.
           </p>
         </div>
 
-        <div className="relative z-10 text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} RestoOS. All rights reserved.
+        <div className="relative z-10 text-sm text-gray-300 drop-shadow-md">
+          &copy; {new Date().getFullYear()} NS Resto Cafe. All rights reserved.
         </div>
       </div>
 
@@ -137,49 +140,49 @@ export function Login() {
             <div className="mt-10 pt-8 border-t border-border/60">
               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4">Quick Demo Access</h3>
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div 
+                <div
                   className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
                   onClick={() => handleDemoClick('superadmin')}
                 >
                   <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Super Admin</span>
                   <span className="text-text-muted mt-0.5 block">superadmin</span>
                 </div>
-                <div 
+                <div
                   className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
                   onClick={() => handleDemoClick('gm')}
                 >
                   <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Manager</span>
                   <span className="text-text-muted mt-0.5 block">gm</span>
                 </div>
-                <div 
+                <div
                   className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
                   onClick={() => handleDemoClick('waiter1')}
                 >
                   <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Waiter</span>
                   <span className="text-text-muted mt-0.5 block">waiter1</span>
                 </div>
-                <div 
+                <div
                   className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
                   onClick={() => handleDemoClick('kitchen')}
                 >
                   <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Kitchen</span>
                   <span className="text-text-muted mt-0.5 block">kitchen</span>
                 </div>
-                <div 
+                <div
                   className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
                   onClick={() => handleDemoClick('cashier')}
                 >
                   <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Cashier</span>
                   <span className="text-text-muted mt-0.5 block">cashier</span>
                 </div>
-                <div 
+                <div
                   className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
                   onClick={() => handleDemoClick('delivery')}
                 >
                   <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Delivery</span>
                   <span className="text-text-muted mt-0.5 block">delivery</span>
                 </div>
-                <div 
+                <div
                   className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group lg:col-span-2"
                   onClick={() => handleDemoClick('inventory')}
                 >

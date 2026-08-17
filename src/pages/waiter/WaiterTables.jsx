@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { cn } from '../../utils/cn';
-import { Users, Clock, Plus, Eye, UtensilsCrossed, LayoutGrid, List } from 'lucide-react';
+import { Users, Clock, Plus, Eye, UtensilsCrossed, LayoutGrid, List, Armchair } from 'lucide-react';
 
 function useElapsedTime(createdAt) {
   const [now, setNow] = React.useState(Date.now());
@@ -32,9 +32,9 @@ const STATUS_STYLES = {
     dot: 'bg-primary animate-pulse-dot',
   },
   RESERVED: {
-    card: 'bg-status-warning-bg border-status-warning/30',
-    badge: 'warning',
-    dot: 'bg-status-warning',
+    card: 'bg-status-info-bg border-status-info/30',
+    badge: 'info',
+    dot: 'bg-status-info',
   },
   CLEANING: {
     card: 'bg-gray-50 border-gray-200',
@@ -113,51 +113,69 @@ function TableCard({ table, activeOrder, isMyTable, view, onClick }) {
   return (
     <div
       className={cn(
-        'flex flex-col rounded-2xl border bg-white shadow-card transition-all duration-200 text-left overflow-hidden h-[165px] justify-between',
-        isOccupied && (isMyTable ? 'border-primary ring-1 ring-primary/20 bg-primary-lighter/10' : 'border-status-warning/20 bg-status-warning-bg/10'),
-        isReserved && 'border-status-warning/20 bg-status-warning-bg/10',
+        'flex flex-col rounded-2xl border bg-white shadow-sm hover:shadow-card transition-all duration-200 text-left overflow-hidden h-auto justify-between group',
+        isAvailable && 'border-status-success/30 bg-status-success-bg/10',
+        isOccupied && (isMyTable ? 'border-primary ring-1 ring-primary/20 bg-primary-lighter/10' : 'border-primary/30 bg-primary-lighter/10'),
+        isReserved && 'border-status-info/20 bg-status-info-bg/10',
         isCleaning && 'border-border bg-gray-50/50'
       )}
     >
-      <div className="p-3.5 flex-1 flex flex-col justify-between">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[10px] font-bold text-text-faint uppercase tracking-widest mb-0.5">Table</p>
-            <p className="text-2xl font-black text-text-main leading-none">{table.tableNumber}</p>
+      <div className="p-4 flex-1 flex flex-col justify-between gap-4">
+        {/* Top row: Icon, Table number & Status badge */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+             <div className={cn(
+               "w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white",
+               isAvailable ? 'bg-status-success' : isOccupied ? 'bg-primary' : isReserved ? 'bg-status-info' : 'bg-gray-400'
+             )}>
+                <Armchair className="w-5 h-5" />
+             </div>
+             <p className="text-xl font-black text-text-main leading-none">T{String(table.tableNumber).padStart(2, '0').replace(/^T0*T/, 'T')}</p>
           </div>
-          <Badge variant={style.badge} className="capitalize text-[10px] px-2 py-0.5 shrink-0">
+          <Badge variant={style.badge} className="capitalize text-[10px] px-2 py-0.5 shrink-0 rounded-lg">
             {table.status.toLowerCase()}
           </Badge>
         </div>
 
-        <div className="my-1.5 space-y-1">
-          <div className="flex items-center gap-1.5 text-xs text-text-muted">
-            <Users className="w-3.5 h-3.5" />
-            <span>{table.capacity} Seats · {table.section}</span>
+        {/* Middle row: Meta info */}
+        <div className="space-y-2 mt-1">
+          <div className="flex items-center gap-2 text-xs text-text-muted font-medium">
+            <Users className="w-4 h-4" />
+            <span>{table.capacity} Seats</span>
+            <span className="text-border-strong">•</span>
+            <span>{table.section}</span>
           </div>
 
           {isOccupied && activeOrder && (
-            <div className="flex items-center gap-1 text-xs font-bold text-primary">
-              <Clock className="w-3.5 h-3.5 animate-pulse-dot" />
-              <span>⏱ {elapsed}</span>
+            <div className="flex items-center gap-2 text-xs font-bold text-primary">
+              <Clock className="w-4 h-4" />
+              <span>{elapsed}</span>
             </div>
           )}
 
           {isReserved && (
-            <div className="flex items-center gap-1 text-xs font-bold text-status-warning-text">
-              <Clock className="w-3.5 h-3.5" />
-              <span>⏱ {reservationTime}</span>
+            <div className="flex items-center gap-2 text-xs font-bold text-status-info-text">
+              <Clock className="w-4 h-4" />
+              <span>{reservationTime}</span>
             </div>
           )}
         </div>
-      </div>
 
-      <div className="px-3.5 py-2.5 bg-canvas/30 border-t border-border/40 shrink-0">
+        {/* Action Button */}
         <Button
           size="sm"
-          variant={isOccupied ? (isMyTable ? 'primary' : 'outline') : (isCleaning ? 'secondary' : 'primary')}
+          variant="outline"
           onClick={onClick}
-          className="w-full font-bold text-xs h-8 rounded-xl"
+          className={cn(
+            "w-full font-bold text-xs h-10 rounded-xl mt-2 transition-colors border",
+            isAvailable 
+              ? "border-status-success text-status-success hover:bg-status-success hover:text-white" 
+              : isOccupied 
+                ? "border-primary text-primary hover:bg-primary hover:text-white"
+                : isReserved 
+                  ? "border-status-info text-status-info hover:bg-status-info hover:text-white"
+                  : "border-gray-400 text-gray-500 hover:bg-gray-500 hover:text-white"
+          )}
         >
           {isAvailable && '+ New Order'}
           {isOccupied && 'View Order'}
@@ -207,8 +225,6 @@ export function WaiterTables() {
     { key: 'All', label: 'All Tables' },
     { key: 'AVAILABLE', label: 'Available' },
     { key: 'OCCUPIED', label: 'Occupied' },
-    { key: 'RESERVED', label: 'Reserved' },
-    { key: 'CLEANING', label: 'Cleaning' },
   ];
 
   return (
@@ -247,31 +263,7 @@ export function WaiterTables() {
         </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Available', count: statusCounts.AVAILABLE, color: 'text-status-success-text', bg: 'bg-status-success-bg', dot: 'bg-status-success' },
-          { label: 'Occupied', count: statusCounts.OCCUPIED, color: 'text-primary-dark', bg: 'bg-primary-light', dot: 'bg-primary' },
-          { label: 'Reserved', count: statusCounts.RESERVED, color: 'text-status-warning-text', bg: 'bg-status-warning-bg', dot: 'bg-status-warning' },
-          { label: 'Cleaning', count: statusCounts.CLEANING, color: 'text-text-muted', bg: 'bg-canvas', dot: 'bg-gray-400' },
-        ].map(stat => (
-          <button
-            key={stat.label}
-            onClick={() => setStatusFilter(statusFilter === stat.label.toUpperCase() ? STATUS_ALL : stat.label.toUpperCase())}
-            className={cn(
-              'flex items-center justify-between px-4 py-3 rounded-2xl border transition-all',
-              stat.bg,
-              statusFilter === stat.label.toUpperCase() ? 'border-current shadow-card' : 'border-transparent hover:border-current/30'
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <div className={cn('w-2 h-2 rounded-full', stat.dot)} />
-              <span className={cn('text-sm font-semibold', stat.color)}>{stat.label}</span>
-            </div>
-            <span className={cn('text-2xl font-black', stat.color)}>{stat.count}</span>
-          </button>
-        ))}
-      </div>
+
 
       {/* Filters Row */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -343,7 +335,7 @@ export function WaiterTables() {
             })}
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4">
             {filtered.map(table => {
               const activeOrder = orders.find(o => o.tableId === table.id && o.status !== 'CLOSED' && o.status !== 'CANCELLED');
               const isMyTable = activeOrder?.waiterId === currentUser?.id;

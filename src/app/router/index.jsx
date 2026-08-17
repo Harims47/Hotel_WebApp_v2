@@ -16,6 +16,7 @@ import { WaiterTables } from '../../pages/waiter/WaiterTables';
 import { WaiterOrderScreen } from '../../pages/waiter/WaiterOrderScreen';
 import { WaiterOrders } from '../../pages/waiter/WaiterOrders';
 import { WaiterMenu } from '../../pages/waiter/WaiterMenu';
+import { WaiterKOT } from '../../pages/waiter/WaiterKOT';
 
 // KOT
 import { KOTDashboard } from '../../pages/kot/KOTDashboard';
@@ -114,11 +115,12 @@ const router = createBrowserRouter([
       { path: 'gm/delivery', element: <GMDelivery /> },
       
       // Waiter Routes
-      { path: 'waiter/dashboard', element: <WaiterDashboard /> },
+      { path: 'waiter/dashboard', element: <Navigate to="/waiter/tables" replace /> },
       { path: 'waiter/tables', element: <WaiterTables /> },
       { path: 'waiter/tables/:tableId', element: <WaiterOrderScreen /> },
       { path: 'waiter/menu', element: <WaiterMenu /> },
       { path: 'waiter/orders', element: <WaiterOrders /> },
+      { path: 'waiter/kot', element: <WaiterKOT /> },
       
       // KOT Routes
       { path: 'kot/dashboard', element: <KOTDashboard /> },
@@ -128,7 +130,7 @@ const router = createBrowserRouter([
       { path: 'kot/completed', element: <KOTCompleted /> },
       
       // Cashier Routes
-      { path: 'cashier/dashboard', element: <CashierDashboard /> },
+      { path: 'cashier/dashboard', element: <Navigate to="/cashier/bills" replace /> },
       { path: 'cashier/bills', element: <CashierBills /> },
       { path: 'cashier/bills/:billId', element: <CashierBillDetails /> },
       { path: 'cashier/payments', element: <CashierPayments /> },

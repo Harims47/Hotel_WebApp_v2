@@ -1,112 +1,148 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { Search } from 'lucide-react';
+import { Search, Utensils, X, Star, Layers, Sparkles, Flame } from 'lucide-react';
+import { FoodCard, CATEGORY_ICONS } from '../../components/waiter/WaiterUI';
 import { cn } from '../../utils/cn';
 
 export function WaiterMenu() {
   const menuCategories = useSelector(state => state.menu.categories);
   const menuItems = useSelector(state => state.menu.items);
-  
+
   const activeCategories = useMemo(() => menuCategories.filter(c => !c.status || c.status === 'ACTIVE'), [menuCategories]);
-  
-  const [activeCategory, setActiveCategory] = useState(activeCategories[0]?.id);
+
+  const [activeCategory, setActiveCategory] = useState(activeCategories[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState(null);
 
   const filteredMenuItems = useMemo(() => {
     return menuItems.filter(item => {
       const isAvailable = item.isAvailable !== false && (!item.status || item.status === 'ACTIVE');
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       
-      if (searchQuery.trim()) {
-        return isAvailable && matchesSearch;
-      }
-      
-      return isAvailable && item.categoryId === activeCategory;
-    });
-  }, [menuItems, activeCategory, searchQuery]);
+      const isBestseller = ['mi-1', 'mi-3', 'mi-4', 'mi-9'].includes(item.id);
+      const isNonVeg = /chicken|mutton|fish|prawn|egg|meat/i.test(item.name);
 
-  // Ensure active category is set
-  React.useEffect(() => {
-    if (!activeCategory && activeCategories.length > 0) {
-      setActiveCategory(activeCategories[0].id);
-    }
-  }, [activeCategory, activeCategories]);
+      let matchesFilter = true;
+      if (activeFilter === 'veg') matchesFilter = !isNonVeg;
+      else if (activeFilter === 'nonveg') matchesFilter = isNonVeg;
+      else if (activeFilter === 'bestseller' || activeFilter === 'popular') matchesFilter = isBestseller;
+
+      if (searchQuery.trim()) return isAvailable && matchesSearch && matchesFilter;
+      return isAvailable && item.categoryId === activeCategory && matchesFilter;
+    });
+  }, [menuItems, activeCategory, searchQuery, activeFilter]);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-text-main">Digital Menu</h1>
-          <p className="text-sm text-text-muted mt-1">Browse all available items</p>
-        </div>
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input 
-            type="text" 
-            placeholder="Search menu items..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm bg-white shadow-sm"
-          />
+    <div className="flex flex-col h-full bg-canvas max-w-7xl mx-auto w-full">
+      {/* Header */}
+      <div className="px-4 md:px-6 pt-4 pb-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-text-main tracking-tight">Menu Catalog</h1>
+            <p className="text-text-muted text-sm font-medium mt-1">Browse the full restaurant menu.</p>
+          </div>
+          
+          {/* Search */}
+          <div className="relative w-full md:w-72 shrink-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-faint w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search dishes…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-9 py-2 border border-border rounded-xl text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all h-10 font-semibold shadow-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-faint hover:text-text-muted"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-1 gap-6 overflow-hidden">
-        <div className="flex-1 flex bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
-          
-          {/* Vertical Categories Sidebar */}
-          {!searchQuery && (
-            <div className="w-56 border-r border-border bg-gray-50/50 overflow-y-auto custom-scrollbar p-4 space-y-2">
-              <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 pl-2">Categories</h2>
-              {activeCategories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={cn(
-                    "w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200",
-                    activeCategory === cat.id 
-                      ? "bg-primary text-white shadow-md shadow-primary/20" 
-                      : "text-text-muted hover:bg-gray-100 hover:text-text-main"
-                  )}
-                >
-                  {cat.name}
-                </button>
+      {/* Horizontal Category Rail */}
+      {!searchQuery && (
+        <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar px-4 md:px-6 py-3 bg-canvas shrink-0">
+          {activeCategories.map(cat => {
+            const IconComponent = CATEGORY_ICONS[cat.id] || Utensils;
+            const isActive = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={cn(
+                  'shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border whitespace-nowrap shadow-sm',
+                  isActive
+                    ? 'bg-primary text-white border-primary shadow-primary-sm'
+                    : 'bg-surface text-text-sub border-border hover:border-border-strong hover:bg-white'
+                )}
+              >
+                <IconComponent className={cn('w-4 h-4', isActive ? 'text-white' : 'text-text-muted')} />
+                <span>{cat.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Content Area */}
+      <div className="flex flex-1 overflow-hidden mt-1">
+        
+        {/* Vertical Filter Rail (Left) */}
+        {!searchQuery && (
+          <div className="hidden md:flex w-[110px] flex-col overflow-y-auto custom-scrollbar shrink-0 py-2 px-4 gap-2">
+            {[
+              { id: 'popular', label: 'Popular', icon: Star },
+              { id: 'veg', label: 'Veg', icon: Sparkles },
+              { id: 'nonveg', label: 'Non-Veg', icon: Layers },
+              { id: 'bestseller', label: 'Bestseller', icon: Flame },
+            ].map(filter => (
+              <button
+                key={filter.id}
+                onClick={() => setActiveFilter(prev => prev === filter.id ? null : filter.id)}
+                className={cn(
+                  'flex flex-col items-center justify-center p-3 rounded-xl text-[11px] font-bold transition-all gap-1.5 shadow-sm border',
+                  activeFilter === filter.id 
+                    ? 'bg-primary text-white border-primary shadow-primary-sm' 
+                    : 'bg-surface text-text-muted border-transparent hover:text-text-main hover:border-border'
+                )}
+              >
+                <filter.icon className="w-5 h-5" />
+                <span>{filter.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Menu Grid */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-2 pb-8">
+          {filteredMenuItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Search className="w-12 h-12 text-text-faint mb-4" />
+              <p className="font-bold text-lg text-text-main">No items found</p>
+              <p className="text-sm text-text-muted mt-1">Try another category or filter</p>
+            </div>
+          ) : (
+            <div
+              className="grid gap-4"
+              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}
+            >
+              {filteredMenuItems.map(item => (
+                <FoodCard
+                  key={item.id}
+                  item={item}
+                  qty={0}
+                  disableAdd={true}
+                  onAdd={() => {}}
+                  onUpdateQty={() => {}}
+                />
               ))}
             </div>
           )}
-          
-          {/* Menu Items Grid */}
-          <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 content-start custom-scrollbar bg-white">
-            {filteredMenuItems.map(item => (
-              <div 
-                key={item.id} 
-                className="flex flex-col bg-white rounded-2xl border border-border/60 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all group overflow-hidden" 
-              >
-                <div className="h-40 w-full overflow-hidden bg-gray-100 relative">
-                  <img 
-                    src={`https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80&auto=format&fit=crop`} 
-                    alt={item.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-bold text-text-main shadow-sm">
-                    ₹{item.price}
-                  </div>
-                </div>
-                <div className="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-bold text-text-main group-hover:text-primary transition-colors line-clamp-1">{item.name}</h3>
-                    <p className="text-xs text-text-muted mt-1.5 line-clamp-2 leading-relaxed">{item.description}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {filteredMenuItems.length === 0 && (
-              <div className="col-span-full py-12 text-center text-text-muted">
-                No menu items found.
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

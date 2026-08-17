@@ -1,11 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { ArrowLeft, Plus, Minus, Send } from 'lucide-react';
-import { Card, CardContent } from '../../components/ui/Card';
+import { ArrowLeft, Sparkles, Utensils, Flame, CupSoda, Dessert } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { createTakeawayOrder } from '../../features/workflows/cashierWorkflow';
+import { FoodCard, QuantityControl } from '../../components/waiter/WaiterUI';
 import { cn } from '../../utils/cn';
+
+const CATEGORY_ICONS = {
+  'cat-1': Sparkles,
+  'cat-2': Utensils,
+  'cat-3': Flame,
+  'cat-4': CupSoda,
+  'cat-5': Dessert,
+};
 
 export function NewTakeawayOrder() {
   const navigate = useNavigate();
@@ -23,18 +31,12 @@ export function NewTakeawayOrder() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [fulfillmentType, setFulfillmentType] = useState('CUSTOMER_PICKUP');
-  const [addressLine, setAddressLine] = useState('');
-  const [area, setArea] = useState('');
-  const [city, setCity] = useState('Coimbatore');
-  const [pincode, setPincode] = useState('');
-  const [landmark, setLandmark] = useState('');
-  const [notes, setNotes] = useState('');
-
+  
   const filteredMenuItems = useMemo(() => {
     return menuItems.filter(item => item.categoryId === activeCategory && item.isAvailable !== false && (!item.status || item.status === 'ACTIVE'));
   }, [menuItems, activeCategory]);
 
-  const handleAddToCart = (menuItem) => {
+  const handleAddToCart = useCallback((menuItem) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === menuItem.id);
       if (existing) {
@@ -42,9 +44,9 @@ export function NewTakeawayOrder() {
       }
       return [...prev, { ...menuItem, quantity: 1 }];
     });
-  };
+  }, []);
 
-  const handleUpdateQuantity = (itemId, delta) => {
+  const handleUpdateQuantity = useCallback((itemId, delta) => {
     setCart(prev => prev.map(i => {
       if (i.id === itemId) {
         const newQ = i.quantity + delta;
@@ -52,7 +54,7 @@ export function NewTakeawayOrder() {
       }
       return i;
     }).filter(Boolean));
-  };
+  }, []);
 
   const handleSendToKOT = () => {
     if (cart.length === 0) return;
@@ -60,24 +62,16 @@ export function NewTakeawayOrder() {
       alert("Customer Name and Phone are required for takeaway orders.");
       return;
     }
-    if (fulfillmentType === 'DELIVERY' && (!addressLine || !area || !city)) {
-      alert("Address Line, Area, and City are required for delivery.");
-      return;
-    }
 
-    const address = fulfillmentType === 'DELIVERY' ? {
-      addressLine, area, city, pincode, landmark
-    } : null;
-    
     dispatch(createTakeawayOrder(
       source,
       customerName,
       customerPhone,
-      notes,
+      '', // notes
       cart,
       currentUser.id,
       fulfillmentType,
-      address
+      null // address
     ));
     
     navigate('/cashier/takeaway');
@@ -86,225 +80,192 @@ export function NewTakeawayOrder() {
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex items-center mb-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/cashier/takeaway')} className="mr-2">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <h1 className="text-2xl font-bold text-text-main">
-          New Takeaway Order
-        </h1>
+    <div className="flex flex-col h-full bg-canvas max-w-[1600px] mx-auto w-full">
+      {/* Top Header */}
+      <div className="px-4 md:px-6 py-4 flex items-center justify-between border-b border-border bg-white shadow-sm shrink-0">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate('/cashier/takeaway')} className="p-2 -ml-2 text-text-muted hover:text-text-main">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-2xl font-bold text-text-main tracking-tight">New Takeaway Order</h1>
+        </div>
       </div>
 
-      <div className="flex flex-1 gap-6 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         {/* Left Pane: Menu */}
-        <div className="flex-1 flex flex-col bg-surface rounded-2xl border border-border overflow-hidden">
-          {/* Categories */}
-          <div className="flex overflow-x-auto p-4 border-b border-border space-x-2">
-            {activeCategories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={cn(
-                  "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
-                  activeCategory === cat.id ? "bg-primary text-white" : "bg-gray-100 text-text-main hover:bg-gray-200"
-                )}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-          
-          {/* Menu Items */}
-          <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 content-start">
-            {filteredMenuItems.map(item => (
-              <Card key={item.id} className="flex flex-col hover:border-primary transition-colors cursor-pointer" onClick={() => handleAddToCart(item)}>
-                <CardContent className="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-semibold text-text-main">{item.name}</h3>
-                    <p className="text-xs text-text-muted mt-1 line-clamp-2">{item.description}</p>
-                  </div>
-                  <div className="flex justify-between items-center mt-4">
-                    <span className="font-bold text-primary">₹{item.price}</span>
-                    <Button size="sm" variant="outline" className="h-8 px-2" onClick={(e) => { e.stopPropagation(); handleAddToCart(item); }}>
-                      <Plus className="w-4 h-4 mr-1" /> Add
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Pane: Customer Details & Cart */}
-        <div className="w-96 flex flex-col bg-surface rounded-2xl border border-border overflow-hidden">
-          <div className="p-4 bg-gray-50 border-b border-border space-y-4">
-            <h2 className="font-bold text-lg text-text-main">Order Details</h2>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Source</label>
-                <div className="flex space-x-2">
-                  <button 
-                    className={cn("flex-1 py-1.5 border rounded text-sm transition-colors", source === 'OFFLINE' ? "bg-primary text-white border-primary" : "bg-white text-text-main border-border")}
-                    onClick={() => setSource('OFFLINE')}
+        <div className="w-full lg:w-[65%] flex flex-col bg-canvas border-r border-border overflow-hidden">
+          {/* Category Tabs */}
+          <div className="px-4 pt-4 pb-2 shrink-0 bg-white border-b border-border shadow-sm z-10">
+            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 snap-x">
+              {activeCategories.map(cat => {
+                const isSelected = activeCategory === cat.id;
+                const Icon = CATEGORY_ICONS[cat.id] || Utensils;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all active:scale-95 shrink-0 snap-start",
+                      isSelected 
+                        ? "bg-primary text-white shadow-md shadow-primary/30" 
+                        : "bg-surface text-text-muted hover:bg-surface-hover hover:text-text-main border border-border"
+                    )}
                   >
-                    OFFLINE
+                    <Icon className={cn("w-4 h-4", isSelected ? "text-white" : "text-text-muted")} />
+                    {cat.name}
                   </button>
-                  <button 
-                    className={cn("flex-1 py-1.5 border rounded text-sm transition-colors", source === 'PHONE' ? "bg-primary text-white border-primary" : "bg-white text-text-main border-border")}
-                    onClick={() => setSource('PHONE')}
-                  >
-                    PHONE
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Customer Name</label>
-                <input 
-                  type="text" 
-                  value={customerName}
-                  onChange={e => setCustomerName(e.target.value)}
-                  className="w-full border border-border rounded px-3 py-1.5 text-sm"
-                  placeholder="Arun Kumar"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Customer Phone</label>
-                <input 
-                  type="text" 
-                  value={customerPhone}
-                  onChange={e => setCustomerPhone(e.target.value)}
-                  className="w-full border border-border rounded px-3 py-1.5 text-sm"
-                  placeholder="9876543210"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Fulfillment</label>
-                <div className="flex space-x-2">
-                  <button 
-                    className={cn("flex-1 py-1.5 border rounded text-sm transition-colors", fulfillmentType === 'CUSTOMER_PICKUP' ? "bg-primary text-white border-primary" : "bg-white text-text-main border-border")}
-                    onClick={() => setFulfillmentType('CUSTOMER_PICKUP')}
-                  >
-                    CUSTOMER PICKUP
-                  </button>
-                  <button 
-                    className={cn("flex-1 py-1.5 border rounded text-sm transition-colors", fulfillmentType === 'DELIVERY' ? "bg-primary text-white border-primary" : "bg-white text-text-main border-border")}
-                    onClick={() => setFulfillmentType('DELIVERY')}
-                  >
-                    DELIVERY
-                  </button>
-                </div>
-              </div>
-
-              {fulfillmentType === 'DELIVERY' && (
-                <div className="space-y-3 p-3 bg-white border border-border rounded">
-                  <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Delivery Address</h3>
-                  <div>
-                    <input 
-                      type="text" 
-                      value={addressLine}
-                      onChange={e => setAddressLine(e.target.value)}
-                      className="w-full border border-border rounded px-3 py-1.5 text-sm mb-2"
-                      placeholder="Address Line"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      value={area}
-                      onChange={e => setArea(e.target.value)}
-                      className="w-1/2 border border-border rounded px-3 py-1.5 text-sm"
-                      placeholder="Area / Locality"
-                    />
-                    <input 
-                      type="text" 
-                      value={city}
-                      onChange={e => setCity(e.target.value)}
-                      className="w-1/2 border border-border rounded px-3 py-1.5 text-sm"
-                      placeholder="City"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      value={pincode}
-                      onChange={e => setPincode(e.target.value)}
-                      className="w-1/3 border border-border rounded px-3 py-1.5 text-sm"
-                      placeholder="Pincode"
-                    />
-                    <input 
-                      type="text" 
-                      value={landmark}
-                      onChange={e => setLandmark(e.target.value)}
-                      className="w-2/3 border border-border rounded px-3 py-1.5 text-sm"
-                      placeholder="Landmark"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-medium text-text-muted mb-1">Notes</label>
-                <input 
-                  type="text" 
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  className="w-full border border-border rounded px-3 py-1.5 text-sm"
-                  placeholder="e.g. Less spicy"
-                />
-              </div>
+                );
+              })}
             </div>
           </div>
 
-          <div className="p-4 bg-gray-50 border-b border-border flex justify-between items-center">
-            <h2 className="font-bold text-lg text-text-main">Current Order</h2>
-            <span className="text-sm font-medium text-text-muted">{cart.length} Items</span>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-text-muted opacity-50">
-                <Send className="w-12 h-12 mb-2" />
-                <p>No items added yet</p>
+          {/* Menu Items Grid */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
+            {filteredMenuItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-40 text-text-muted">
+                <p>No items available in this category.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {cart.map(item => (
-                  <div key={item.id} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium text-text-main text-sm">{item.name}</p>
-                      <p className="text-primary font-bold text-xs">₹{item.price * item.quantity}</p>
-                    </div>
-                    <div className="flex items-center space-x-3 bg-gray-100 rounded-lg p-1">
-                      <button onClick={() => handleUpdateQuantity(item.id, -1)} className="p-1 hover:bg-white rounded shadow-sm text-text-muted">
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="font-semibold text-sm w-4 text-center">{item.quantity}</span>
-                      <button onClick={() => handleUpdateQuantity(item.id, 1)} className="p-1 hover:bg-white rounded shadow-sm text-text-muted">
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 pb-20">
+                {filteredMenuItems.map(item => {
+                  const cartItem = cart.find(c => c.id === item.id);
+                  return (
+                    <FoodCard
+                      key={item.id}
+                      item={item}
+                      qty={cartItem?.quantity || 0}
+                      onAdd={handleAddToCart}
+                      onUpdateQty={handleUpdateQuantity}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
+        </div>
 
-          {cart.length > 0 && (
-            <div className="p-4 border-t border-border bg-gray-50 space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-text-muted font-medium">Subtotal</span>
-                <span className="text-lg font-bold text-text-main">₹{cartTotal}</span>
+        {/* Right Pane: Order Details & Cart */}
+        <div className="hidden lg:flex flex-col w-[35%] bg-white shrink-0 shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.1)] z-20 overflow-y-auto">
+          
+          <div className="p-5 border-b border-border bg-surface/50">
+            <h2 className="text-sm font-bold text-text-main uppercase tracking-wider mb-4">Customer Details</h2>
+            
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setSource('OFFLINE')}
+                  className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all border", source === 'OFFLINE' ? "bg-primary/10 text-primary border-primary/30" : "bg-white text-text-muted border-border")}
+                >
+                  Walk-in
+                </button>
+                <button 
+                  onClick={() => setSource('PHONE')}
+                  className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all border", source === 'PHONE' ? "bg-primary/10 text-primary border-primary/30" : "bg-white text-text-muted border-border")}
+                >
+                  Phone
+                </button>
               </div>
-              <Button onClick={handleSendToKOT} className="w-full h-12 text-lg">
-                <Send className="w-5 h-5 mr-2" /> Send to KOT
-              </Button>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-text-muted uppercase">Name</label>
+                  <input 
+                    type="text" 
+                    value={customerName} 
+                    onChange={e => setCustomerName(e.target.value)}
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-text-muted uppercase">Phone</label>
+                  <input 
+                    type="tel" 
+                    value={customerPhone} 
+                    onChange={e => setCustomerPhone(e.target.value)}
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    placeholder="9876543210"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-text-muted uppercase">Fulfillment</label>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setFulfillmentType('CUSTOMER_PICKUP')}
+                    className={cn("flex-1 py-2 rounded-lg text-xs font-bold transition-all border", fulfillmentType === 'CUSTOMER_PICKUP' ? "bg-primary/10 text-primary border-primary/30" : "bg-white text-text-muted border-border")}
+                  >
+                    Customer Pickup
+                  </button>
+                  <button 
+                    onClick={() => setFulfillmentType('DELIVERY')}
+                    className={cn("flex-1 py-2 rounded-lg text-xs font-bold transition-all border", fulfillmentType === 'DELIVERY' ? "bg-primary/10 text-primary border-primary/30" : "bg-white text-text-muted border-border")}
+                  >
+                    Delivery
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+
+          <div className="p-5 border-b border-border bg-surface/50">
+            <h2 className="text-sm font-bold text-text-main uppercase tracking-wider mb-4 flex justify-between">
+              <span>Current Order</span>
+              <span className="text-primary">{cart.length} Items</span>
+            </h2>
+          </div>
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4">
+            {cart.length === 0 ? (
+              <div className="text-center text-text-muted py-10">
+                <p>Cart is empty</p>
+                <p className="text-xs mt-1">Add items from the menu</p>
+              </div>
+            ) : (
+              cart.map(item => (
+                <div key={item.id} className="flex flex-col gap-2 p-3 bg-white border border-border rounded-xl shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <span className="font-bold text-text-main text-sm">{item.name}</span>
+                    <span className="font-bold text-text-main text-sm">₹{(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-text-sub font-semibold">₹{item.price.toFixed(2)} / each</span>
+                    <QuantityControl 
+                      count={item.quantity} 
+                      onIncrease={() => handleUpdateQuantity(item.id, 1)} 
+                      onDecrease={() => handleUpdateQuantity(item.id, -1)} 
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="p-5 bg-white border-t border-border shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] z-30">
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-sm font-semibold text-text-sub">
+                <span>Subtotal</span>
+                <span>₹{cartTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm font-semibold text-text-sub">
+                <span>Taxes (5%)</span>
+                <span>₹{(cartTotal * 0.05).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-black text-primary pt-2 border-t border-dashed border-border">
+                <span>Grand Total</span>
+                <span>₹{(cartTotal * 1.05).toFixed(2)}</span>
+              </div>
+            </div>
+            
+            <Button 
+              className="w-full h-12 text-base font-bold shadow-xl shadow-primary/30"
+              disabled={cart.length === 0}
+              onClick={handleSendToKOT}
+            >
+              Place Order & Send to Kitchen
+            </Button>
+          </div>
         </div>
       </div>
     </div>

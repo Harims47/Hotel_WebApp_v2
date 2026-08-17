@@ -4,72 +4,17 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   ArrowLeft, Plus, Minus, Send, CheckCircle, Receipt,
   ShoppingBag, Search, X, ChevronUp, Clock, Sparkles,
-  Utensils, Flame, CupSoda, Dessert, Cookie, Layers, Star
+  Utensils, Flame, CupSoda, Dessert, Cookie, Layers, Star, Trash2
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
-import { StatusPill } from '../../components/ui/Badge';
+import { Badge, StatusPill } from '../../components/ui/Badge';
 import { BottomSheet } from '../../components/ui/Modal';
 import { cn } from '../../utils/cn';
+import { CATEGORY_ICONS, FoodCard, VegNonVegDot, getMenuImage, QuantityControl } from '../../components/waiter/WaiterUI';
 import { sendOrderToKOT, pickupItem, serveItem, cancelItem, cancelOrder } from '../../features/workflows/waiterWorkflow';
 import { completeOrder } from '../../features/workflows/cashierWorkflow';
 
-const CATEGORY_IMAGES = {
-  'cat-1': 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400&q=75&auto=format&fit=crop',
-  'cat-2': 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=75&auto=format&fit=crop',
-  'cat-3': 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=75&auto=format&fit=crop',
-  'cat-4': 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=75&auto=format&fit=crop',
-  'cat-5': 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&q=75&auto=format&fit=crop',
-};
-const DEFAULT_IMG = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=75&auto=format&fit=crop';
-function getMenuImage(item) {
-  if (item.image) return item.image;
-  return CATEGORY_IMAGES[item.categoryId] || DEFAULT_IMG;
-}
 
-const CATEGORY_ICONS = {
-  'cat-1': Sparkles,
-  'cat-2': Utensils,
-  'cat-3': Flame,
-  'cat-4': CupSoda,
-  'cat-5': Dessert,
-};
-
-function VegNonVegDot({ name }) {
-  const isNonVeg = /chicken|mutton|fish|prawn|egg|meat/i.test(name);
-  return (
-    <span className={cn(
-      'inline-flex w-4 h-4 items-center justify-center border-2 rounded bg-white shrink-0 shadow-sm',
-      isNonVeg ? 'border-status-danger' : 'border-status-success'
-    )}>
-      <span className={cn('w-1.5 h-1.5 rounded-full', isNonVeg ? 'bg-status-danger' : 'bg-status-success')} />
-    </span>
-  );
-}
-
-function QuantityControl({ count, onIncrease, onDecrease }) {
-  return (
-    <div className="flex items-center gap-1.5 bg-canvas border border-border rounded-xl p-0.5">
-      <button
-        onClick={(e) => { e.stopPropagation(); onDecrease(); }}
-        className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:bg-surface hover:text-text-main transition-colors active:scale-90"
-        aria-label="Decrease quantity"
-      >
-        <Minus className="w-3.5 h-3.5" />
-      </button>
-      <span className="font-bold text-text-main text-center select-none w-6 text-sm">
-        {count}
-      </span>
-      <button
-        onClick={(e) => { e.stopPropagation(); onIncrease(); }}
-        className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors active:scale-90"
-        aria-label="Increase quantity"
-      >
-        <Plus className="w-3.5 h-3.5" />
-      </button>
-    </div>
-  );
-}
 
 export function WaiterOrderScreen() {
   const { tableId } = useParams();
@@ -88,6 +33,7 @@ export function WaiterOrderScreen() {
 
   const [activeCategory, setActiveCategory] = useState(activeCategories[0]?.id);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState(null);
   const [cart, setCart] = useState([]);
   const [showCartSheet, setShowCartSheet] = useState(false);
 
@@ -102,10 +48,19 @@ export function WaiterOrderScreen() {
     return menuItems.filter(item => {
       const isAvailable = item.isAvailable !== false && (!item.status || item.status === 'ACTIVE');
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-      if (searchQuery.trim()) return isAvailable && matchesSearch;
-      return isAvailable && item.categoryId === activeCategory;
+      
+      const isBestseller = ['mi-1', 'mi-3', 'mi-4', 'mi-9'].includes(item.id);
+      const isNonVeg = /chicken|mutton|fish|prawn|egg|meat/i.test(item.name);
+
+      let matchesFilter = true;
+      if (activeFilter === 'veg') matchesFilter = !isNonVeg;
+      else if (activeFilter === 'nonveg') matchesFilter = isNonVeg;
+      else if (activeFilter === 'bestseller' || activeFilter === 'popular') matchesFilter = isBestseller;
+
+      if (searchQuery.trim()) return isAvailable && matchesSearch && matchesFilter;
+      return isAvailable && item.categoryId === activeCategory && matchesFilter;
     });
-  }, [menuItems, activeCategory, searchQuery]);
+  }, [menuItems, activeCategory, searchQuery, activeFilter]);
 
   const handleAddToCart = useCallback((menuItem) => {
     setCart(prev => {
@@ -190,66 +145,43 @@ export function WaiterOrderScreen() {
     const menuItem = menuItems.find(m => m.id === oi.menuItemId);
     return (
       <div className={cn(
-        'p-3 rounded-xl border transition-colors',
+        'p-2.5 rounded-xl border transition-colors',
         oi.status === 'READY' ? 'bg-status-success-bg border-status-success/30 animate-pulse' :
         oi.status === 'PREPARING' ? 'bg-status-preparing-bg border-purple-200' :
         oi.status === 'SERVED' ? 'bg-canvas border-border opacity-70' :
         oi.status === 'CANCELLED' ? 'bg-status-danger-bg border-status-danger/20 opacity-50' :
         'bg-surface border-border'
       )}>
-        <div className="flex items-start justify-between gap-3 mb-1.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <VegNonVegDot name={menuItem?.name || ''} />
-            <p className="font-bold text-text-main text-xs leading-tight truncate">{menuItem?.name}</p>
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-start gap-2 min-w-0">
+            <div className="mt-0.5"><VegNonVegDot name={menuItem?.name || ''} /></div>
+            <div>
+              <p className="font-bold text-text-main text-xs leading-tight line-clamp-1">{menuItem?.name}</p>
+              <p className="text-[10px] text-text-muted mt-0.5">Qty: {oi.quantity} • ₹{oi.unitPrice * oi.quantity}</p>
+            </div>
           </div>
           <StatusPill status={oi.status} size="xs" />
-        </div>
-        <div className="flex justify-between items-center text-xs text-text-muted pl-6">
-          <span>Qty: {oi.quantity}</span>
-          <span className="font-semibold text-text-main">₹{oi.unitPrice * oi.quantity}</span>
         </div>
 
         {/* Actions */}
         {isOrderInProgress && oi.status === 'READY' && (
           activePickupItemId !== oi.id ? (
-            <Button
-              size="sm"
-              className="w-full mt-2.5 h-8 text-xs font-bold"
-              onClick={() => handlePickupClick(oi.id)}
-            >
-              Pickup Item
-            </Button>
+            <Button size="sm" className="w-full mt-2 h-7 text-[10px] font-bold" onClick={() => handlePickupClick(oi.id)}>Pickup</Button>
           ) : (
-            <div className="mt-2.5 flex gap-1.5">
-              <input
-                type="text"
-                placeholder={`Table code (${table.tableNumber})`}
-                className="flex-1 h-8 rounded-lg border border-border px-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                value={pickupCode}
-                onChange={e => setPickupCode(e.target.value)}
-              />
-              <Button size="sm" className="h-8 px-3 text-xs" variant="success" onClick={() => confirmPickup(oi.id)}>Go</Button>
-              <button
-                className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-main border border-border rounded-lg bg-surface shrink-0"
-                onClick={() => setActivePickupItemId(null)}
-              >
-                <X className="w-4 h-4" />
-              </button>
+            <div className="mt-2 flex gap-1.5">
+              <input type="text" placeholder="Code" className="w-16 h-7 rounded border border-border px-1 text-[10px] outline-none" value={pickupCode} onChange={e => setPickupCode(e.target.value)} />
+              <Button size="sm" className="h-7 px-2 text-[10px]" variant="success" onClick={() => confirmPickup(oi.id)}>Go</Button>
+              <button className="w-7 h-7 flex items-center justify-center text-text-muted border border-border rounded bg-surface shrink-0" onClick={() => setActivePickupItemId(null)}><X className="w-3 h-3" /></button>
             </div>
           )
         )}
         {isOrderInProgress && oi.status === 'PICKED_UP' && (
-          <Button size="sm" variant="secondary" className="w-full mt-2.5 h-8 text-xs font-bold" onClick={() => handleServe(oi.id)}>
-            Serve to Customer
-          </Button>
+          <Button size="sm" variant="secondary" className="w-full mt-2 h-7 text-[10px] font-bold" onClick={() => handleServe(oi.id)}>Serve</Button>
         )}
         {isOrderInProgress && ['ORDERED', 'PREPARING'].includes(oi.status) && (
-          <button
-            className="w-full mt-2 text-[10px] font-bold text-status-danger-text hover:underline py-1 text-center"
-            onClick={() => { setItemToCancel({ id: oi.id, name: menuItem?.name || 'Item' }); setCancelReason(''); }}
-          >
+          <Button variant="danger-outline" size="sm" className="w-full mt-1.5 h-7 text-[10px] font-bold" onClick={() => { setItemToCancel({ id: oi.id, name: menuItem?.name || 'Item' }); setCancelReason(''); }}>
             Cancel Item
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -276,9 +208,6 @@ export function WaiterOrderScreen() {
         {/* Section: New Cart Items */}
         {isOrderInProgress && (
           <div className="p-4">
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-3">
-              New Items to Send
-            </h3>
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-6 text-center text-text-muted">
                 <ShoppingBag className="w-5 h-5 text-text-faint mb-2" />
@@ -287,16 +216,20 @@ export function WaiterOrderScreen() {
             ) : (
               <div className="space-y-3">
                 {cart.map(item => (
-                  <div key={item.id} className="flex items-center gap-3 bg-canvas/30 rounded-xl border border-border p-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-xs text-text-main leading-tight truncate">{item.name}</p>
-                      <p className="text-xs font-bold text-primary mt-1">₹{item.price * item.quantity}</p>
+                  <div key={item.id} className="flex flex-col gap-2 pb-3 border-b border-border last:border-0 last:pb-0">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <div className="mt-0.5"><VegNonVegDot name={item.name} /></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-xs text-text-main leading-tight line-clamp-2">{item.name}</p>
+                      </div>
+                      <span className="font-extrabold text-sm text-text-main shrink-0">₹{item.price * item.quantity}</span>
                     </div>
-                    <QuantityControl
-                      count={item.quantity}
-                      onDecrease={() => handleUpdateQuantity(item.id, -1)}
-                      onIncrease={() => handleAddToCart(item)}
-                    />
+                    <div className="flex items-center justify-between pl-6">
+                      <QuantityControl count={item.quantity} onDecrease={() => handleUpdateQuantity(item.id, -1)} onIncrease={() => handleAddToCart(item)} />
+                      <button onClick={() => handleUpdateQuantity(item.id, -item.quantity)} className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:bg-canvas hover:text-status-danger transition-colors shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -306,62 +239,63 @@ export function WaiterOrderScreen() {
       </div>
 
       {/* Totals & Actions Footer */}
-      <div className="border-t border-border bg-canvas/40 p-4 shrink-0 space-y-3">
-        <div className="space-y-1.5 text-xs text-text-muted">
+      <div className="border-t border-border bg-surface p-4 shrink-0 space-y-3 shadow-[0_-4px_24px_rgba(0,0,0,0.02)] relative z-10">
+        <div className="space-y-2 text-xs font-semibold text-text-sub">
           <div className="flex justify-between">
             <span>Subtotal</span>
-            <span className="font-semibold text-text-main">₹{subtotal}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>CGST (2.5%)</span>
-            <span className="font-semibold text-text-main">₹{cgst}</span>
+            <span className="text-text-main">₹{subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
             <span>SGST (2.5%)</span>
-            <span className="font-semibold text-text-main">₹{sgst}</span>
+            <span className="text-text-main">₹{sgst.toFixed(2)}</span>
           </div>
-          <div className="border-t border-border/60 my-2 pt-2 flex justify-between text-sm font-bold text-text-main">
-            <span>Grand Total</span>
-            <span className="text-base font-extrabold text-primary">₹{grandTotal}</span>
+          <div className="flex justify-between">
+            <span>CGST (2.5%)</span>
+            <span className="text-text-main">₹{cgst.toFixed(2)}</span>
+          </div>
+          <div className="border-t border-border/60 mt-2 pt-3 flex justify-between items-center text-sm font-bold text-text-main">
+            <span className="uppercase tracking-wider">Total</span>
+            <span className="text-xl font-black text-primary">₹{grandTotal.toFixed(2)}</span>
           </div>
         </div>
 
         {isOrderInProgress && cart.length > 0 && (
           <Button
-            className="w-full h-11 text-sm font-bold"
+            variant="success"
+            className="w-full h-12 text-[15px] font-black rounded-xl"
             onClick={handleSendToKOT}
-            leftIcon={Send}
           >
             SEND TO KITCHEN
           </Button>
         )}
-        
+
         {isOrderInProgress && cart.length === 0 && allItemsFinished && (
           <Button
-            className="w-full h-11 text-sm font-bold"
+            className="w-full h-12 text-[15px] font-black rounded-xl"
             variant="success"
             onClick={handleCompleteOrder}
-            leftIcon={CheckCircle}
           >
             COMPLETE ORDER
           </Button>
         )}
 
         {isOrderInProgress && activeOrder && activeOrder.items.length > 0 && (
-          <Button
-            variant="danger-outline"
-            className="w-full h-9 text-xs font-bold"
-            onClick={handleCancelOrderClick}
-          >
-            Cancel Entire Order
-          </Button>
+          <div className="mt-2">
+            <Button
+              variant="danger"
+              className="w-full h-10 text-xs font-bold rounded-xl"
+              onClick={handleCancelOrderClick}
+            >
+              Cancel Order
+            </Button>
+          </div>
         )}
       </div>
     </div>
   );
 
   return (
-    <div className="flex flex-col h-full overflow-hidden -m-4 md:-m-6">
+    <div className="flex flex-col h-full overflow-hidden bg-canvas">
       {/* ─── Top Header ─── */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface shrink-0 gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -386,27 +320,39 @@ export function WaiterOrderScreen() {
           </div>
         </div>
 
-        {/* Search */}
-        {isOrderInProgress && (
-          <div className="relative w-48 md:w-64 shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-faint w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search dishes…"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-9 py-2 border border-border rounded-xl text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all focus:bg-surface h-10"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-faint hover:text-text-muted"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+        {/* Search & Actions */}
+        <div className="flex items-center gap-3">
+          {isOrderInProgress && (
+            <div className="relative w-48 md:w-64 shrink-0 hidden sm:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-faint w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search dishes…"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-9 py-2 border border-border rounded-xl text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all focus:bg-surface h-10 font-semibold"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-faint hover:text-text-muted"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2.5 pl-3 border-l border-border">
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-sm font-bold text-text-main leading-tight">{currentUser?.name}</span>
+              <span className="text-[10px] text-text-muted font-bold uppercase">Waiter</span>
+            </div>
+            <div className="w-9 h-9 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+              {currentUser?.name?.charAt(0)}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* ─── Bill Requested State ─── */}
@@ -422,61 +368,65 @@ export function WaiterOrderScreen() {
           <StatusPill status={activeOrder.status} />
         </div>
       ) : (
-        // ─── Order Entry Layout ───
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Horizontal Category Rail (Top) */}
+          {!searchQuery && (
+            <div className="flex items-center gap-2 overflow-x-auto category-scroll px-4 py-3 bg-surface border-b border-border shrink-0">
+            {activeCategories.map(cat => {
+              const IconComponent = CATEGORY_ICONS[cat.id] || Utensils;
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={cn(
+                    'shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border whitespace-nowrap',
+                    isActive
+                      ? 'bg-primary text-white border-primary shadow-primary-sm'
+                      : 'bg-surface text-text-sub border-border hover:border-border-strong hover:bg-canvas'
+                  )}
+                >
+                  <IconComponent className={cn('w-4 h-4', isActive ? 'text-white' : 'text-text-muted')} />
+                  <span>{cat.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Order Entry Layout */}
         <div className="flex flex-1 overflow-hidden">
           
-          {/* Categories Sidebar (Tablet Landscape + Desktop) */}
+          {/* Vertical Filter Rail (Left) */}
           {!searchQuery && (
-            <div className="hidden md:flex md:w-[130px] lg:w-[140px] flex-col border-r border-border bg-canvas/40 overflow-y-auto custom-scrollbar shrink-0 py-4 px-2.5 gap-1.5">
-              {activeCategories.map(cat => {
-                const IconComponent = CATEGORY_ICONS[cat.id] || Utensils;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={cn(
-                      'w-full flex flex-col items-center justify-center text-center p-3 rounded-2xl text-xs font-bold transition-all gap-1.5',
-                      activeCategory === cat.id
-                        ? 'bg-primary text-white shadow-primary-sm'
-                        : 'bg-surface text-text-muted border border-border hover:border-primary/20 hover:text-text-main'
-                    )}
-                  >
-                    <IconComponent className="w-5 h-5 shrink-0" />
-                    <span>{cat.name}</span>
-                  </button>
-                );
-              })}
+            <div className="hidden md:flex w-[110px] flex-col border-r border-border bg-canvas/30 overflow-y-auto custom-scrollbar shrink-0 py-3 px-2 gap-1">
+              {[
+                { id: 'popular', label: 'Popular', icon: Star },
+                { id: 'veg', label: 'Veg', icon: Sparkles },
+                { id: 'nonveg', label: 'Non-Veg', icon: Layers },
+                { id: 'bestseller', label: 'Bestseller', icon: Flame },
+              ].map(filter => (
+                <button
+                  key={filter.id}
+                  onClick={() => setActiveFilter(prev => prev === filter.id ? null : filter.id)}
+                  className={cn(
+                    'flex flex-col items-center justify-center p-3 rounded-xl text-[11px] font-bold transition-colors gap-1.5',
+                    activeFilter === filter.id 
+                      ? 'bg-primary text-white shadow-primary-sm' 
+                      : 'text-text-muted hover:text-text-main hover:bg-surface'
+                  )}
+                >
+                  <filter.icon className="w-5 h-5" />
+                  <span>{filter.label}</span>
+                </button>
+              ))}
             </div>
           )}
 
           {/* Center Content: Menu grid */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-canvas/10">
-            {/* Mobile/Portrait Category scrolling list */}
-            {!searchQuery && (
-              <div className="md:hidden category-scroll px-4 pt-3 pb-2 shrink-0 gap-2">
-                {activeCategories.map(cat => {
-                  const IconComponent = CATEGORY_ICONS[cat.id] || Utensils;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setActiveCategory(cat.id)}
-                      className={cn(
-                        'shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border whitespace-nowrap',
-                        activeCategory === cat.id
-                          ? 'bg-primary text-white border-primary shadow-primary-sm'
-                          : 'bg-surface text-text-muted border-border'
-                      )}
-                    >
-                      <IconComponent className="w-4 h-4 shrink-0" />
-                      <span>{cat.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
+          <div className="flex-1 flex flex-col overflow-hidden bg-canvas/20">
             {/* Menu Items Grid */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-5">
               {filteredMenuItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <Search className="w-10 h-10 text-text-faint mb-3" />
@@ -485,8 +435,8 @@ export function WaiterOrderScreen() {
                 </div>
               ) : (
                 <div
-                  className="grid gap-4 pb-6"
-                  style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}
+                  className="grid gap-3 lg:gap-4 pb-6"
+                  style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}
                 >
                   {filteredMenuItems.map(item => {
                     const qty = getCartQty(item.id);
@@ -494,79 +444,13 @@ export function WaiterOrderScreen() {
                     const isNew = ['mi-5', 'mi-11'].includes(item.id);
 
                     return (
-                      <div
+                      <FoodCard
                         key={item.id}
-                        className="menu-card flex flex-col group bg-surface"
-                        onClick={() => handleAddToCart(item)}
-                      >
-                        {/* Image section */}
-                        <div className="relative h-28 sm:h-32 overflow-hidden bg-canvas shrink-0">
-                          <img
-                            src={getMenuImage(item)}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            loading="lazy"
-                          />
-                          
-                          {/* Badges */}
-                          <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-                            {isBestseller && (
-                              <span className="bg-primary text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
-                                <Star className="w-2.5 h-2.5 fill-current" /> Bestseller
-                              </span>
-                            )}
-                            {isNew && (
-                              <span className="bg-status-success text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-sm">
-                                New
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Veg/Nonveg indicator */}
-                          <div className="absolute top-2 right-2 z-10">
-                            <VegNonVegDot name={item.name} />
-                          </div>
-
-                          {qty > 0 && (
-                            <div className="absolute inset-0 bg-primary/10 flex items-center justify-center backdrop-blur-[1px]">
-                              <div className="w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold shadow-primary-sm animate-scale-in">
-                                {qty}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Text Content */}
-                        <div className="p-3 flex-1 flex flex-col justify-between gap-2.5">
-                          <div className="space-y-1">
-                            <h3 className="text-sm font-bold text-text-main leading-tight group-hover:text-primary transition-colors line-clamp-1">
-                              {item.name}
-                            </h3>
-                            <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2 h-8">
-                              {item.description}
-                            </p>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="font-extrabold text-text-main text-base">₹{item.price}</span>
-                            {qty > 0 ? (
-                              <QuantityControl
-                                count={qty}
-                                onIncrease={() => handleAddToCart(item)}
-                                onDecrease={() => handleUpdateQuantity(item.id, -1)}
-                              />
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 rounded-xl font-bold text-xs px-3 text-primary border-primary/20 hover:bg-primary hover:text-white"
-                                onClick={e => { e.stopPropagation(); handleAddToCart(item); }}
-                              >
-                                + Add
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        item={item}
+                        qty={qty}
+                        onAdd={handleAddToCart}
+                        onUpdateQty={handleUpdateQuantity}
+                      />
                     );
                   })}
                 </div>
@@ -578,14 +462,22 @@ export function WaiterOrderScreen() {
           <div className="hidden lg:flex lg:w-[320px] xl:w-[350px] shrink-0 flex-col border-l border-border bg-surface overflow-hidden">
             <div className="px-5 py-4 border-b border-border bg-canvas/30 shrink-0 flex justify-between items-center">
               <h2 className="font-black text-sm uppercase tracking-wider text-text-main">Current Order</h2>
-              <Badge variant="primary" className="text-[10px] font-bold py-0.5 px-2">
-                {(activeOrder?.items?.length || 0) + cartItemCount} Items
-              </Badge>
+              <div className="flex items-center gap-2">
+                {cart.length > 0 && (
+                  <button onClick={() => setCart([])} className="text-status-danger-text hover:text-status-danger transition-colors p-1" aria-label="Clear cart">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <Badge variant="primary" className="text-[10px] font-bold py-0.5 px-2">
+                  {(activeOrder?.items?.length || 0) + cartItemCount} Items
+                </Badge>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               <CartContent />
             </div>
           </div>
+        </div>
         </div>
       )}
 

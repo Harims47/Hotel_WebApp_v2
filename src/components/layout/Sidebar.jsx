@@ -133,10 +133,9 @@ const ROLE_NAV = {
     { name: 'UOM', path: '/inventory/uom', icon: Scale },
   ],
   WAITER: [
-    { name: 'Dashboard', path: '/waiter/dashboard', icon: LayoutDashboard },
     { name: 'Tables', path: '/waiter/tables', icon: UtensilsCrossed },
-    { name: 'Menu', path: '/waiter/menu', icon: ListOrdered },
     { name: 'Orders', path: '/waiter/orders', icon: Receipt },
+    { name: 'Menu', path: '/waiter/menu', icon: ListOrdered },
   ],
   KOT: [
     { name: 'Dashboard', path: '/kot/dashboard', icon: LayoutDashboard },
@@ -146,7 +145,6 @@ const ROLE_NAV = {
     { name: 'Completed', path: '/kot/completed', icon: Receipt },
   ],
   CASHIER: [
-    { name: 'Dashboard', path: '/cashier/dashboard', icon: LayoutDashboard },
     { name: 'Bills', path: '/cashier/bills', icon: Receipt },
     { name: 'Takeaway', path: '/cashier/takeaway', icon: ShoppingBag },
     { name: 'Delivery', path: '/cashier/delivery', icon: Truck },
@@ -200,20 +198,17 @@ export function Sidebar({ isOpen, onClose }) {
         )}
       >
         {/* Brand */}
-        <div className="flex items-center justify-between h-[60px] px-5 border-b border-white/8 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Logo mark */}
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-primary-sm">
-              <span className="text-white font-black text-xs">SA</span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-white font-bold text-sm leading-tight truncate">
-                {restaurant?.name || 'Sri Annapoorna'}
-              </p>
-              <p className="text-[9px] font-semibold text-primary/80 tracking-[0.15em] uppercase mt-0.5">
-                Restaurant OS
-              </p>
-            </div>
+        <div className="flex items-center gap-3 h-[72px] px-5 border-b border-white/5 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-primary-sm">
+            <span className="text-white font-black text-sm">NS</span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-white font-bold text-sm leading-tight truncate">
+              {restaurant?.name || 'NS Resto Cafe'}
+            </p>
+            <p className="text-[9px] font-semibold text-primary tracking-widest uppercase mt-0.5">
+              Restaurant OS
+            </p>
           </div>
           {/* Mobile close button */}
           <button
@@ -244,15 +239,14 @@ export function Sidebar({ isOpen, onClose }) {
                 onClick={() => { if (window.innerWidth < 1280) onClose(); }}
                 className={({ isActive }) =>
                   cn(
-                    'relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium',
-                    'transition-all duration-150',
+                    'relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150',
                     isActive
                       ? 'bg-primary text-white shadow-primary-sm'
-                      : 'text-white/50 hover:bg-white/8 hover:text-white/90'
+                      : 'text-white/60 hover:bg-white/5 hover:text-white'
                   )
                 }
               >
-                <item.icon className="h-4.5 w-4.5 shrink-0" style={{ width: '18px', height: '18px' }} />
+                <item.icon className="w-5 h-5 shrink-0" />
                 <span className="truncate">{item.name}</span>
               </NavLink>
             );
@@ -260,24 +254,25 @@ export function Sidebar({ isOpen, onClose }) {
         </nav>
 
         {/* User + logout */}
-        <div className="border-t border-white/8 p-3 shrink-0">
-          <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
-            <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
-              <span className="text-primary font-bold text-xs">
+        <div className="border-t border-white/5 p-4 shrink-0 flex flex-col gap-3">
+          <div className="bg-sidebar-item rounded-xl p-4 flex flex-col gap-2 border border-white/5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
                 {currentUser?.name?.charAt(0) || 'U'}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-xs font-semibold truncate">{currentUser?.name}</p>
-              <RoleChip role={currentUser?.role} />
+              </div>
+              <div>
+                <p className="text-white text-sm font-bold leading-tight">{currentUser?.name || 'User'}</p>
+                <p className="text-primary text-[10px] font-bold uppercase tracking-wider">{currentUser?.role?.replace('_', ' ') || 'User'}</p>
+              </div>
             </div>
           </div>
+          
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl text-white/40 hover:bg-white/8 hover:text-white/80 transition-all duration-150"
+            className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl text-white/50 hover:bg-white/5 hover:text-white transition-all duration-150"
           >
-            <LogOut className="h-4 w-4 shrink-0" />
-            Sign Out
+            <LogOut className="w-5 h-5 shrink-0" />
+            Logout
           </button>
         </div>
       </aside>
