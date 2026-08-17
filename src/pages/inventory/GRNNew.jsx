@@ -278,15 +278,15 @@ export function GRNNew() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {!isDirectPurchase && (
-                  <Input label="Input" hideLabel 
-                    label="Purchase Order" 
-                    value={purchaseOrders.find(p => p.id === grnData.poId)?.poNumber || ''} 
-                    disabled 
+                  <Input
+                    label="Purchase Order"
+                    value={purchaseOrders.find(p => p.id === grnData.poId)?.poNumber || ''}
+                    disabled
                   />
                 )}
-                <Select label="Select" hideLabel 
-                  label="Supplier" 
-                  value={grnData.supplierId} 
+                <Select
+                  label="Supplier"
+                  value={grnData.supplierId}
                   onChange={e => setGrnData({...grnData, supplierId: e.target.value})}
                   disabled={!isDirectPurchase} // Locked if from PO
                   options={[
@@ -294,32 +294,32 @@ export function GRNNew() {
                     ...activeSuppliers.map(s => ({ value: s.id, label: s.name }))
                   ]}
                 />
-                <Select label="Location" hideLabel 
-                  label="Receiving Location" 
-                  value={grnData.locationId} 
+                <Select
+                  label="Receiving Location"
+                  value={grnData.locationId}
                   onChange={e => setGrnData({...grnData, locationId: e.target.value})}
                   options={[
                     { value: '', label: 'Select Location...' },
                     ...activeLocations.map(l => ({ value: l.id, label: l.name }))
                   ]}
                 />
-                <Input label="Input" hideLabel type="date" 
-                  label="GRN Date" 
-                  value={grnData.grnDate} 
-                  onChange={e => setGrnData({...grnData, grnDate: e.target.value})} 
+                <Input type="date"
+                  label="GRN Date"
+                  value={grnData.grnDate}
+                  onChange={e => setGrnData({...grnData, grnDate: e.target.value})}
                 />
-                <Input label="Input" hideLabel 
-                  label="Supplier Invoice No." 
-                  value={grnData.supplierInvoiceNumber} 
-                  onChange={e => setGrnData({...grnData, supplierInvoiceNumber: e.target.value})} 
+                <Input
+                  label="Supplier Invoice No."
+                  value={grnData.supplierInvoiceNumber}
+                  onChange={e => setGrnData({...grnData, supplierInvoiceNumber: e.target.value})}
                   placeholder="Optional"
                 />
               </div>
               <div className="mt-4">
-                <Input label="Input" hideLabel 
-                  label="Notes" 
-                  value={grnData.notes} 
-                  onChange={e => setGrnData({...grnData, notes: e.target.value})} 
+                <Input
+                  label="Notes"
+                  value={grnData.notes}
+                  onChange={e => setGrnData({...grnData, notes: e.target.value})}
                 />
               </div>
             </CardContent>

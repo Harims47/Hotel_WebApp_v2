@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -70,10 +70,17 @@ export function PurchaseOrderNew() {
     }
   }, [editId, existingPO, navigate]);
 
-  // Check if we arrived from Low Stock with a prefilled item
+  // Check if we arrived from Low Stock with a prefilled item.
+  // Guarded by a ref so it applies exactly once, even though `items`/`activeSuppliers`
+  // are recreated every render (window.history.replaceState does not clear
+  // React Router's in-memory location.state, so this effect would otherwise
+  // re-fire — and re-add the item — on every subsequent re-render).
+  const prefillAppliedRef = useRef(false);
+  const prefilledItemId = location.state?.prefilledItem;
   useEffect(() => {
-    if (!editId && location.state?.prefilledItem) {
-      const item = items.find(i => i.id === location.state.prefilledItem);
+    if (!editId && prefilledItemId && !prefillAppliedRef.current) {
+      prefillAppliedRef.current = true;
+      const item = items.find(i => i.id === prefilledItemId);
       if (item && item.status === 'ACTIVE') {
         if (item.preferredSupplierId) {
           const supplier = activeSuppliers.find(s => s.id === item.preferredSupplierId);
@@ -85,7 +92,7 @@ export function PurchaseOrderNew() {
       }
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, items, activeSuppliers, editId]);
+  }, [prefilledItemId, editId]);
 
   const handleAddEmptyItem = (prefillItemId = '') => {
     setPoItems(prev => [...prev, {
@@ -259,28 +266,28 @@ export function PurchaseOrderNew() {
             <CardHeader><CardTitle>Order Details</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Select label="Select" hideLabel 
-                  label="Supplier" 
-                  value={poData.supplierId} 
+                <Select
+                  label="Supplier"
+                  value={poData.supplierId}
                   onChange={e => setPoData({...poData, supplierId: e.target.value})}
                   options={[
                     { value: '', label: 'Select a supplier...' },
                     ...activeSuppliers.map(s => ({ value: s.id, label: s.name }))
                   ]}
                 />
-                <Input label="Input" hideLabel type="date" 
-                  label="Order Date" 
-                  value={poData.orderDate} 
-                  onChange={e => setPoData({...poData, orderDate: e.target.value})} 
+                <Input type="date"
+                  label="Order Date"
+                  value={poData.orderDate}
+                  onChange={e => setPoData({...poData, orderDate: e.target.value})}
                 />
-                <Input label="Input" hideLabel type="date" 
-                  label="Expected Delivery Date" 
-                  value={poData.expectedDeliveryDate} 
-                  onChange={e => setPoData({...poData, expectedDeliveryDate: e.target.value})} 
+                <Input type="date"
+                  label="Expected Delivery Date"
+                  value={poData.expectedDeliveryDate}
+                  onChange={e => setPoData({...poData, expectedDeliveryDate: e.target.value})}
                 />
               </div>
               <div className="mt-4">
-                <Input label="Input" hideLabel 
+                <Input
                   label="Notes" 
                   value={poData.notes} 
                   onChange={e => setPoData({...poData, notes: e.target.value})} 

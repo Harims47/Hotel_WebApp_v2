@@ -112,9 +112,9 @@ export function LocationsMaster() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Input label="Location Code" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} placeholder="e.g. LOC-MAIN" />
               <Input label="Location Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-              <Select label="Select" hideLabel 
-                label="Type" 
-                value={formData.type} 
+              <Select
+                label="Type"
+                value={formData.type}
                 onChange={e => setFormData({...formData, type: e.target.value})}
                 options={[
                   { value: 'STORE', label: 'Store' },

@@ -177,7 +177,7 @@ export function InventoryReports() {
   };
 
   const renderPurchases = () => {
-    let filteredPOs = pos.filter(po => isWithinDateRange(po.poDate));
+    let filteredPOs = pos.filter(po => isWithinDateRange(po.orderDate));
     return (
       <div className="overflow-x-auto">
         <Table>
@@ -194,12 +194,12 @@ export function InventoryReports() {
           <tbody>
             {filteredPOs.map((po, idx) => {
               const supplier = suppliers.find(s => s.id === po.supplierId);
-              const orderedTotal = po.items?.reduce((sum, i) => sum + (i.totalAmount || 0), 0) || 0;
+              const orderedTotal = po.items?.reduce((sum, i) => sum + (i.amount || 0), 0) || 0;
               const receivedCount = po.items?.reduce((sum, i) => sum + (i.receivedQuantity || 0), 0) || 0;
               const orderedCount = po.items?.reduce((sum, i) => sum + (i.quantity || 0), 0) || 0;
               return (
                 <tr key={idx}>
-                  <Table.Td>{new Date(po.poDate).toLocaleDateString()}</Table.Td>
+                  <Table.Td>{new Date(po.orderDate).toLocaleDateString()}</Table.Td>
                   <Table.Td>{po.poNumber}</Table.Td>
                   <Table.Td>{supplier?.name}</Table.Td>
                   <Table.Td><Badge variant="secondary">{po.status}</Badge></Table.Td>
@@ -215,7 +215,7 @@ export function InventoryReports() {
   };
 
   const renderIssues = () => {
-    let filteredIssues = issues.filter(i => isWithinDateRange(i.date));
+    let filteredIssues = issues.filter(i => isWithinDateRange(i.issueDate));
     if (locationFilter !== 'ALL') filteredIssues = filteredIssues.filter(i => i.fromLocationId === locationFilter);
     return (
       <div className="overflow-x-auto">
@@ -234,13 +234,13 @@ export function InventoryReports() {
           <tbody>
             {filteredIssues.map((issue, idx) => (
               <tr key={idx}>
-                <Table.Td>{new Date(issue.date).toLocaleDateString()}</Table.Td>
+                <Table.Td>{new Date(issue.issueDate).toLocaleDateString()}</Table.Td>
                 <Table.Td>{issue.issueNumber}</Table.Td>
                 <Table.Td>{getLocationName(issue.fromLocationId)}</Table.Td>
-                <Table.Td>{issue.toLocationId ? getLocationName(issue.toLocationId) : issue.departmentName}</Table.Td>
+                <Table.Td>{issue.toLocationId ? getLocationName(issue.toLocationId) : (issue.department || '-')}</Table.Td>
                 <Table.Td>{issue.items?.length || 0}</Table.Td>
                 <Table.Td><Badge variant={issue.status === 'CONFIRMED' ? 'success' : 'secondary'}>{issue.status}</Badge></Table.Td>
-                <Table.Td>{formatCurrency(issue.totalValue)}</Table.Td>
+                <Table.Td>{formatCurrency(issue.total)}</Table.Td>
               </tr>
             ))}
           </tbody>
@@ -250,7 +250,7 @@ export function InventoryReports() {
   };
 
   const renderWaste = () => {
-    let filteredWaste = waste.filter(w => isWithinDateRange(w.date));
+    let filteredWaste = waste.filter(w => isWithinDateRange(w.wasteDate));
     if (locationFilter !== 'ALL') filteredWaste = filteredWaste.filter(w => w.locationId === locationFilter);
     return (
       <div className="overflow-x-auto">
@@ -269,13 +269,13 @@ export function InventoryReports() {
           <tbody>
             {filteredWaste.map((w, idx) => (
               <tr key={idx}>
-                <Table.Td>{new Date(w.date).toLocaleDateString()}</Table.Td>
+                <Table.Td>{new Date(w.wasteDate).toLocaleDateString()}</Table.Td>
                 <Table.Td>{w.wasteNumber}</Table.Td>
                 <Table.Td>{getLocationName(w.locationId)}</Table.Td>
                 <Table.Td>{w.reason}</Table.Td>
                 <Table.Td>{w.items?.length || 0}</Table.Td>
                 <Table.Td><Badge variant={w.status === 'CONFIRMED' ? 'success' : 'secondary'}>{w.status}</Badge></Table.Td>
-                <Table.Td className="text-status-danger">{formatCurrency(w.totalValue)}</Table.Td>
+                <Table.Td className="text-status-danger">{formatCurrency(w.total)}</Table.Td>
               </tr>
             ))}
           </tbody>
@@ -285,7 +285,7 @@ export function InventoryReports() {
   };
 
   const renderTransfers = () => {
-    let filteredTransfers = transfers.filter(t => isWithinDateRange(t.date));
+    let filteredTransfers = transfers.filter(t => isWithinDateRange(t.transferDate));
     if (locationFilter !== 'ALL') filteredTransfers = filteredTransfers.filter(t => t.fromLocationId === locationFilter || t.toLocationId === locationFilter);
     return (
       <div className="overflow-x-auto">
@@ -303,7 +303,7 @@ export function InventoryReports() {
           <tbody>
             {filteredTransfers.map((t, idx) => (
               <tr key={idx}>
-                <Table.Td>{new Date(t.date).toLocaleDateString()}</Table.Td>
+                <Table.Td>{new Date(t.transferDate).toLocaleDateString()}</Table.Td>
                 <Table.Td>{t.transferNumber}</Table.Td>
                 <Table.Td>{getLocationName(t.fromLocationId)}</Table.Td>
                 <Table.Td>{getLocationName(t.toLocationId)}</Table.Td>
@@ -318,7 +318,7 @@ export function InventoryReports() {
   };
 
   const renderAdjustments = () => {
-    let filteredAdj = adjustments.filter(a => isWithinDateRange(a.date));
+    let filteredAdj = adjustments.filter(a => isWithinDateRange(a.adjustmentDate));
     if (locationFilter !== 'ALL') filteredAdj = filteredAdj.filter(a => a.locationId === locationFilter);
     return (
       <div className="overflow-x-auto">
@@ -337,7 +337,7 @@ export function InventoryReports() {
           <tbody>
             {filteredAdj.map((a, idx) => (
               <tr key={idx}>
-                <Table.Td>{new Date(a.date).toLocaleDateString()}</Table.Td>
+                <Table.Td>{new Date(a.adjustmentDate).toLocaleDateString()}</Table.Td>
                 <Table.Td>{a.adjustmentNumber}</Table.Td>
                 <Table.Td>{getLocationName(a.locationId)}</Table.Td>
                 <Table.Td>{a.reason}</Table.Td>
@@ -394,8 +394,8 @@ export function InventoryReports() {
 
   const renderSupplierSummary = () => {
     const summary = suppliers.map(supplier => {
-      const suppPOs = pos.filter(po => po.supplierId === supplier.id && isWithinDateRange(po.poDate));
-      const orderedValue = suppPOs.reduce((sum, po) => sum + po.items.reduce((s, i) => s + (i.totalAmount || 0), 0), 0);
+      const suppPOs = pos.filter(po => po.supplierId === supplier.id && isWithinDateRange(po.orderDate));
+      const orderedValue = suppPOs.reduce((sum, po) => sum + po.items.reduce((s, i) => s + (i.amount || 0), 0), 0);
       const receivedValue = suppPOs.reduce((sum, po) => sum + po.items.reduce((s, i) => s + ((i.receivedQuantity || 0) * (i.unitRate || 0)), 0), 0);
       return {
         ...supplier,
@@ -488,12 +488,12 @@ export function InventoryReports() {
       <Card>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-gray-50/50 p-4 rounded-xl border border-border">
-            <Input label="Input" hideLabel type="date"
+            <Input type="date"
               label="Date From"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
             />
-            <Input label="Input" hideLabel type="date"
+            <Input type="date"
               label="Date To"
               value={dateTo}
               onChange={e => setDateTo(e.target.value)}

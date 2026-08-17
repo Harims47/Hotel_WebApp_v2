@@ -147,28 +147,28 @@ export function ItemsMaster() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Input label="Item Code" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} placeholder="e.g. ITEM-001" />
               <Input label="Item Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-              <Select label="Select" hideLabel 
-                label="Category" 
-                value={formData.categoryId} 
+              <Select
+                label="Category"
+                value={formData.categoryId}
                 onChange={e => setFormData({...formData, categoryId: e.target.value})}
                 options={[{value:'', label:'Select Category'}, ...activeCategories.map(c => ({ value: c.id, label: c.name }))]}
               />
-              <Select label="Select" hideLabel 
-                label="Preferred Supplier" 
-                value={formData.preferredSupplierId} 
+              <Select
+                label="Preferred Supplier"
+                value={formData.preferredSupplierId}
                 onChange={e => setFormData({...formData, preferredSupplierId: e.target.value})}
                 options={[{value:'', label:'None'}, ...activeSuppliers.map(s => ({ value: s.id, label: s.name }))]}
               />
-              
-              <Select label="Select" hideLabel 
-                label="Base UOM" 
-                value={formData.baseUomId} 
+
+              <Select
+                label="Base UOM"
+                value={formData.baseUomId}
                 onChange={e => setFormData({...formData, baseUomId: e.target.value})}
                 options={[{value:'', label:'Select UOM'}, ...activeUoms.map(u => ({ value: u.id, label: `${u.name} (${u.code})` }))]}
               />
-              <Select label="Select" hideLabel 
-                label="Purchase UOM" 
-                value={formData.purchaseUomId} 
+              <Select
+                label="Purchase UOM"
+                value={formData.purchaseUomId}
                 onChange={e => setFormData({...formData, purchaseUomId: e.target.value})}
                 options={[{value:'', label:'Select UOM'}, ...activeUoms.map(u => ({ value: u.id, label: `${u.name} (${u.code})` }))]}
               />

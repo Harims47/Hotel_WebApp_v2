@@ -82,12 +82,15 @@ export const completeOrder = (orderId, waiterId) => (dispatch, getState) => {
   dispatch(createBill(newBill));
 
   // Notify Cashier
+  const orderLocationLabel = order.tableId
+    ? `Table ${state.tables.data.find(t => t.id === order.tableId)?.tableNumber || 'Unknown'}`
+    : `${order.orderType === 'TAKEAWAY' ? (order.fulfillmentType === 'DELIVERY' ? 'Delivery' : 'Takeaway') : 'Order'}${order.customerName ? ` (${order.customerName})` : ''}`;
   dispatch(addNotification({
     id: `notif-${uuidv4()}`,
     userId: null, // Broadcast to roles if we supported it, but we can target CASHIER users
     role: 'CASHIER',
     title: 'New Bill Request',
-    message: `Table ${state.tables.data.find(t => t.id === order.tableId)?.tableNumber} (Order #${order.orderNumber}) requested bill. Total: ₹${grandTotal.toFixed(2)}`,
+    message: `${orderLocationLabel} (Order #${order.orderNumber}) requested bill. Total: ₹${grandTotal.toFixed(2)}`,
     type: 'INFO',
     referenceId: billId,
     isRead: false,

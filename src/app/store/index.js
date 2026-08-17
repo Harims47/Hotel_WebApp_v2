@@ -33,7 +33,7 @@ import {
 } from '../../features/inventory/inventorySlices';
 
 // A modified loadState that injects initial states for new modules
-const rawPreloadedState = loadState();
+const { _version, ...rawPreloadedState } = loadState();
 const preloadedState = {
   ...rawPreloadedState,
   invStock: rawPreloadedState.invStock || { data: [] },

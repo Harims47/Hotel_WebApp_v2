@@ -82,7 +82,7 @@ export function CashierBillDetails() {
       if (discountType === 'AMOUNT') setDiscountValue(subtotal);
     }
     
-    const taxAmount = ((subtotal - discountAmount) * bill?.taxRate || 5) / 100;
+    const taxAmount = ((subtotal - discountAmount) * (bill?.taxRate ?? 5)) / 100;
     const grandTotal = subtotal - discountAmount + taxAmount;
     
     return { subtotal, discountPercentage, discountAmount, taxAmount, grandTotal };

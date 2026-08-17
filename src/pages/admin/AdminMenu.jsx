@@ -29,6 +29,7 @@ export function AdminMenu() {
 
   const [showCreateItem, setShowCreateItem] = useState(false);
   const [newItem, setNewItem] = useState({ name: '', categoryId: categories[0]?.id || '', price: '', description: '' });
+  const [priceEdits, setPriceEdits] = useState({});
 
   const filteredCategories = categories.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()));
   const filteredItems = items.filter(i => !search || i.name.toLowerCase().includes(search.toLowerCase()));
@@ -101,7 +102,11 @@ export function AdminMenu() {
 
   const changeItemPrice = (item, price) => {
     const newPrice = Number(price);
-    if (newPrice === item.price) return;
+    setPriceEdits(prev => {
+      const { [item.id]: _, ...rest } = prev;
+      return rest;
+    });
+    if (Number.isNaN(newPrice) || newPrice === item.price) return;
     dispatch(updateMenuItem({ id: item.id, price: newPrice }));
     dispatch(logAction({
       id: `log-${uuidv4()}`,
@@ -261,7 +266,7 @@ export function AdminMenu() {
                       </select>
                     </Table.Td>
                     <Table.Td className="font-bold text-primary">
-                      ₹ <input type="number" value={item.price} onBlur={(e) => changeItemPrice(item, e.target.value)} onChange={(e) => {}} onKeyDown={(e) => {if(e.key==='Enter') changeItemPrice(item, e.target.value)}} className="border border-border p-1 rounded-lg w-20 text-text-main ml-1 outline-none focus:border-primary" placeholder={item.price} />
+                      ₹ <input type="number" value={priceEdits[item.id] ?? item.price} onChange={(e) => setPriceEdits(prev => ({ ...prev, [item.id]: e.target.value }))} onBlur={(e) => changeItemPrice(item, e.target.value)} onKeyDown={(e) => {if(e.key==='Enter') e.target.blur();}} className="border border-border p-1 rounded-lg w-20 text-text-main ml-1 outline-none focus:border-primary" placeholder={item.price} />
                     </Table.Td>
                     <Table.Td>
                       <Badge variant={(!item.status || item.status === 'ACTIVE') ? 'success' : 'danger'}>

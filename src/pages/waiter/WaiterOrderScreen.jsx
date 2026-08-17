@@ -267,7 +267,7 @@ export function WaiterOrderScreen() {
             <h2 className="font-bold text-lg text-text-main flex items-center justify-between">
               Order Summary
               <span className="text-sm font-medium text-text-muted bg-gray-200/50 px-2.5 py-1 rounded-md">
-                {activeOrder?.items?.length || 0} items
+                {(activeOrder?.items?.length || 0) + cart.reduce((sum, item) => sum + item.quantity, 0)} items
               </span>
             </h2>
           </div>
