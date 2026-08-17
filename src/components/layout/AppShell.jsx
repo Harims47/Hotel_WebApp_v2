@@ -80,14 +80,14 @@ export function AppShell() {
   }
 
   return (
-    <div className="flex h-screen bg-peach-soft overflow-hidden relative">
-      <Toaster position="top-right" richColors />
+    <div className="flex h-screen bg-canvas overflow-hidden relative">
+      <Toaster position="top-right" richColors expand={false} gap={8} />
       <AudioNotifier />
       <TimerEngine />
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
           <Outlet />
         </main>
       </div>

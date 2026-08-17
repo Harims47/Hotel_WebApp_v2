@@ -1,12 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Bell, User, X, Menu } from 'lucide-react';
+import { Bell, X, Menu, ChevronRight } from 'lucide-react';
 import { resetDemoData } from '../../services/persistence/localStorage';
 import { Button } from '../ui/Button';
 import { markNotificationRead } from '../../features/notifications/notificationsSlice';
 import { updateOrderItem } from '../../features/orders/ordersSlice';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '../../utils/cn';
+
+function timeAgo(isoString) {
+  if (!isoString) return '';
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 export function Header({ onToggleSidebar }) {
   const navigate = useNavigate();
@@ -14,17 +26,20 @@ export function Header({ onToggleSidebar }) {
   const { currentUser } = useSelector(state => state.auth);
   const restaurant = useSelector(state => state.restaurant.data);
   const allNotifications = useSelector(state => state.notifications.data);
-  
+
   const notifications = React.useMemo(() => {
-    return allNotifications.filter(n => n.userId === currentUser?.id || n.role === currentUser?.role);
+    return allNotifications
+      .filter(n => n.userId === currentUser?.id || n.role === currentUser?.role)
+      .slice()
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 30);
   }, [allNotifications, currentUser?.id, currentUser?.role]);
-  
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const [showDropdown, setShowDropdown] = useState(false);
-  
+  const dropdownRef = useRef(null);
   const toastedIds = useRef(new Set());
 
-  // Show toast for new unread notifications
   useEffect(() => {
     notifications.forEach(n => {
       if (!n.isRead && !toastedIds.current.has(n.id)) {
@@ -35,7 +50,7 @@ export function Header({ onToggleSidebar }) {
             label: 'View',
             onClick: () => {
               dispatch(markNotificationRead(n.id));
-              if (n.referenceId) {
+              if (n.referenceId && currentUser?.role === 'WAITER') {
                 navigate('/waiter/tables');
               }
             }
@@ -43,14 +58,23 @@ export function Header({ onToggleSidebar }) {
         });
       }
     });
-  }, [notifications, dispatch, navigate]);
+  }, [notifications, dispatch, navigate, currentUser?.role]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handler(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleNotificationClick = (n) => {
     dispatch(markNotificationRead(n.id));
     setShowDropdown(false);
-    if (n.referenceId && currentUser?.role === 'WAITER') {
-      navigate('/waiter/tables');
-    }
+    if (n.referenceId && currentUser?.role === 'WAITER') navigate('/waiter/tables');
   };
 
   const handleSnooze = (e, n) => {
@@ -61,64 +85,118 @@ export function Header({ onToggleSidebar }) {
       orderItemId: n.orderItemId,
       updates: { snoozedUntil: new Date(Date.now() + 5 * 60 * 1000).toISOString() }
     }));
-    toast.success("Reminder snoozed for 5 minutes");
+    toast.success('Reminder snoozed for 5 minutes');
+  };
+
+  const markAllRead = () => {
+    notifications.filter(n => !n.isRead).forEach(n => dispatch(markNotificationRead(n.id)));
   };
 
   return (
-    <header className="h-16 bg-surface border-b border-border/60 flex items-center justify-between px-4 md:px-8 relative z-30 shadow-sm shrink-0">
-      <div className="flex items-center gap-4">
-        <button 
+    <header className="h-[60px] bg-surface border-b border-border flex items-center justify-between px-4 md:px-6 relative z-30 shrink-0 shadow-header">
+      {/* Left: hamburger */}
+      <div className="flex items-center gap-3">
+        <button
           onClick={onToggleSidebar}
-          className="xl:hidden p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-primary-light"
+          className="xl:hidden w-9 h-9 flex items-center justify-center text-text-muted hover:text-primary hover:bg-primary-light rounded-xl transition-colors"
+          aria-label="Toggle sidebar"
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="flex items-center space-x-6">
-        <Button variant="outline" size="sm" onClick={resetDemoData} className="text-xs">
-          Reset Demo Data
+      {/* Right: actions */}
+      <div className="flex items-center gap-2 md:gap-3">
+        <Button
+          variant="ghost"
+          size="xs"
+          onClick={resetDemoData}
+          className="hidden sm:inline-flex text-text-muted text-xs"
+        >
+          Reset Data
         </Button>
 
-        <div className="relative">
-          <button 
-            className="relative p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-primary-light"
-            onClick={() => setShowDropdown(!showDropdown)}
+        {/* Notifications */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            className="relative w-9 h-9 flex items-center justify-center text-text-muted hover:text-primary hover:bg-primary-light rounded-xl transition-colors"
+            onClick={() => setShowDropdown(v => !v)}
+            aria-label="Notifications"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-surface" />
+              <span className="absolute top-1.5 right-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white ring-2 ring-surface">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
-          
+
           {showDropdown && (
-            <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-xl border border-border overflow-hidden z-50">
-              <div className="flex justify-between items-center p-4 border-b border-border bg-gray-50/50">
-                <span className="font-semibold text-sm text-text-main">Notifications</span>
-                <button onClick={() => setShowDropdown(false)} className="text-text-muted hover:text-text-main transition-colors p-1 rounded-full hover:bg-gray-100"><X className="w-4 h-4" /></button>
+            <div className="absolute right-0 mt-2 w-[340px] md:w-[380px] bg-surface rounded-2xl shadow-modal border border-border overflow-hidden z-50 animate-slide-down">
+              <div className="flex items-center justify-between px-4 py-3.5 border-b border-border bg-canvas">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-text-main">Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 bg-primary text-white rounded-full text-[10px] font-bold">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllRead}
+                      className="text-[11px] font-semibold text-primary hover:text-primary-dark px-2 py-1 rounded-lg hover:bg-primary-light transition-colors"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowDropdown(false)}
+                    className="p-1.5 text-text-muted hover:text-text-main hover:bg-border rounded-lg transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-              <div className="max-h-96 overflow-y-auto custom-scrollbar">
+
+              <div className="max-h-[420px] overflow-y-auto custom-scrollbar divide-y divide-border/60">
                 {notifications.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-text-muted">No notifications</div>
+                  <div className="py-12 text-center">
+                    <Bell className="w-8 h-8 text-border mx-auto mb-3" />
+                    <p className="text-sm font-medium text-text-muted">No notifications yet</p>
+                  </div>
                 ) : (
                   notifications.map(n => (
-                    <div 
-                      key={n.id} 
-                      className={`p-4 border-b border-border last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors ${!n.isRead ? 'bg-primary-light/30' : ''}`}
+                    <div
+                      key={n.id}
+                      className={cn(
+                        'px-4 py-3.5 cursor-pointer hover:bg-canvas transition-colors',
+                        !n.isRead && 'bg-primary-lighter'
+                      )}
                       onClick={() => handleNotificationClick(n)}
                     >
-                      <div className="flex justify-between items-start">
-                        <span className="font-semibold text-sm text-text-main pr-4 leading-tight">{n.title}</span>
-                        {!n.isRead && <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1"></span>}
-                      </div>
-                      <p className="text-xs text-text-muted mt-1.5 leading-relaxed">{n.message}</p>
-                      {n.actionRequired === 'SNOOZE' && !n.isRead && (
-                        <div className="mt-3">
-                          <Button size="sm" variant="outline" className="w-full text-xs h-8" onClick={(e) => handleSnooze(e, n)}>
-                            Snooze 5 min
-                          </Button>
+                      <div className="flex items-start gap-3">
+                        <div className={cn(
+                          'mt-0.5 w-2 h-2 rounded-full shrink-0',
+                          !n.isRead ? 'bg-primary' : 'bg-transparent'
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-semibold text-text-main leading-tight">{n.title}</p>
+                            <span className="text-[10px] text-text-muted shrink-0 mt-0.5">{timeAgo(n.createdAt)}</span>
+                          </div>
+                          <p className="text-xs text-text-muted mt-1 leading-relaxed">{n.message}</p>
+                          {n.actionRequired === 'SNOOZE' && !n.isRead && (
+                            <button
+                              onClick={(e) => handleSnooze(e, n)}
+                              className="mt-2 text-xs font-semibold text-primary hover:text-primary-dark"
+                            >
+                              Snooze 5 min
+                            </button>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   ))
                 )}
@@ -127,13 +205,16 @@ export function Header({ onToggleSidebar }) {
           )}
         </div>
 
-        <div className="flex items-center space-x-3 border-l border-border pl-6">
-          <div className="flex flex-col items-end">
-            <span className="text-sm font-semibold text-text-main">{currentUser?.name}</span>
-            <span className="text-xs text-text-muted capitalize">{currentUser?.role.replace('_', ' ').toLowerCase()}</span>
+        {/* User chip */}
+        <div className="flex items-center gap-2.5 pl-3 border-l border-border">
+          <div className="hidden sm:flex flex-col items-end">
+            <span className="text-sm font-semibold text-text-main leading-tight">{currentUser?.name}</span>
+            <span className="text-[10px] text-text-muted font-medium capitalize">
+              {currentUser?.role?.replace(/_/g, ' ').toLowerCase()}
+            </span>
           </div>
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold ring-2 ring-primary/20">
-            <User className="h-5 w-5" />
+          <div className="w-9 h-9 rounded-full bg-primary/15 border-2 border-primary/30 flex items-center justify-center text-primary font-bold text-sm">
+            {currentUser?.name?.charAt(0) || 'U'}
           </div>
         </div>
       </div>

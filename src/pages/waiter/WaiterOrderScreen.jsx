@@ -1,14 +1,75 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { ArrowLeft, Plus, Minus, Send, CheckCircle, Receipt, ShoppingBag, Search } from 'lucide-react';
-import { Card, CardContent } from '../../components/ui/Card';
+import {
+  ArrowLeft, Plus, Minus, Send, CheckCircle, Receipt,
+  ShoppingBag, Search, X, ChevronUp, Clock, Sparkles,
+  Utensils, Flame, CupSoda, Dessert, Cookie, Layers, Star
+} from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { StatusPill } from '../../components/ui/Badge';
+import { BottomSheet } from '../../components/ui/Modal';
+import { cn } from '../../utils/cn';
 import { sendOrderToKOT, pickupItem, serveItem, cancelItem, cancelOrder } from '../../features/workflows/waiterWorkflow';
 import { completeOrder } from '../../features/workflows/cashierWorkflow';
-import { cn } from '../../utils/cn';
-import { X } from 'lucide-react';
+
+const CATEGORY_IMAGES = {
+  'cat-1': 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400&q=75&auto=format&fit=crop',
+  'cat-2': 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&q=75&auto=format&fit=crop',
+  'cat-3': 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=75&auto=format&fit=crop',
+  'cat-4': 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=75&auto=format&fit=crop',
+  'cat-5': 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&q=75&auto=format&fit=crop',
+};
+const DEFAULT_IMG = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=75&auto=format&fit=crop';
+function getMenuImage(item) {
+  if (item.image) return item.image;
+  return CATEGORY_IMAGES[item.categoryId] || DEFAULT_IMG;
+}
+
+const CATEGORY_ICONS = {
+  'cat-1': Sparkles,
+  'cat-2': Utensils,
+  'cat-3': Flame,
+  'cat-4': CupSoda,
+  'cat-5': Dessert,
+};
+
+function VegNonVegDot({ name }) {
+  const isNonVeg = /chicken|mutton|fish|prawn|egg|meat/i.test(name);
+  return (
+    <span className={cn(
+      'inline-flex w-4 h-4 items-center justify-center border-2 rounded bg-white shrink-0 shadow-sm',
+      isNonVeg ? 'border-status-danger' : 'border-status-success'
+    )}>
+      <span className={cn('w-1.5 h-1.5 rounded-full', isNonVeg ? 'bg-status-danger' : 'bg-status-success')} />
+    </span>
+  );
+}
+
+function QuantityControl({ count, onIncrease, onDecrease }) {
+  return (
+    <div className="flex items-center gap-1.5 bg-canvas border border-border rounded-xl p-0.5">
+      <button
+        onClick={(e) => { e.stopPropagation(); onDecrease(); }}
+        className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:bg-surface hover:text-text-main transition-colors active:scale-90"
+        aria-label="Decrease quantity"
+      >
+        <Minus className="w-3.5 h-3.5" />
+      </button>
+      <span className="font-bold text-text-main text-center select-none w-6 text-sm">
+        {count}
+      </span>
+      <button
+        onClick={(e) => { e.stopPropagation(); onIncrease(); }}
+        className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors active:scale-90"
+        aria-label="Increase quantity"
+      >
+        <Plus className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
 
 export function WaiterOrderScreen() {
   const { tableId } = useParams();
@@ -19,21 +80,20 @@ export function WaiterOrderScreen() {
   const table = useSelector(state => state.tables.data.find(t => t.id === tableId));
   const menuCategories = useSelector(state => state.menu.categories);
   const menuItems = useSelector(state => state.menu.items);
-  
-  // Find active order for this table (anything not CLOSED)
-  const activeOrder = useSelector(state => state.orders.data.find(o => o.tableId === tableId && o.status !== 'CLOSED'));
-  
+  const activeOrder = useSelector(state =>
+    state.orders.data.find(o => o.tableId === tableId && o.status !== 'CLOSED')
+  );
+
   const activeCategories = useMemo(() => menuCategories.filter(c => !c.status || c.status === 'ACTIVE'), [menuCategories]);
-  
+
   const [activeCategory, setActiveCategory] = useState(activeCategories[0]?.id);
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState([]);
-  
-  // For static pickup code
+  const [showCartSheet, setShowCartSheet] = useState(false);
+
+  // Cancel/pickup state
   const [pickupCode, setPickupCode] = useState('');
   const [activePickupItemId, setActivePickupItemId] = useState(null);
-
-  // For cancellation
   const [itemToCancel, setItemToCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelOrderModal, setShowCancelOrderModal] = useState(false);
@@ -42,27 +102,20 @@ export function WaiterOrderScreen() {
     return menuItems.filter(item => {
       const isAvailable = item.isAvailable !== false && (!item.status || item.status === 'ACTIVE');
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      // If searching, ignore category filter to show all matches
-      if (searchQuery.trim()) {
-        return isAvailable && matchesSearch;
-      }
-      
+      if (searchQuery.trim()) return isAvailable && matchesSearch;
       return isAvailable && item.categoryId === activeCategory;
     });
   }, [menuItems, activeCategory, searchQuery]);
 
-  const handleAddToCart = (menuItem) => {
+  const handleAddToCart = useCallback((menuItem) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === menuItem.id);
-      if (existing) {
-        return prev.map(i => i.id === menuItem.id ? { ...i, quantity: i.quantity + 1 } : i);
-      }
+      if (existing) return prev.map(i => i.id === menuItem.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [...prev, { ...menuItem, quantity: 1 }];
     });
-  };
+  }, []);
 
-  const handleUpdateQuantity = (itemId, delta) => {
+  const handleUpdateQuantity = useCallback((itemId, delta) => {
     setCart(prev => prev.map(i => {
       if (i.id === itemId) {
         const newQ = i.quantity + delta;
@@ -70,383 +123,533 @@ export function WaiterOrderScreen() {
       }
       return i;
     }).filter(Boolean));
-  };
+  }, []);
 
   const handleSendToKOT = () => {
     if (cart.length === 0) return;
     dispatch(sendOrderToKOT(table.id, currentUser.id, cart));
     setCart([]);
+    setShowCartSheet(false);
   };
 
-  const handlePickupClick = (orderItemId) => {
-    setActivePickupItemId(orderItemId);
-    setPickupCode('');
-  };
-
+  const handlePickupClick = (orderItemId) => { setActivePickupItemId(orderItemId); setPickupCode(''); };
   const confirmPickup = (orderItemId) => {
     if (pickupCode === table.tableNumber) {
       dispatch(pickupItem(activeOrder.id, orderItemId, currentUser.id));
-      setActivePickupItemId(null);
-      setPickupCode('');
+      setActivePickupItemId(null); setPickupCode('');
     } else {
-      alert('Invalid table code. Please enter the exact table number (e.g. T04)');
+      alert(`Invalid table code. Enter the exact table number (e.g. ${table.tableNumber})`);
     }
   };
-
-  const handleServe = (orderItemId) => {
-    dispatch(serveItem(activeOrder.id, orderItemId, currentUser.id));
-  };
-
+  const handleServe = (orderItemId) => dispatch(serveItem(activeOrder.id, orderItemId, currentUser.id));
   const handleCompleteOrder = () => {
     const hasActiveItems = activeOrder.items.some(i => i.status !== 'SERVED' && i.status !== 'CANCELLED');
-    if (hasActiveItems) {
-      alert("All items must be served or cancelled before completing the order.");
-      return;
-    }
+    if (hasActiveItems) { alert('All items must be served or cancelled before completing the order.'); return; }
     dispatch(completeOrder(activeOrder.id, currentUser.id));
   };
-
   const confirmCancelItem = () => {
-    if (!cancelReason.trim()) {
-      alert("Please provide a cancellation reason.");
-      return;
-    }
+    if (!cancelReason.trim()) { alert('Please provide a cancellation reason.'); return; }
     dispatch(cancelItem(activeOrder.id, itemToCancel.id, currentUser.id, cancelReason));
-    setItemToCancel(null);
-    setCancelReason('');
+    setItemToCancel(null); setCancelReason('');
   };
-
-  const handleCancelOrderClick = () => {
-    const hasServedItems = activeOrder.items.some(i => ['SERVED', 'PICKED_UP'].includes(i.status));
-    if (hasServedItems) {
-      alert("This order contains picked up or served items and cannot be completely cancelled. You can cancel remaining active items individually.");
-      return;
-    }
-    setCancelReason('');
-    setShowCancelOrderModal(true);
-  };
-
   const confirmCancelOrder = () => {
-    if (!cancelReason.trim()) {
-      alert("Please provide a cancellation reason.");
-      return;
-    }
+    if (!cancelReason.trim()) { alert('Please provide a cancellation reason.'); return; }
     dispatch(cancelOrder(activeOrder.id, currentUser.id, cancelReason));
-    setShowCancelOrderModal(false);
-    setCancelReason('');
+    setShowCancelOrderModal(false); setCancelReason('');
     navigate('/waiter/tables');
   };
+  const handleCancelOrderClick = () => {
+    const hasServedItems = activeOrder.items.some(i => ['SERVED', 'PICKED_UP'].includes(i.status));
+    if (hasServedItems) { alert('Cannot cancel — order has served or picked up items. Cancel remaining items individually.'); return; }
+    setCancelReason(''); setShowCancelOrderModal(true);
+  };
 
-  if (!table) return <div>Table not found</div>;
+  if (!table) return <div className="p-8 text-text-muted">Table not found</div>;
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const isOrderInProgress = !activeOrder || activeOrder.status === 'IN_PROGRESS';
-  const allItemsFinished = activeOrder && activeOrder.items.length > 0 && activeOrder.items.every(i => i.status === 'SERVED' || i.status === 'CANCELLED');
 
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex flex-1 flex-col lg:flex-row gap-6 overflow-hidden">
-        {/* Left Pane: Menu or Status Screen */}
-        <div className="flex-1 flex flex-col bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
-          {/* Unified Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border bg-white shadow-sm z-10">
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="icon" onClick={() => navigate('/waiter/tables')} className="rounded-full shadow-sm bg-white shrink-0">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-bold text-text-main flex items-center gap-3">
-                  Table {table.tableNumber}
-                  {activeOrder && (
-                    <Badge variant={isOrderInProgress ? "warning" : "success"} className="text-xs px-2 py-0.5">
-                      Order #{activeOrder.orderNumber}
-                    </Badge>
-                  )}
-                </h1>
-                <p className="text-xs font-medium text-text-muted mt-0.5">{table.capacity} Seats • Dine-In</p>
-              </div>
+  // Subtotal including kitchen items
+  const activeOrderSubtotal = activeOrder
+    ? activeOrder.items.reduce((sum, item) => item.status !== 'CANCELLED' ? sum + (item.unitPrice * item.quantity) : sum, 0)
+    : 0;
+  
+  const subtotal = cartTotal + activeOrderSubtotal;
+  const cgst = parseFloat((subtotal * 0.025).toFixed(2));
+  const sgst = parseFloat((subtotal * 0.025).toFixed(2));
+  const grandTotal = subtotal + cgst + sgst;
+
+  const allItemsFinished = activeOrder && activeOrder.items.length > 0 &&
+    activeOrder.items.every(i => i.status === 'SERVED' || i.status === 'CANCELLED');
+
+  const getCartQty = (itemId) => cart.find(i => i.id === itemId)?.quantity || 0;
+
+  // Compact item card for the kitchen status section
+  const KitchenItemCard = ({ oi }) => {
+    const menuItem = menuItems.find(m => m.id === oi.menuItemId);
+    return (
+      <div className={cn(
+        'p-3 rounded-xl border transition-colors',
+        oi.status === 'READY' ? 'bg-status-success-bg border-status-success/30 animate-pulse' :
+        oi.status === 'PREPARING' ? 'bg-status-preparing-bg border-purple-200' :
+        oi.status === 'SERVED' ? 'bg-canvas border-border opacity-70' :
+        oi.status === 'CANCELLED' ? 'bg-status-danger-bg border-status-danger/20 opacity-50' :
+        'bg-surface border-border'
+      )}>
+        <div className="flex items-start justify-between gap-3 mb-1.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <VegNonVegDot name={menuItem?.name || ''} />
+            <p className="font-bold text-text-main text-xs leading-tight truncate">{menuItem?.name}</p>
+          </div>
+          <StatusPill status={oi.status} size="xs" />
+        </div>
+        <div className="flex justify-between items-center text-xs text-text-muted pl-6">
+          <span>Qty: {oi.quantity}</span>
+          <span className="font-semibold text-text-main">₹{oi.unitPrice * oi.quantity}</span>
+        </div>
+
+        {/* Actions */}
+        {isOrderInProgress && oi.status === 'READY' && (
+          activePickupItemId !== oi.id ? (
+            <Button
+              size="sm"
+              className="w-full mt-2.5 h-8 text-xs font-bold"
+              onClick={() => handlePickupClick(oi.id)}
+            >
+              Pickup Item
+            </Button>
+          ) : (
+            <div className="mt-2.5 flex gap-1.5">
+              <input
+                type="text"
+                placeholder={`Table code (${table.tableNumber})`}
+                className="flex-1 h-8 rounded-lg border border-border px-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                value={pickupCode}
+                onChange={e => setPickupCode(e.target.value)}
+              />
+              <Button size="sm" className="h-8 px-3 text-xs" variant="success" onClick={() => confirmPickup(oi.id)}>Go</Button>
+              <button
+                className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-main border border-border rounded-lg bg-surface shrink-0"
+                onClick={() => setActivePickupItemId(null)}
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
+          )
+        )}
+        {isOrderInProgress && oi.status === 'PICKED_UP' && (
+          <Button size="sm" variant="secondary" className="w-full mt-2.5 h-8 text-xs font-bold" onClick={() => handleServe(oi.id)}>
+            Serve to Customer
+          </Button>
+        )}
+        {isOrderInProgress && ['ORDERED', 'PREPARING'].includes(oi.status) && (
+          <button
+            className="w-full mt-2 text-[10px] font-bold text-status-danger-text hover:underline py-1 text-center"
+            onClick={() => { setItemToCancel({ id: oi.id, name: menuItem?.name || 'Item' }); setCancelReason(''); }}
+          >
+            Cancel Item
+          </button>
+        )}
+      </div>
+    );
+  };
 
-            {isOrderInProgress && (
-              <div className="relative w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input 
-                  type="text" 
-                  placeholder="Search menu items..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm bg-gray-50/50 focus:bg-white"
-                />
+  // ─── CART PANEL ───
+  const CartContent = () => (
+    <div className="flex flex-col h-full bg-surface">
+      <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-border/60">
+        
+        {/* Section: Kitchen items */}
+        {activeOrder && activeOrder.items.length > 0 && (
+          <div className="p-4">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-3 flex items-center justify-between">
+              <span>Active Kitchen Order</span>
+              <span className="text-text-main font-semibold">#{activeOrder.orderNumber}</span>
+            </h3>
+            <div className="space-y-2">
+              {activeOrder.items.map(oi => <KitchenItemCard key={oi.id} oi={oi} />)}
+            </div>
+          </div>
+        )}
+
+        {/* Section: New Cart Items */}
+        {isOrderInProgress && (
+          <div className="p-4">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-3">
+              New Items to Send
+            </h3>
+            {cart.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center text-text-muted">
+                <ShoppingBag className="w-5 h-5 text-text-faint mb-2" />
+                <p className="text-xs">No unsent items in cart</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {cart.map(item => (
+                  <div key={item.id} className="flex items-center gap-3 bg-canvas/30 rounded-xl border border-border p-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-xs text-text-main leading-tight truncate">{item.name}</p>
+                      <p className="text-xs font-bold text-primary mt-1">₹{item.price * item.quantity}</p>
+                    </div>
+                    <QuantityControl
+                      count={item.quantity}
+                      onDecrease={() => handleUpdateQuantity(item.id, -1)}
+                      onIncrease={() => handleAddToCart(item)}
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
-          {isOrderInProgress ? (
-            <>
+        )}
+      </div>
 
-
-              <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-                {/* Categories Strip / Sidebar */}
-                {!searchQuery && (
-                  <div className="md:w-48 border-b md:border-b-0 md:border-r border-border bg-gray-50/30 overflow-x-auto md:overflow-y-auto custom-scrollbar p-3 flex md:flex-col gap-2 shrink-0">
-                    {activeCategories.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setActiveCategory(cat.id)}
-                        className={cn(
-                          "whitespace-nowrap w-auto md:w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 shrink-0",
-                          activeCategory === cat.id 
-                            ? "bg-primary text-white shadow-md shadow-primary/20" 
-                            : "text-text-muted hover:bg-gray-100 hover:text-text-main"
-                        )}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Menu Items Grid */}
-                <div className="flex-1 overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 content-start custom-scrollbar bg-gray-50/20">
-                  {filteredMenuItems.map(item => (
-                    <div 
-                      key={item.id} 
-                      className="flex flex-col bg-white rounded-2xl border border-border/60 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all cursor-pointer group overflow-hidden" 
-                      onClick={() => handleAddToCart(item)}
-                    >
-                      <div className="h-32 w-full overflow-hidden bg-gray-100 relative">
-                        {/* Placeholder image for a premium look */}
-                        <img 
-                          src={`https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80&auto=format&fit=crop`} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      </div>
-                      <div className="p-4 flex-1 flex flex-col justify-between">
-                        <div>
-                          <h3 className="font-bold text-text-main group-hover:text-primary transition-colors line-clamp-1">{item.name}</h3>
-                          <p className="text-xs text-text-muted mt-1.5 line-clamp-2 leading-relaxed">{item.description}</p>
-                        </div>
-                        <div className="flex justify-between items-center mt-4">
-                          <span className="font-extrabold text-lg text-text-main">₹{item.price}</span>
-                          <button 
-                            className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors"
-                            onClick={(e) => { e.stopPropagation(); handleAddToCart(item); }}
-                          >
-                            <Plus className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {filteredMenuItems.length === 0 && (
-                    <div className="col-span-full py-12 text-center text-text-muted">
-                      No items found.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                <Receipt className="w-10 h-10 text-status-success" />
-              </div>
-              <h2 className="text-3xl font-bold text-text-main mb-3">Bill Requested</h2>
-              <p className="text-text-muted mb-8 max-w-sm text-lg leading-relaxed">
-                This order has been sent to the Cashier. No further items can be added to this table.
-              </p>
-              <Badge variant="success" className="text-xl py-2 px-6 shadow-sm">{activeOrder.status}</Badge>
-            </div>
-          )}
+      {/* Totals & Actions Footer */}
+      <div className="border-t border-border bg-canvas/40 p-4 shrink-0 space-y-3">
+        <div className="space-y-1.5 text-xs text-text-muted">
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <span className="font-semibold text-text-main">₹{subtotal}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>CGST (2.5%)</span>
+            <span className="font-semibold text-text-main">₹{cgst}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>SGST (2.5%)</span>
+            <span className="font-semibold text-text-main">₹{sgst}</span>
+          </div>
+          <div className="border-t border-border/60 my-2 pt-2 flex justify-between text-sm font-bold text-text-main">
+            <span>Grand Total</span>
+            <span className="text-base font-extrabold text-primary">₹{grandTotal}</span>
+          </div>
         </div>
 
-        {/* Right Pane: Cart & Active Order */}
-        <div className="w-full lg:w-96 shrink-0 bg-white rounded-2xl shadow-sm border border-border flex flex-col overflow-hidden">
-          <div className="p-5 border-b border-border/60 bg-gray-50/50">
-            <h2 className="font-bold text-lg text-text-main flex items-center justify-between">
-              Order Summary
-              <span className="text-sm font-medium text-text-muted bg-gray-200/50 px-2.5 py-1 rounded-md">
-                {(activeOrder?.items?.length || 0) + cart.reduce((sum, item) => sum + item.quantity, 0)} items
-              </span>
-            </h2>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar">
-            
-            {/* Existing Active Order Items */}
-            {activeOrder && activeOrder.items.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 pl-1">Kitchen Items</h3>
-                <div className="space-y-3">
-                  {activeOrder.items.map(oi => {
-                    const menuItem = menuItems.find(m => m.id === oi.menuItemId);
-                    return (
-                      <div key={oi.id} className="bg-white p-4 rounded-xl border border-border hover:border-primary/30 transition-colors shadow-sm">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <p className="font-bold text-text-main text-sm leading-tight mb-1">{menuItem?.name}</p>
-                            <p className="text-xs font-semibold text-text-muted bg-gray-100 inline-block px-2 py-0.5 rounded">Qty: {oi.quantity}</p>
-                          </div>
-                          <Badge 
-                            variant={
-                              oi.status === 'READY' ? 'success' : 
-                              oi.status === 'PREPARING' ? 'warning' : 
-                              oi.status === 'SERVED' ? 'default' : 'primary'
-                            }
-                            className="text-[10px] px-2 py-0.5"
-                          >
-                            {oi.status}
-                          </Badge>
-                        </div>
-                        
-                        {/* Pickup / Serve Actions */}
-                        {isOrderInProgress && oi.status === 'READY' && activePickupItemId !== oi.id && (
-                          <Button size="sm" className="w-full mt-2 font-semibold shadow-sm" onClick={() => handlePickupClick(oi.id)}>
-                            Pickup Item
-                          </Button>
-                        )}
-                        
-                        {isOrderInProgress && oi.status === 'READY' && activePickupItemId === oi.id && (
-                          <div className="mt-2 flex gap-2">
-                            <input 
-                              type="text" 
-                              placeholder="Table Code (e.g. T04)" 
-                              className="flex-1 h-9 rounded-lg border border-border px-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                              value={pickupCode}
-                              onChange={(e) => setPickupCode(e.target.value)}
-                            />
-                            <Button size="sm" variant="success" className="font-semibold shadow-sm" onClick={() => confirmPickup(oi.id)}>
-                              Confirm
-                            </Button>
-                          </div>
-                        )}
+        {isOrderInProgress && cart.length > 0 && (
+          <Button
+            className="w-full h-11 text-sm font-bold"
+            onClick={handleSendToKOT}
+            leftIcon={Send}
+          >
+            SEND TO KITCHEN
+          </Button>
+        )}
+        
+        {isOrderInProgress && cart.length === 0 && allItemsFinished && (
+          <Button
+            className="w-full h-11 text-sm font-bold"
+            variant="success"
+            onClick={handleCompleteOrder}
+            leftIcon={CheckCircle}
+          >
+            COMPLETE ORDER
+          </Button>
+        )}
 
-                        {isOrderInProgress && oi.status === 'PICKED_UP' && (
-                          <Button size="sm" variant="secondary" className="w-full mt-2 font-semibold" onClick={() => handleServe(oi.id)}>
-                            Serve to Customer
-                          </Button>
-                        )}
-                        
-                        {/* Cancel Action */}
-                        {isOrderInProgress && ['ORDERED', 'PREPARING'].includes(oi.status) && (
-                          <button 
-                            className="w-full mt-3 text-xs font-semibold text-status-danger hover:text-red-700 transition-colors py-1" 
-                            onClick={() => {
-                              setItemToCancel({ id: oi.id, name: menuItem?.name || 'Item' });
-                              setCancelReason('');
-                            }}
-                          >
-                            Cancel Item
-                          </button>
-                        )}
+        {isOrderInProgress && activeOrder && activeOrder.items.length > 0 && (
+          <Button
+            variant="danger-outline"
+            className="w-full h-9 text-xs font-bold"
+            onClick={handleCancelOrderClick}
+          >
+            Cancel Entire Order
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden -m-4 md:-m-6">
+      {/* ─── Top Header ─── */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface shrink-0 gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => navigate('/waiter/tables')}
+            className="w-9 h-9 flex items-center justify-center rounded-xl border border-border hover:bg-canvas transition-colors shrink-0"
+            aria-label="Back to tables"
+          >
+            <ArrowLeft className="w-5 h-5 text-text-main" />
+          </button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-lg font-bold text-text-main">Table {table.tableNumber}</h1>
+              {activeOrder && (
+                <StatusPill status={activeOrder.status} size="xs" />
+              )}
+            </div>
+            <p className="text-xs text-text-muted mt-0.5">
+              {table.capacity} Seats · {table.section}
+              {activeOrder && ` · ${activeOrder.orderNumber}`}
+            </p>
+          </div>
+        </div>
+
+        {/* Search */}
+        {isOrderInProgress && (
+          <div className="relative w-48 md:w-64 shrink-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-faint w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search dishes…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-9 py-2 border border-border rounded-xl text-sm bg-canvas focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all focus:bg-surface h-10"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-faint hover:text-text-muted"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Bill Requested State ─── */}
+      {!isOrderInProgress ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-canvas/10">
+          <div className="w-20 h-20 bg-status-success-bg rounded-full flex items-center justify-center mb-5">
+            <Receipt className="w-10 h-10 text-status-success" />
+          </div>
+          <h2 className="text-2xl font-bold text-text-main mb-2">Bill Requested</h2>
+          <p className="text-text-muted text-sm max-w-xs leading-relaxed mb-6">
+            This order has been sent to the Cashier. No further items can be added to this table.
+          </p>
+          <StatusPill status={activeOrder.status} />
+        </div>
+      ) : (
+        // ─── Order Entry Layout ───
+        <div className="flex flex-1 overflow-hidden">
+          
+          {/* Categories Sidebar (Tablet Landscape + Desktop) */}
+          {!searchQuery && (
+            <div className="hidden md:flex md:w-[130px] lg:w-[140px] flex-col border-r border-border bg-canvas/40 overflow-y-auto custom-scrollbar shrink-0 py-4 px-2.5 gap-1.5">
+              {activeCategories.map(cat => {
+                const IconComponent = CATEGORY_ICONS[cat.id] || Utensils;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={cn(
+                      'w-full flex flex-col items-center justify-center text-center p-3 rounded-2xl text-xs font-bold transition-all gap-1.5',
+                      activeCategory === cat.id
+                        ? 'bg-primary text-white shadow-primary-sm'
+                        : 'bg-surface text-text-muted border border-border hover:border-primary/20 hover:text-text-main'
+                    )}
+                  >
+                    <IconComponent className="w-5 h-5 shrink-0" />
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Center Content: Menu grid */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-canvas/10">
+            {/* Mobile/Portrait Category scrolling list */}
+            {!searchQuery && (
+              <div className="md:hidden category-scroll px-4 pt-3 pb-2 shrink-0 gap-2">
+                {activeCategories.map(cat => {
+                  const IconComponent = CATEGORY_ICONS[cat.id] || Utensils;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={cn(
+                        'shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border whitespace-nowrap',
+                        activeCategory === cat.id
+                          ? 'bg-primary text-white border-primary shadow-primary-sm'
+                          : 'bg-surface text-text-muted border-border'
+                      )}
+                    >
+                      <IconComponent className="w-4 h-4 shrink-0" />
+                      <span>{cat.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Menu Items Grid */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+              {filteredMenuItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Search className="w-10 h-10 text-text-faint mb-3" />
+                  <p className="font-semibold text-text-sub">No items found</p>
+                  <p className="text-sm text-text-muted mt-1">Try another category or query</p>
+                </div>
+              ) : (
+                <div
+                  className="grid gap-4 pb-6"
+                  style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}
+                >
+                  {filteredMenuItems.map(item => {
+                    const qty = getCartQty(item.id);
+                    const isBestseller = ['mi-1', 'mi-3', 'mi-4', 'mi-9'].includes(item.id);
+                    const isNew = ['mi-5', 'mi-11'].includes(item.id);
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="menu-card flex flex-col group bg-surface"
+                        onClick={() => handleAddToCart(item)}
+                      >
+                        {/* Image section */}
+                        <div className="relative h-28 sm:h-32 overflow-hidden bg-canvas shrink-0">
+                          <img
+                            src={getMenuImage(item)}
+                            alt={item.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                          
+                          {/* Badges */}
+                          <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+                            {isBestseller && (
+                              <span className="bg-primary text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-sm flex items-center gap-0.5">
+                                <Star className="w-2.5 h-2.5 fill-current" /> Bestseller
+                              </span>
+                            )}
+                            {isNew && (
+                              <span className="bg-status-success text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-sm">
+                                New
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Veg/Nonveg indicator */}
+                          <div className="absolute top-2 right-2 z-10">
+                            <VegNonVegDot name={item.name} />
+                          </div>
+
+                          {qty > 0 && (
+                            <div className="absolute inset-0 bg-primary/10 flex items-center justify-center backdrop-blur-[1px]">
+                              <div className="w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold shadow-primary-sm animate-scale-in">
+                                {qty}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Text Content */}
+                        <div className="p-3 flex-1 flex flex-col justify-between gap-2.5">
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-bold text-text-main leading-tight group-hover:text-primary transition-colors line-clamp-1">
+                              {item.name}
+                            </h3>
+                            <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2 h-8">
+                              {item.description}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold text-text-main text-base">₹{item.price}</span>
+                            {qty > 0 ? (
+                              <QuantityControl
+                                count={qty}
+                                onIncrease={() => handleAddToCart(item)}
+                                onDecrease={() => handleUpdateQuantity(item.id, -1)}
+                              />
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 rounded-xl font-bold text-xs px-3 text-primary border-primary/20 hover:bg-primary hover:text-white"
+                                onClick={e => { e.stopPropagation(); handleAddToCart(item); }}
+                              >
+                                + Add
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            )}
-
-            {/* New Items Cart */}
-            {isOrderInProgress && (
-              <div>
-                {cart.length > 0 && <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 pl-1">New Items</h3>}
-                
-                {cart.length === 0 && (!activeOrder || activeOrder.items.length === 0) ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-border/50">
-                      <ShoppingBag className="w-6 h-6 text-gray-400" />
-                    </div>
-                    <p className="font-semibold text-text-main">Cart is empty</p>
-                    <p className="text-sm text-text-muted mt-1 max-w-[200px]">Select items from the menu to add to this order.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {cart.map(item => (
-                      <div key={item.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-border/60 shadow-sm">
-                        <div className="flex-1 pr-4">
-                          <p className="font-bold text-text-main text-sm mb-1 leading-tight">{item.name}</p>
-                          <p className="text-primary font-bold text-sm">₹{item.price * item.quantity}</p>
-                        </div>
-                        <div className="flex items-center space-x-3 bg-gray-50 border border-border/50 rounded-lg p-1">
-                          <button onClick={() => handleUpdateQuantity(item.id, -1)} className="w-7 h-7 flex items-center justify-center rounded bg-white shadow-sm hover:bg-gray-100 text-text-main transition-colors">
-                            <Minus className="w-3.5 h-3.5" />
-                          </button>
-                          <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
-                          <button onClick={() => handleUpdateQuantity(item.id, 1)} className="w-7 h-7 flex items-center justify-center rounded bg-white shadow-sm hover:bg-gray-100 text-text-main transition-colors">
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            
+              )}
+            </div>
           </div>
-          
-          {/* Action Buttons Container */}
-          <div className="p-5 border-t border-border/60 bg-gray-50/80 space-y-3">
-            {/* Send to KOT */}
-            {isOrderInProgress && cart.length > 0 && (
-              <div>
-                <div className="flex justify-between items-center mb-4 px-1">
-                  <span className="font-bold text-text-main">Subtotal</span>
-                  <span className="font-extrabold text-xl text-primary">₹{cartTotal}</span>
-                </div>
-                <Button className="w-full h-12 text-base font-bold shadow-md shadow-primary/20" onClick={handleSendToKOT}>
-                  <Send className="w-4 h-4 mr-2" /> SEND TO KITCHEN
-                </Button>
-              </div>
-            )}
-  
-            {/* Complete Order */}
-            {isOrderInProgress && cart.length === 0 && allItemsFinished && (
-              <Button className="w-full h-12 text-base font-bold shadow-md shadow-green-500/20" variant="success" onClick={handleCompleteOrder}>
-                <CheckCircle className="w-4 h-4 mr-2" /> COMPLETE ORDER
-              </Button>
-            )}
 
-            {/* Cancel Whole Order */}
-            {isOrderInProgress && activeOrder && activeOrder.items.length > 0 && (
-              <Button variant="outline" className="w-full h-10 font-bold border-red-200 text-status-danger hover:bg-red-50 hover:text-red-700 hover:border-red-300" onClick={handleCancelOrderClick}>
-                CANCEL ENTIRE ORDER
-              </Button>
-            )}
+          {/* Right Sidebar: Cart Panel (Only on desktop/landscape layout) */}
+          <div className="hidden lg:flex lg:w-[320px] xl:w-[350px] shrink-0 flex-col border-l border-border bg-surface overflow-hidden">
+            <div className="px-5 py-4 border-b border-border bg-canvas/30 shrink-0 flex justify-between items-center">
+              <h2 className="font-black text-sm uppercase tracking-wider text-text-main">Current Order</h2>
+              <Badge variant="primary" className="text-[10px] font-bold py-0.5 px-2">
+                {(activeOrder?.items?.length || 0) + cartItemCount} Items
+              </Badge>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <CartContent />
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Sticky Bottom Cart Strip for Portrait Tablet / Mobile */}
+      {isOrderInProgress && (cartItemCount > 0 || (activeOrder && activeOrder.items.length > 0)) && (
+        <div className="lg:hidden border-t border-border bg-surface shrink-0 px-4 py-3 shadow-bottom-sheet">
+          <button
+            onClick={() => setShowCartSheet(true)}
+            className="w-full flex items-center justify-between bg-primary text-white px-5 py-3.5 rounded-2xl shadow-primary-md active:scale-[0.98] transition-all"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
+                <ShoppingBag className="w-3.5 h-3.5" />
+              </div>
+              <span className="font-bold text-sm">
+                {cartItemCount > 0 ? `${cartItemCount} item${cartItemCount > 1 ? 's' : ''} added` : 'View order'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {cartItemCount > 0 && (
+                <span className="font-black text-base">₹{cartTotal}</span>
+              )}
+              <ChevronUp className="w-4 h-4 animate-bounce" />
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Cart Bottom Sheet (for portrait viewports) */}
+      <BottomSheet
+        isOpen={showCartSheet}
+        onClose={() => setShowCartSheet(false)}
+        title="Current Order"
+      >
+        <div className="max-h-[70vh]">
+          <CartContent />
+        </div>
+      </BottomSheet>
 
       {/* Cancel Item Modal */}
       {itemToCancel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-xl shadow-xl w-96 max-w-[90%] overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-surface rounded-2xl shadow-modal w-full max-w-sm animate-scale-in overflow-hidden border border-border">
+            <div className="px-5 py-4 border-b border-border bg-canvas flex justify-between items-center">
               <h3 className="font-bold text-text-main">Cancel Item</h3>
-              <button onClick={() => setItemToCancel(null)} className="text-text-muted hover:text-text-main">
-                <X className="w-5 h-5" />
-              </button>
+              <button onClick={() => setItemToCancel(null)} className="p-1.5 text-text-muted hover:text-text-main rounded-xl hover:bg-border"><X className="w-4 h-4" /></button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-5 space-y-4">
               <p className="text-sm text-text-main">Cancel <strong>{itemToCancel.name}</strong>?</p>
               <div>
-                <label className="block text-sm font-medium text-text-main mb-1">Reason:</label>
-                <input 
-                  type="text" 
+                <label className="block text-sm font-semibold text-text-main mb-1.5">Reason <span className="text-status-danger">*</span></label>
+                <input
+                  type="text"
                   value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
+                  onChange={e => setCancelReason(e.target.value)}
                   placeholder="e.g. Customer changed order"
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+                  className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   autoFocus
                 />
               </div>
-            </div>
-            <div className="p-4 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">
-              <Button variant="outline" onClick={() => setItemToCancel(null)}>Keep Item</Button>
-              <Button variant="danger" className="bg-red-500 hover:bg-red-600 text-white border-red-600" onClick={confirmCancelItem}>
-                Confirm Cancellation
-              </Button>
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1" onClick={() => setItemToCancel(null)}>Keep</Button>
+                <Button variant="danger" className="flex-1" onClick={confirmCancelItem}>Cancel Item</Button>
+              </div>
             </div>
           </div>
         </div>
@@ -454,33 +657,29 @@ export function WaiterOrderScreen() {
 
       {/* Cancel Order Modal */}
       {showCancelOrderModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-xl shadow-xl w-96 max-w-[90%] overflow-hidden">
-            <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-              <h3 className="font-bold text-text-main">Cancel Order</h3>
-              <button onClick={() => setShowCancelOrderModal(false)} className="text-text-muted hover:text-text-main">
-                <X className="w-5 h-5" />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-surface rounded-2xl shadow-modal w-full max-w-sm animate-scale-in overflow-hidden border border-border">
+            <div className="px-5 py-4 border-b border-border bg-canvas flex justify-between items-center">
+              <h3 className="font-bold text-text-main">Cancel Entire Order</h3>
+              <button onClick={() => setShowCancelOrderModal(false)} className="p-1.5 text-text-muted hover:text-text-main rounded-xl hover:bg-border"><X className="w-4 h-4" /></button>
             </div>
-            <div className="p-6 space-y-4">
-              <p className="text-sm text-text-main">Are you sure you want to cancel the entire order?</p>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-text-muted">This will cancel all pending items in this order. This action cannot be undone.</p>
               <div>
-                <label className="block text-sm font-medium text-text-main mb-1">Reason:</label>
-                <input 
-                  type="text" 
+                <label className="block text-sm font-semibold text-text-main mb-1.5">Reason <span className="text-status-danger">*</span></label>
+                <input
+                  type="text"
                   value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
+                  onChange={e => setCancelReason(e.target.value)}
                   placeholder="e.g. Customer left"
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+                  className="w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   autoFocus
                 />
               </div>
-            </div>
-            <div className="p-4 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">
-              <Button variant="outline" onClick={() => setShowCancelOrderModal(false)}>Keep Order</Button>
-              <Button variant="danger" className="bg-red-500 hover:bg-red-600 text-white border-red-600" onClick={confirmCancelOrder}>
-                Cancel Order
-              </Button>
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1" onClick={() => setShowCancelOrderModal(false)}>Keep Order</Button>
+                <Button variant="danger" className="flex-1" onClick={confirmCancelOrder}>Cancel Order</Button>
+              </div>
             </div>
           </div>
         </div>

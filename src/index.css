@@ -1,26 +1,183 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
-    @apply font-sans bg-peach-soft text-text-main;
+    @apply font-sans bg-canvas text-text-main;
+    overscroll-behavior: none;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  input, select, textarea {
+    font-size: 16px;
+  }
+
+  @media (min-width: 768px) {
+    input, select, textarea {
+      font-size: 14px;
+    }
   }
 }
 
-/* Custom Scrollbar */
+@layer components {
+  /* =============================================
+     SCROLLBAR STYLES
+  ============================================= */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border-strong rounded-full;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-text-faint;
+  }
+
+  /* =============================================
+     TOUCH UTILITIES
+  ============================================= */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    @apply flex items-center justify-center;
+  }
+
+  .touch-target-lg {
+    min-height: 52px;
+    min-width: 52px;
+    @apply flex items-center justify-center;
+  }
+
+  /* =============================================
+     STATUS INDICATORS
+  ============================================= */
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+  .status-dot-lg {
+    @apply inline-block w-2.5 h-2.5 rounded-full;
+  }
+
+  /* =============================================
+     GLASS EFFECT
+  ============================================= */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  /* =============================================
+     BOTTOM SHEET OVERLAY
+  ============================================= */
+  .bottom-sheet-overlay {
+    @apply fixed inset-0 z-50 flex flex-col justify-end;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  .bottom-sheet-content {
+    @apply bg-surface rounded-t-3xl shadow-bottom-sheet overflow-hidden;
+    max-height: 90vh;
+  }
+
+  /* =============================================
+     CATEGORY PILL (horizontal scroll tabs)
+  ============================================= */
+  .category-scroll {
+    @apply flex gap-2 overflow-x-auto pb-1;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .category-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* =============================================
+     MENU ITEM CARD
+  ============================================= */
+  .menu-card {
+    @apply bg-surface rounded-2xl border border-border overflow-hidden cursor-pointer;
+    @apply transition-all duration-200;
+    @apply hover:border-primary/30 hover:shadow-card-hover;
+    @apply active:scale-[0.98];
+  }
+
+  /* =============================================
+     TABLE CARD STATUS VARIANTS
+  ============================================= */
+  .table-card-available {
+    @apply bg-surface border-border hover:border-primary/40 hover:shadow-card-hover;
+  }
+  .table-card-occupied {
+    @apply bg-primary-lighter border-primary/30;
+  }
+  .table-card-occupied-mine {
+    @apply bg-primary-light border-primary shadow-card-active;
+  }
+  .table-card-reserved {
+    @apply bg-status-warning-bg border-status-warning/40;
+  }
+  .table-card-cleaning {
+    @apply bg-gray-50 border-gray-200;
+  }
+
+  /* =============================================
+     SHIMMER LOADING
+  ============================================= */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      #f0ece8 0%,
+      #faf7f4 50%,
+      #f0ece8 100%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  /* =============================================
+     ACTIVE NAV INDICATOR
+  ============================================= */
+  .nav-active-bar {
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-primary rounded-r-full;
+  }
+}
+
+/* =============================================
+   GLOBAL SCROLLBAR OVERRIDE
+============================================= */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full;
+  background: #D4CFC9;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
+  background: #B0AEAB;
 }
