@@ -30,7 +30,7 @@ export function CashierBillDetails() {
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   
   const settings = useSelector(state => state.restaurant.data?.settings) || {};
-  const activePaymentMethods = settings.paymentMethods || { CASH: true, UPI: true, CARD: true };
+  const activePaymentMethods = settings.paymentMethods || { CASH: true, UPI: true, CARD: false };
   const restaurantName = useSelector(state => state.restaurant.data?.name) || 'NS Resto Cafe';
   const restaurantAddress = useSelector(state => state.restaurant.data?.address) || '123 Main Street, Food District';
   const restaurantPhone = useSelector(state => state.restaurant.data?.phone) || '+91 9876543210';
@@ -339,7 +339,7 @@ export function CashierBillDetails() {
               <form onSubmit={handlePaymentSubmit} className="space-y-6">
                 <div>
                   <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Payment Method</label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {Object.entries(activePaymentMethods).map(([method, isActive]) => {
                       if (!isActive) return null;
                       const selected = paymentMethod === method;
