@@ -15,6 +15,21 @@ import { logAction } from '../../features/audit/auditSlice';
 import { formatCurrency } from '../../utils/currency';
 import { Trash2, Plus, Save, CheckCircle } from 'lucide-react';
 
+// Curated internal department list. These represent operational areas within
+// the restaurant that consume stock. No separate entity is needed as there is
+// no dynamic department management in the current architecture.
+const ISSUE_DEPARTMENTS = [
+  { value: '', label: 'Select department...' },
+  { value: 'Kitchen', label: 'Kitchen' },
+  { value: 'Bar', label: 'Bar' },
+  { value: 'Bakery', label: 'Bakery' },
+  { value: 'Events', label: 'Events' },
+  { value: 'Housekeeping', label: 'Housekeeping' },
+  { value: 'Maintenance', label: 'Maintenance' },
+  { value: 'Admin', label: 'Admin' },
+  { value: 'Other', label: 'Other' },
+];
+
 export function IssueNew() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -45,49 +60,86 @@ export function IssueNew() {
   const activeItems = items.filter(i => i.status === 'ACTIVE');
   const activeLocations = locations.filter(l => l.status === 'ACTIVE');
 
+  // Header state — no toLocationId; that belongs to Transfer.
   const [header, setHeader] = useState({
     fromLocationId: existingIssue?.fromLocationId || prefillLocationId || '',
-    toLocationId: existingIssue?.toLocationId || '',
     department: existingIssue?.department || '',
     issueDate: existingIssue?.issueDate || new Date().toISOString().split('T')[0],
     notes: existingIssue?.notes || ''
   });
 
+  // Derive unitRate from item's currentRate when the item is selected.
+  const getItemRate = (itemId) => {
+    if (!itemId) return 0;
+    const itemDef = items.find(i => i.id === itemId);
+    return itemDef?.currentRate || 0;
+  };
+
+  const makeNewRow = (itemId = '') => ({
+    id: uuidv4(),
+    itemId,
+    quantity: 1,
+    unitRate: getItemRate(itemId),
+  });
+
   const [issueItems, setIssueItems] = useState(() => {
     if (existingIssue) {
-      return existingIssue.items.map(i => ({ id: i.id, itemId: i.itemId, quantity: i.quantity, unitRate: i.unitRate }));
+      return existingIssue.items.map(i => ({
+        id: i.id,
+        itemId: i.itemId,
+        quantity: i.quantity,
+        // Prefer stored unitRate, fall back to item's current rate.
+        unitRate: i.unitRate || getItemRate(i.itemId),
+      }));
     }
-    if (prefillItemId) {
-      return [{ id: uuidv4(), itemId: prefillItemId, quantity: 1, unitRate: 0 }];
-    }
-    return [{ id: uuidv4(), itemId: '', quantity: 1, unitRate: 0 }];
+    if (prefillItemId) return [makeNewRow(prefillItemId)];
+    return [makeNewRow()];
   });
 
   const getAvailableStock = (itemId, locationId) => {
     if (!itemId || !locationId) return 0;
-    return stock.filter(s => s.itemId === itemId && s.locationId === locationId).reduce((sum, s) => sum + s.quantity, 0);
+    return stock
+      .filter(s => s.itemId === itemId && s.locationId === locationId)
+      .reduce((sum, s) => sum + s.quantity, 0);
   };
 
-  const handleAdd = () => setIssueItems([...issueItems, { id: uuidv4(), itemId: '', quantity: 1, unitRate: 0 }]);
+  const handleAdd = () => setIssueItems([...issueItems, makeNewRow()]);
   const handleRemove = id => setIssueItems(issueItems.filter(i => i.id !== id));
-  const handleChange = (id, field, value) => setIssueItems(issueItems.map(i => i.id === id ? { ...i, [field]: value } : i));
 
-  const calcAmount = item => (parseFloat(item.quantity) || 0) * (parseFloat(item.unitRate) || 0);
+  // When item changes, auto-populate rate from item's currentRate.
+  const handleChange = (id, field, value) => {
+    setIssueItems(issueItems.map(ii => {
+      if (ii.id !== id) return ii;
+      if (field === 'itemId') {
+        return { ...ii, itemId: value, unitRate: getItemRate(value) };
+      }
+      return { ...ii, [field]: value };
+    }));
+  };
+
+  const calcAmount = (ii) => {
+    const qty = parseFloat(ii.quantity) || 0;
+    const rate = parseFloat(ii.unitRate) || 0;
+    return qty * rate;
+  };
+
   const total = issueItems.reduce((s, i) => s + calcAmount(i), 0);
 
   const getIssueNumber = () => `ISS-${String(issues.length + 1).padStart(5, '0')}`;
 
   const validate = () => {
-    if (!header.fromLocationId) { toast.error('Source Location is required'); return false; }
-    if (issueItems.length === 0) { toast.error('Add at least one item'); return false; }
+    if (!header.fromLocationId) { toast.error('Please select a Source Location.'); return false; }
+    if (!header.department) { toast.error('Please select who the stock is being issued to.'); return false; }
+    if (!header.issueDate) { toast.error('Issue Date is required.'); return false; }
+    if (issueItems.length === 0) { toast.error('Add at least one item to issue.'); return false; }
     for (const item of issueItems) {
-      if (!item.itemId) { toast.error('Select an item for all rows'); return false; }
+      if (!item.itemId) { toast.error('Please select an item for all rows.'); return false; }
       const qty = parseFloat(item.quantity) || 0;
-      if (qty <= 0) { toast.error('Quantity must be > 0'); return false; }
+      if (qty <= 0) { toast.error('Quantity must be greater than 0.'); return false; }
       const avail = getAvailableStock(item.itemId, header.fromLocationId);
       if (qty > avail) {
         const itemName = items.find(i => i.id === item.itemId)?.name || 'item';
-        toast.error(`Insufficient stock for ${itemName}. Available: ${avail}`);
+        toast.error(`Insufficient stock for ${itemName}. Available quantity is ${avail}.`);
         return false;
       }
     }
@@ -97,12 +149,18 @@ export function IssueNew() {
   const buildFinalItems = () => issueItems.map(ii => {
     const itemDef = items.find(i => i.id === ii.itemId);
     const uomDef = uoms.find(u => u.id === itemDef?.baseUomId);
+    const rate = parseFloat(ii.unitRate) || 0;
+    const qty = parseFloat(ii.quantity) || 0;
     return {
-      id: ii.id, itemId: ii.itemId,
-      itemCode: itemDef?.code || '', itemName: itemDef?.name || '',
-      uomId: itemDef?.baseUomId || '', uomName: uomDef?.code || '',
-      quantity: parseFloat(ii.quantity), unitRate: parseFloat(ii.unitRate) || 0,
-      amount: calcAmount(ii)
+      id: ii.id,
+      itemId: ii.itemId,
+      itemCode: itemDef?.code || '',
+      itemName: itemDef?.name || '',
+      uomId: itemDef?.baseUomId || '',
+      uomName: uomDef?.code || '',
+      quantity: qty,
+      unitRate: rate,
+      amount: qty * rate,
     };
   });
 
@@ -122,13 +180,27 @@ export function IssueNew() {
     const newId = `iss-${uuidv4().substring(0, 8)}`;
     const issueNumber = getIssueNumber();
     const newIssue = {
-      id: newId, issueNumber, ...header, status: 'DRAFT',
-      items: finalItems, total,
-      createdBy: currentUser?.id, createdAt: timestamp, updatedAt: timestamp
+      id: newId,
+      issueNumber,
+      ...header,
+      status: 'DRAFT',
+      items: finalItems,
+      total,
+      createdBy: currentUser?.id,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     };
 
     dispatch(createIssue(newIssue));
-    dispatch(logAction({ id: `log-${uuidv4()}`, userId: currentUser?.id, action: 'STOCK_ISSUE_CREATED', entityType: 'STOCK_ISSUE', entityId: newId, description: `Created Issue ${issueNumber}`, createdAt: timestamp }));
+    dispatch(logAction({
+      id: `log-${uuidv4()}`,
+      userId: currentUser?.id,
+      action: 'STOCK_ISSUE_CREATED',
+      entityType: 'STOCK_ISSUE',
+      entityId: newId,
+      description: `Created Issue ${issueNumber}`,
+      createdAt: timestamp,
+    }));
 
     if (confirm) {
       try {
@@ -163,54 +235,112 @@ export function IssueNew() {
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 space-y-6">
+
+          {/* Issue Details — no Destination Location (that belongs to Transfer) */}
           <Card>
             <CardHeader><CardTitle>Issue Details</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Select label="Source Location *" value={header.fromLocationId} onChange={e => setHeader({ ...header, fromLocationId: e.target.value })}
-                  options={[{ value: '', label: 'Select source location...' }, ...activeLocations.map(l => ({ value: l.id, label: l.name }))]} />
-                <Select label="Destination Location" value={header.toLocationId} onChange={e => setHeader({ ...header, toLocationId: e.target.value })}
-                  options={[{ value: '', label: 'Optional — select if transferring to a location' }, ...activeLocations.map(l => ({ value: l.id, label: l.name }))]} />
-                <Input label="Department / Issued To" value={header.department} onChange={e => setHeader({ ...header, department: e.target.value })} placeholder="e.g. Kitchen, Bar, Events" />
-                <Input type="date" label="Issue Date *" value={header.issueDate} onChange={e => setHeader({ ...header, issueDate: e.target.value })} />
-              </div>
-              <div className="mt-4">
-                <Input label="Notes" value={header.notes} onChange={e => setHeader({ ...header, notes: e.target.value })} placeholder="Optional notes" />
+                <Select
+                  label="Source Location *"
+                  value={header.fromLocationId}
+                  onChange={e => setHeader({ ...header, fromLocationId: e.target.value })}
+                  options={[
+                    { value: '', label: 'Select source location...' },
+                    ...activeLocations.map(l => ({ value: l.id, label: l.name })),
+                  ]}
+                />
+                <Select
+                  label="Issued To *"
+                  value={header.department}
+                  onChange={e => setHeader({ ...header, department: e.target.value })}
+                  options={ISSUE_DEPARTMENTS}
+                />
+                <Input
+                  type="date"
+                  label="Issue Date *"
+                  value={header.issueDate}
+                  onChange={e => setHeader({ ...header, issueDate: e.target.value })}
+                />
+                <Input
+                  label="Notes"
+                  value={header.notes}
+                  onChange={e => setHeader({ ...header, notes: e.target.value })}
+                  placeholder="Optional notes"
+                />
               </div>
             </CardContent>
           </Card>
 
+          {/* Issue Items */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Issue Items</CardTitle>
-              <Button size="sm" variant="outline" onClick={handleAdd}><Plus className="w-4 h-4 mr-1" />Add Item</Button>
+              <Button size="sm" variant="outline" onClick={handleAdd}>
+                <Plus className="w-4 h-4 mr-1" />Add Item
+              </Button>
             </CardHeader>
             <CardContent>
               {/* Mobile card layout */}
               <div className="md:hidden space-y-4">
                 {issueItems.map((ii, idx) => {
-                  const itemDef = activeItems.find(i => i.id === ii.itemId);
                   const avail = getAvailableStock(ii.itemId, header.fromLocationId);
+                  const rate = parseFloat(ii.unitRate) || 0;
+                  const amount = calcAmount(ii);
                   return (
                     <div key={ii.id} className="border border-border rounded-xl p-4 space-y-3 bg-white">
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-bold text-primary uppercase">Item {idx + 1}</span>
-                        <button onClick={() => handleRemove(ii.id)} className="p-1.5 text-text-muted hover:text-status-danger"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => handleRemove(ii.id)} className="p-1.5 text-text-muted hover:text-status-danger">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                       <div>
                         <label className="text-xs text-text-muted block mb-1">Item *</label>
-                        <Select label="Item" hideLabel value={ii.itemId} onChange={e => handleChange(ii.id, 'itemId', e.target.value)}
-                          options={[{ value: '', label: 'Select item...' }, ...activeItems.map(i => ({ value: i.id, label: i.name }))]} />
+                        <Select
+                          label="Item"
+                          hideLabel
+                          value={ii.itemId}
+                          onChange={e => handleChange(ii.id, 'itemId', e.target.value)}
+                          options={[{ value: '', label: 'Select item...' }, ...activeItems.map(i => ({ value: i.id, label: i.name }))]}
+                        />
                       </div>
-                      {ii.itemId && <p className="text-xs text-text-muted">Available: <span className={avail <= 0 ? 'text-red-500 font-bold' : 'text-green-600 font-medium'}>{avail}</span></p>}
-                      <div className="grid grid-cols-1 gap-2">
-                        <div><label className="text-xs text-text-muted block mb-1">Quantity *</label>
-                          <Input label="Quantity" hideLabel type="number" min="0.1" step="0.1" value={ii.quantity} onChange={e => handleChange(ii.id, 'quantity', e.target.value)} /></div>
+                      {ii.itemId && (
+                        <p className="text-xs text-text-muted">
+                          Available: <span className={avail <= 0 ? 'text-red-500 font-bold' : 'text-green-600 font-medium'}>{avail}</span>
+                        </p>
+                      )}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-xs text-text-muted block mb-1">Quantity *</label>
+                          <Input
+                            label="Quantity"
+                            hideLabel
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            value={ii.quantity}
+                            onChange={e => handleChange(ii.id, 'quantity', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-muted block mb-1">Rate</label>
+                          <p className="text-sm font-medium text-text-main pt-2">
+                            {rate > 0 ? formatCurrency(rate) : <span className="text-text-muted italic">No rate</span>}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-text-muted">Amount</span>
+                        <span className="font-semibold">
+                          {ii.itemId && rate > 0 ? formatCurrency(amount) : <span className="text-text-muted">—</span>}
+                        </span>
                       </div>
                     </div>
                   );
                 })}
               </div>
+
               {/* Desktop table layout */}
               <div className="hidden md:block overflow-x-auto">
                 <Table>
@@ -218,32 +348,66 @@ export function IssueNew() {
                     <Table.Th>Item *</Table.Th>
                     <Table.Th>Available Stock</Table.Th>
                     <Table.Th>Quantity *</Table.Th>
+                    <Table.Th>Rate</Table.Th>
+                    <Table.Th>Amount</Table.Th>
                     <Table.Th align="right"></Table.Th>
                   </tr></thead>
                   <tbody>
-                    {issueItems.length === 0 ? <tr><td colSpan="4" className="text-center py-8 text-text-muted">Add items to issue</td></tr> :
-                      issueItems.map(ii => {
-                        const avail = getAvailableStock(ii.itemId, header.fromLocationId);
-                        return (
-                          <tr key={ii.id}>
-                            <Table.Td className="min-w-[200px]">
-                              <Select label="Item" hideLabel value={ii.itemId} onChange={e => handleChange(ii.id, 'itemId', e.target.value)}
-                                options={[{ value: '', label: 'Select item...' }, ...activeItems.map(i => ({ value: i.id, label: i.name }))]} />
-                            </Table.Td>
-                            <Table.Td>
-                              <span className={ii.itemId ? (avail <= 0 ? 'text-red-500 font-bold' : 'text-green-600 font-medium') : 'text-text-muted'}>
-                                {ii.itemId ? avail : '—'}
-                              </span>
-                            </Table.Td>
-                            <Table.Td className="min-w-[120px]">
-                              <Input label="Quantity" hideLabel type="number" min="0.1" step="0.1" value={ii.quantity} onChange={e => handleChange(ii.id, 'quantity', e.target.value)} />
-                            </Table.Td>
-                            <Table.Td align="right">
-                              <button onClick={() => handleRemove(ii.id)} className="p-2 text-text-muted hover:text-status-danger"><Trash2 className="w-4 h-4" /></button>
-                            </Table.Td>
-                          </tr>
-                        );
-                      })
+                    {issueItems.length === 0
+                      ? <tr><td colSpan="6" className="text-center py-8 text-text-muted">Add items to issue</td></tr>
+                      : issueItems.map(ii => {
+                          const avail = getAvailableStock(ii.itemId, header.fromLocationId);
+                          const rate = parseFloat(ii.unitRate) || 0;
+                          const amount = calcAmount(ii);
+                          return (
+                            <tr key={ii.id}>
+                              <Table.Td className="min-w-[200px]">
+                                <Select
+                                  label="Item"
+                                  hideLabel
+                                  value={ii.itemId}
+                                  onChange={e => handleChange(ii.id, 'itemId', e.target.value)}
+                                  options={[{ value: '', label: 'Select item...' }, ...activeItems.map(i => ({ value: i.id, label: i.name }))]}
+                                />
+                              </Table.Td>
+                              <Table.Td>
+                                <span className={ii.itemId ? (avail <= 0 ? 'text-red-500 font-bold' : 'text-green-600 font-medium') : 'text-text-muted'}>
+                                  {ii.itemId ? avail : '—'}
+                                </span>
+                              </Table.Td>
+                              <Table.Td className="min-w-[120px]">
+                                <Input
+                                  label="Quantity"
+                                  hideLabel
+                                  type="number"
+                                  min="0.1"
+                                  step="0.1"
+                                  value={ii.quantity}
+                                  onChange={e => handleChange(ii.id, 'quantity', e.target.value)}
+                                />
+                              </Table.Td>
+                              <Table.Td>
+                                {ii.itemId
+                                  ? rate > 0
+                                    ? <span className="font-medium">{formatCurrency(rate)}</span>
+                                    : <span className="text-xs text-text-muted italic">No rate</span>
+                                  : <span className="text-text-muted">—</span>
+                                }
+                              </Table.Td>
+                              <Table.Td>
+                                {ii.itemId && rate > 0
+                                  ? <span className="font-medium">{formatCurrency(amount)}</span>
+                                  : <span className="text-text-muted">—</span>
+                                }
+                              </Table.Td>
+                              <Table.Td align="right">
+                                <button onClick={() => handleRemove(ii.id)} className="p-2 text-text-muted hover:text-status-danger">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </Table.Td>
+                            </tr>
+                          );
+                        })
                     }
                   </tbody>
                 </Table>
@@ -252,12 +416,22 @@ export function IssueNew() {
           </Card>
         </div>
 
+        {/* Summary */}
         <div className="xl:col-span-1">
           <Card className="sticky top-6">
             <CardHeader><CardTitle>Summary</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-text-muted">Total Items</span><span className="font-medium">{issueItems.length}</span></div>
+                <div className="flex justify-between">
+                  <span className="text-text-muted">Total Items</span>
+                  <span className="font-medium">{issueItems.length}</span>
+                </div>
+                <div className="pt-3 border-t border-border flex justify-between items-center">
+                  <span className="font-bold text-text-main">Total Value</span>
+                  <span className="text-xl font-bold text-primary">
+                    {total > 0 ? formatCurrency(total) : <span className="text-text-muted text-base font-normal">—</span>}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
