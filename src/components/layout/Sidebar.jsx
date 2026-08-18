@@ -193,22 +193,12 @@ export function Sidebar({ isOpen, onClose }) {
         )}
       >
         {/* Brand */}
-        <div className="flex items-center gap-3 h-[72px] px-5 border-b border-white/5 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-primary-sm">
-            <span className="text-white font-black text-sm">NS</span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-white font-bold text-sm leading-tight truncate">
-              {restaurant?.name || 'NS Resto Cafe'}
-            </p>
-            <p className="text-[9px] font-semibold text-primary tracking-widest uppercase mt-0.5">
-              Restaurant OS
-            </p>
-          </div>
+        <div className="flex items-center justify-between h-[60px] px-6 border-b border-white/5 shrink-0">
+          <img src="/logoo.png" alt="Logo" className="w-44 object-contain" />
           {/* Mobile close button */}
           <button
             onClick={onClose}
-            className="xl:hidden p-1.5 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+            className="xl:hidden p-1.5 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-white/10 shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -251,7 +241,7 @@ export function Sidebar({ isOpen, onClose }) {
         {/* User + logout */}
         <div className="border-t border-white/5 p-4 shrink-0 flex flex-col gap-3">
 
-          
+
           <button
             onClick={handleLogout}
             className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl text-white/50 hover:bg-white/5 hover:text-white transition-all duration-150"

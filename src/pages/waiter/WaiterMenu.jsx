@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { Search, Utensils, X, Star, Layers, Sparkles, Flame } from 'lucide-react';
+import { Search, Utensils, X, Star, Layers, Sparkles, Flame, LayoutGrid } from 'lucide-react';
 import { FoodCard, CATEGORY_ICONS } from '../../components/waiter/WaiterUI';
 import { cn } from '../../utils/cn';
 
@@ -20,7 +20,7 @@ export function WaiterMenu() {
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       
       const isBestseller = ['mi-1', 'mi-3', 'mi-4', 'mi-9'].includes(item.id);
-      const isNonVeg = /chicken|mutton|fish|prawn|egg|meat/i.test(item.name);
+      const isNonVeg = /chicken|mutton|fish|prawn|egg|meat|beef|kozhi|shawaya|alfaham/i.test(item.name);
 
       let matchesFilter = true;
       if (activeFilter === 'veg') matchesFilter = !isNonVeg;
@@ -66,7 +66,7 @@ export function WaiterMenu() {
 
       {/* Horizontal Category Rail */}
       {!searchQuery && (
-        <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar px-4 md:px-6 py-3 bg-canvas shrink-0">
+        <div className="flex flex-wrap items-center gap-2 px-4 md:px-6 py-3 bg-canvas shrink-0">
           {activeCategories.map(cat => {
             const IconComponent = CATEGORY_ICONS[cat.id] || Utensils;
             const isActive = activeCategory === cat.id;
@@ -96,6 +96,7 @@ export function WaiterMenu() {
         {!searchQuery && (
           <div className="hidden md:flex w-[110px] flex-col overflow-y-auto custom-scrollbar shrink-0 py-2 px-4 gap-2">
             {[
+              { id: 'all', label: 'All', icon: LayoutGrid },
               { id: 'popular', label: 'Popular', icon: Star },
               { id: 'veg', label: 'Veg', icon: Sparkles },
               { id: 'nonveg', label: 'Non-Veg', icon: Layers },
@@ -103,10 +104,10 @@ export function WaiterMenu() {
             ].map(filter => (
               <button
                 key={filter.id}
-                onClick={() => setActiveFilter(prev => prev === filter.id ? null : filter.id)}
+                onClick={() => setActiveFilter(filter.id === 'all' ? null : filter.id)}
                 className={cn(
                   'flex flex-col items-center justify-center p-3 rounded-xl text-[11px] font-bold transition-all gap-1.5 shadow-sm border',
-                  activeFilter === filter.id 
+                  (activeFilter === filter.id || (filter.id === 'all' && !activeFilter))
                     ? 'bg-primary text-white border-primary shadow-primary-sm' 
                     : 'bg-surface text-text-muted border-transparent hover:text-text-main hover:border-border'
                 )}

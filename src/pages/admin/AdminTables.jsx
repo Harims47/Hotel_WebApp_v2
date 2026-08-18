@@ -17,7 +17,7 @@ export function AdminTables() {
   const { currentUser } = useSelector(state => state.auth);
 
   const [search, setSearch] = useState('');
-  
+
   const [showCreate, setShowCreate] = useState(false);
   const [newTable, setNewTable] = useState({ tableNumber: '', capacity: 2, section: 'Main Hall' });
 
@@ -29,7 +29,7 @@ export function AdminTables() {
   const handleCreate = () => {
     if (!newTable.tableNumber) return toast.error('Table Number required');
     const tableToCreate = {
-      id: `t-${uuidv4().substring(0,6)}`,
+      id: `t-${uuidv4().substring(0, 6)}`,
       ...newTable,
       status: 'AVAILABLE', // Initial runtime state
       configStatus: 'ACTIVE'
@@ -72,11 +72,11 @@ export function AdminTables() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <PageHeader 
-        title="Table Management" 
+    <div className="space-y-6 max-w-7xl ">
+      <PageHeader
+        title="Table Management"
         description="Configure table layouts, capacity, and active status."
-        action={
+        actions={
           <Button onClick={() => setShowCreate(!showCreate)} className="font-bold shadow-md shadow-primary/20">
             <Plus className="w-4 h-4 mr-2" />
             Add Table
@@ -94,34 +94,34 @@ export function AdminTables() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               <div>
                 <label className="block text-sm font-bold text-text-main mb-1.5">Table Number / Name</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. T15 or VIP-1" 
-                  value={newTable.tableNumber} 
-                  onChange={e => setNewTable({...newTable, tableNumber: e.target.value})} 
-                  className="w-full border border-border rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow" 
+                <input
+                  type="text"
+                  placeholder="e.g. T15 or VIP-1"
+                  value={newTable.tableNumber}
+                  onChange={e => setNewTable({ ...newTable, tableNumber: e.target.value })}
+                  className="w-full border border-border rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
                 />
               </div>
               <div>
                 <label className="block text-sm font-bold text-text-main mb-1.5">Capacity (Seats)</label>
-                <input 
-                  type="number" 
-                  value={newTable.capacity} 
-                  onChange={e => setNewTable({...newTable, capacity: Number(e.target.value)})} 
-                  className="w-full border border-border rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow" 
+                <input
+                  type="number"
+                  value={newTable.capacity}
+                  onChange={e => setNewTable({ ...newTable, capacity: Number(e.target.value) })}
+                  className="w-full border border-border rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
                 />
               </div>
               <div>
                 <label className="block text-sm font-bold text-text-main mb-1.5">Section / Area</label>
-                <input 
-                  type="text" 
-                  value={newTable.section} 
-                  onChange={e => setNewTable({...newTable, section: e.target.value})} 
-                  className="w-full border border-border rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow" 
+                <input
+                  type="text"
+                  value={newTable.section}
+                  onChange={e => setNewTable({ ...newTable, section: e.target.value })}
+                  className="w-full border border-border rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
                 />
               </div>
             </div>
-            
+
             <div className="mt-6 flex justify-between items-center border-t border-border/50 pt-4">
               <p className="text-sm text-text-muted flex items-center"><Info className="w-4 h-4 mr-1.5" /> Tables are immediately available upon creation.</p>
               <div className="space-x-3">
@@ -137,19 +137,19 @@ export function AdminTables() {
         <div className="p-4 border-b border-border/60 bg-gray-50/50 flex items-center gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input 
-              type="text" 
-              placeholder="Search tables..." 
-              value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              className="w-full border border-border rounded-lg pl-9 p-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow bg-white text-sm" 
+            <input
+              type="text"
+              placeholder="Search tables..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full border border-border rounded-lg pl-9 p-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow bg-white text-sm"
             />
           </div>
           <span className="text-sm font-medium text-text-muted bg-white border border-border/50 px-2 py-1 rounded shadow-sm">
             {filteredTables.length} tables found
           </span>
         </div>
-        
+
         <Table>
           <TableHeader>
             <TableRow>
@@ -173,9 +173,9 @@ export function AdminTables() {
                   <TableCell className="font-bold text-text-main">{table.tableNumber}</TableCell>
                   <TableCell>{table.section}</TableCell>
                   <TableCell>
-                    <input 
-                      type="number" 
-                      value={table.capacity} 
+                    <input
+                      type="number"
+                      value={table.capacity}
                       onChange={(e) => changeCapacity(table, e.target.value)}
                       className="border border-border p-1.5 rounded-md w-20 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-center"
                     />
@@ -186,9 +186,9 @@ export function AdminTables() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => toggleStatus(table)}
                       className={table.configStatus !== 'INACTIVE' ? 'border-red-200 text-status-danger hover:bg-red-50 hover:text-red-700' : 'border-green-200 text-status-success hover:bg-green-50 hover:text-green-700'}
                       title={table.configStatus !== 'INACTIVE' ? 'Deactivate Table' : 'Activate Table'}

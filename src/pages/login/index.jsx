@@ -20,7 +20,7 @@ export function Login() {
   const users = useSelector(state => state.users.data) || [];
   const { isAuthenticated, currentUser } = useSelector(state => state.auth);
 
-  const { register, handleSubmit, setValue, formState: { errors }, setError } = useForm({
+  const { register, handleSubmit, formState: { errors }, setError } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
@@ -47,10 +47,7 @@ export function Login() {
     }
   };
 
-  const handleDemoClick = (username, password = '123456') => {
-    setValue('username', username);
-    setValue('password', password);
-  };
+
 
   return (
     <div className="min-h-screen flex">
@@ -62,19 +59,10 @@ export function Login() {
         {/* Dark overlay to ensure text readability if needed */}
         <div className="absolute inset-0 bg-black/40" />
 
-        <div className="relative z-10">
-          <h2 className="text-3xl font-extrabold tracking-tight drop-shadow-md">
-            <span className="text-primary">NS</span> Resto Cafe
-          </h2>
-          <p className="mt-2 text-sm text-gray-200 font-medium tracking-widest uppercase drop-shadow-md">
-            Serving Happiness
-          </p>
-        </div>
-
         <div className="relative z-10 max-w-md">
+          <img src="/logoo.png" alt="Logo" className="max-h-24 w-auto object-contain mb-8" />
           <h1 className="text-5xl font-bold leading-tight mb-6 drop-shadow-lg">
-            Welcome to <br />
-            <span className="text-primary">NS Resto Cafe.</span>
+            Welcome!
           </h1>
           <p className="text-lg text-gray-200 leading-relaxed drop-shadow-md">
             Authentic taste, exceptional service, and a memorable dining experience.
@@ -137,60 +125,7 @@ export function Login() {
               </Button>
             </form>
 
-            <div className="mt-10 pt-8 border-t border-border/60">
-              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4">Quick Demo Access</h3>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div
-                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
-                  onClick={() => handleDemoClick('superadmin')}
-                >
-                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Super Admin</span>
-                  <span className="text-text-muted mt-0.5 block">superadmin</span>
-                </div>
-                <div
-                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
-                  onClick={() => handleDemoClick('gm')}
-                >
-                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Manager</span>
-                  <span className="text-text-muted mt-0.5 block">gm</span>
-                </div>
-                <div
-                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
-                  onClick={() => handleDemoClick('waiter1')}
-                >
-                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Waiter</span>
-                  <span className="text-text-muted mt-0.5 block">waiter1</span>
-                </div>
-                <div
-                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
-                  onClick={() => handleDemoClick('kitchen')}
-                >
-                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Kitchen</span>
-                  <span className="text-text-muted mt-0.5 block">kitchen</span>
-                </div>
-                <div
-                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
-                  onClick={() => handleDemoClick('cashier')}
-                >
-                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Cashier</span>
-                  <span className="text-text-muted mt-0.5 block">cashier</span>
-                </div>
-                <div
-                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group"
-                  onClick={() => handleDemoClick('delivery')}
-                >
-                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Delivery</span>
-                  <span className="text-text-muted mt-0.5 block">delivery</span>
-                </div>
-                <div
-                  className="bg-white p-3 rounded-xl border border-border cursor-pointer hover:border-primary hover:shadow-md transition-all group lg:col-span-2"
-                  onClick={() => handleDemoClick('inventory')}
-                >
-                  <span className="font-bold block text-text-main group-hover:text-primary transition-colors">Inventory</span>
-                  <span className="text-text-muted mt-0.5 block">inventory</span>
-                </div>
-              </div>
-            </div>
+
           </Card>
         </div>
       </div>

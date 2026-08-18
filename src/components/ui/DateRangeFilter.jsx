@@ -44,7 +44,6 @@ export function DateRangeFilter({ value, onChange, className }) {
   return (
     <div className={cn("flex flex-wrap items-end gap-3", className)}>
       <Select
-        label="Date Range"
         value={value.preset || 'TODAY'}
         onChange={handlePresetChange}
         options={[

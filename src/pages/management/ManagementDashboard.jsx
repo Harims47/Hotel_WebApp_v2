@@ -331,6 +331,53 @@ export function ManagementDashboard() {
               </Card>
             )}
           </div>
+
+          {/* RECENT ACTIVITY */}
+          <Card className="overflow-hidden border-border/50 shadow-sm">
+            <CardHeader className="bg-gray-50/50 border-b border-border/50 flex flex-row items-center justify-between py-4">
+              <CardTitle className="flex items-center gap-2 text-base"><Activity className="w-4 h-4" /> Recent Staff Activity</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/management/reports')} className="h-8">View Full Report →</Button>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50/30">
+                    <TableHead className="whitespace-nowrap">Time</TableHead>
+                    <TableHead className="whitespace-nowrap">User / Role</TableHead>
+                    <TableHead className="whitespace-nowrap">Action</TableHead>
+                    <TableHead className="whitespace-nowrap">Reference</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-text-muted py-12">No activity in this period.</TableCell>
+                    </TableRow>
+                  ) : (
+                    [...fLogs].reverse().slice(0, 15).map((log, i) => (
+                      <TableRow key={log.id || i} className="hover:bg-gray-50/50 transition-colors">
+                        <TableCell className="text-xs text-text-muted whitespace-nowrap">
+                          {new Date(log.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="text-sm font-medium text-text-main">{getUserName(log.userId)}</div>
+                          <div className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mt-0.5">{log.userRole?.replace(/_/g, ' ')}</div>
+                        </TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">
+                          <Badge variant="outline" className="bg-white text-gray-700 shadow-sm font-normal">
+                            {log.action}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs font-mono text-text-muted whitespace-nowrap">
+                          {log.entityType} {log.entityId ? `#${shortId(log.entityId)}` : ''}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </div>
 
         {/* RIGHT SIDEBAR — Tables, KOT, Delivery, Inventory */}
@@ -426,52 +473,7 @@ export function ManagementDashboard() {
         </div>
       </div>
 
-      {/* RECENT ACTIVITY */}
-      <Card className="overflow-hidden border-border/50 shadow-sm">
-        <CardHeader className="bg-gray-50/50 border-b border-border/50 flex flex-row items-center justify-between py-4">
-          <CardTitle className="flex items-center gap-2 text-base"><Activity className="w-4 h-4" /> Recent Staff Activity</CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/management/reports')} className="h-8">View Full Report →</Button>
-        </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50/30">
-                <TableHead className="whitespace-nowrap">Time</TableHead>
-                <TableHead className="whitespace-nowrap">User / Role</TableHead>
-                <TableHead className="whitespace-nowrap">Action</TableHead>
-                <TableHead className="whitespace-nowrap">Reference</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {fLogs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-text-muted py-12">No activity in this period.</TableCell>
-                </TableRow>
-              ) : (
-                [...fLogs].reverse().slice(0, 15).map((log, i) => (
-                  <TableRow key={log.id || i} className="hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="text-xs text-text-muted whitespace-nowrap">
-                      {new Date(log.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      <div className="text-sm font-medium text-text-main">{getUserName(log.userId)}</div>
-                      <div className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mt-0.5">{log.userRole?.replace(/_/g, ' ')}</div>
-                    </TableCell>
-                    <TableCell className="text-sm whitespace-nowrap">
-                      <Badge variant="outline" className="bg-white text-gray-700 shadow-sm font-normal">
-                        {log.action}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs font-mono text-text-muted whitespace-nowrap">
-                      {log.entityType} {log.entityId ? `#${shortId(log.entityId)}` : ''}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+
     </div>
   );
 }

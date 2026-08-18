@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   ArrowLeft, Plus, Minus, Send, CheckCircle, Receipt,
-  ShoppingBag, Search, X, ChevronUp, Clock, Sparkles,
+  ShoppingBag, Search, X, ChevronUp, Clock, Sparkles, LayoutGrid,
   Utensils, Flame, CupSoda, Dessert, Cookie, Layers, Star, Trash2
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -50,7 +50,7 @@ export function WaiterOrderScreen() {
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       
       const isBestseller = ['mi-1', 'mi-3', 'mi-4', 'mi-9'].includes(item.id);
-      const isNonVeg = /chicken|mutton|fish|prawn|egg|meat/i.test(item.name);
+      const isNonVeg = /chicken|mutton|fish|prawn|egg|meat|beef|kozhi|shawaya|alfaham/i.test(item.name);
 
       let matchesFilter = true;
       if (activeFilter === 'veg') matchesFilter = !isNonVeg;
@@ -141,10 +141,10 @@ export function WaiterOrderScreen() {
   const getCartQty = (itemId) => cart.find(i => i.id === itemId)?.quantity || 0;
 
   // Compact item card for the kitchen status section
-  const KitchenItemCard = ({ oi }) => {
+  const renderKitchenItemCard = (oi) => {
     const menuItem = menuItems.find(m => m.id === oi.menuItemId);
     return (
-      <div className={cn(
+      <div key={oi.id} className={cn(
         'p-2.5 rounded-xl border transition-colors',
         oi.status === 'READY' ? 'bg-status-success-bg border-status-success/30 animate-pulse' :
         oi.status === 'PREPARING' ? 'bg-status-preparing-bg border-purple-200' :
@@ -166,20 +166,20 @@ export function WaiterOrderScreen() {
         {/* Actions */}
         {isOrderInProgress && oi.status === 'READY' && (
           activePickupItemId !== oi.id ? (
-            <Button size="sm" className="w-full mt-2 h-7 text-[10px] font-bold" onClick={() => handlePickupClick(oi.id)}>Pickup</Button>
+            <Button size="sm" className="w-full mt-3 h-9 text-xs font-bold" onClick={() => handlePickupClick(oi.id)}>Pickup</Button>
           ) : (
-            <div className="mt-2 flex gap-1.5">
-              <input type="text" placeholder="Code" className="w-16 h-7 rounded border border-border px-1 text-[10px] outline-none" value={pickupCode} onChange={e => setPickupCode(e.target.value)} />
-              <Button size="sm" className="h-7 px-2 text-[10px]" variant="success" onClick={() => confirmPickup(oi.id)}>Go</Button>
-              <button className="w-7 h-7 flex items-center justify-center text-text-muted border border-border rounded bg-surface shrink-0" onClick={() => setActivePickupItemId(null)}><X className="w-3 h-3" /></button>
+            <div className="mt-3 flex gap-2">
+              <input type="text" placeholder="Code" className="flex-1 min-w-0 h-9 rounded-lg border border-border px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-shadow" value={pickupCode} onChange={e => setPickupCode(e.target.value)} />
+              <Button size="sm" className="h-9 px-4 text-xs font-bold shrink-0" variant="success" onClick={() => confirmPickup(oi.id)}>Go</Button>
+              <button className="w-9 h-9 flex items-center justify-center text-text-sub border border-border rounded-lg bg-surface hover:bg-canvas hover:text-text-main transition-colors shrink-0" onClick={() => setActivePickupItemId(null)}><X className="w-4 h-4" /></button>
             </div>
           )
         )}
         {isOrderInProgress && oi.status === 'PICKED_UP' && (
-          <Button size="sm" variant="secondary" className="w-full mt-2 h-7 text-[10px] font-bold" onClick={() => handleServe(oi.id)}>Serve</Button>
+          <Button size="sm" variant="secondary" className="w-full mt-3 h-9 text-xs font-bold" onClick={() => handleServe(oi.id)}>Serve</Button>
         )}
         {isOrderInProgress && ['ORDERED', 'PREPARING'].includes(oi.status) && (
-          <Button variant="danger-outline" size="sm" className="w-full mt-1.5 h-7 text-[10px] font-bold" onClick={() => { setItemToCancel({ id: oi.id, name: menuItem?.name || 'Item' }); setCancelReason(''); }}>
+          <Button variant="danger-outline" size="sm" className="w-full mt-3 h-9 text-xs font-bold" onClick={() => { setItemToCancel({ id: oi.id, name: menuItem?.name || 'Item' }); setCancelReason(''); }}>
             Cancel Item
           </Button>
         )}
@@ -188,7 +188,7 @@ export function WaiterOrderScreen() {
   };
 
   // ─── CART PANEL ───
-  const CartContent = () => (
+  const renderCartContent = () => (
     <div className="flex flex-col h-full bg-surface">
       <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-border/60">
         
@@ -200,7 +200,7 @@ export function WaiterOrderScreen() {
               <span className="text-text-main font-semibold">#{activeOrder.orderNumber}</span>
             </h3>
             <div className="space-y-2">
-              {activeOrder.items.map(oi => <KitchenItemCard key={oi.id} oi={oi} />)}
+              {activeOrder.items.map(oi => renderKitchenItemCard(oi))}
             </div>
           </div>
         )}
@@ -371,7 +371,7 @@ export function WaiterOrderScreen() {
         <div className="flex flex-col flex-1 overflow-hidden">
           {/* Horizontal Category Rail (Top) */}
           {!searchQuery && (
-            <div className="flex items-center gap-2 overflow-x-auto category-scroll px-4 py-3 bg-surface border-b border-border shrink-0">
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-surface border-b border-border shrink-0">
             {activeCategories.map(cat => {
               const IconComponent = CATEGORY_ICONS[cat.id] || Utensils;
               const isActive = activeCategory === cat.id;
@@ -401,6 +401,7 @@ export function WaiterOrderScreen() {
           {!searchQuery && (
             <div className="hidden md:flex w-[110px] flex-col border-r border-border bg-canvas/30 overflow-y-auto custom-scrollbar shrink-0 py-3 px-2 gap-1">
               {[
+                { id: 'all', label: 'All', icon: LayoutGrid },
                 { id: 'popular', label: 'Popular', icon: Star },
                 { id: 'veg', label: 'Veg', icon: Sparkles },
                 { id: 'nonveg', label: 'Non-Veg', icon: Layers },
@@ -408,10 +409,10 @@ export function WaiterOrderScreen() {
               ].map(filter => (
                 <button
                   key={filter.id}
-                  onClick={() => setActiveFilter(prev => prev === filter.id ? null : filter.id)}
+                  onClick={() => setActiveFilter(filter.id === 'all' ? null : filter.id)}
                   className={cn(
                     'flex flex-col items-center justify-center p-3 rounded-xl text-[11px] font-bold transition-colors gap-1.5',
-                    activeFilter === filter.id 
+                    (activeFilter === filter.id || (filter.id === 'all' && !activeFilter))
                       ? 'bg-primary text-white shadow-primary-sm' 
                       : 'text-text-muted hover:text-text-main hover:bg-surface'
                   )}
@@ -474,7 +475,7 @@ export function WaiterOrderScreen() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-              <CartContent />
+              {renderCartContent()}
             </div>
           </div>
         </div>
@@ -513,7 +514,7 @@ export function WaiterOrderScreen() {
         title="Current Order"
       >
         <div className="max-h-[70vh]">
-          <CartContent />
+          {renderCartContent()}
         </div>
       </BottomSheet>
 

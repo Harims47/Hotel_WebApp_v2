@@ -27,7 +27,7 @@ export const CATEGORY_ICONS = {
 };
 
 export function VegNonVegDot({ name }) {
-  const isNonVeg = /chicken|mutton|fish|prawn|egg|meat/i.test(name);
+  const isNonVeg = /chicken|mutton|fish|prawn|egg|meat|beef|kozhi|shawaya|alfaham/i.test(name);
   return (
     <span className={cn(
       'inline-flex w-4 h-4 items-center justify-center border-2 rounded bg-white shrink-0 shadow-sm',
