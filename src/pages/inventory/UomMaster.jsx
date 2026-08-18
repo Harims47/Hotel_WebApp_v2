@@ -24,7 +24,7 @@ export function UomMaster() {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
@@ -32,9 +32,9 @@ export function UomMaster() {
 
   const isGM = currentUser?.role === 'GM';
 
-  const filteredUoms = uoms.filter(u => 
-    !search || 
-    u.name.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredUoms = uoms.filter(u =>
+    !search ||
+    u.name.toLowerCase().includes(search.toLowerCase()) ||
     u.code.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -76,8 +76,8 @@ export function UomMaster() {
       }));
       toast.success('UOM updated');
     } else {
-      const newId = `uom-${uuidv4().substring(0,6)}`;
-      dispatch(invUomActions.createRecord({ 
+      const newId = `uom-${uuidv4().substring(0, 6)}`;
+      dispatch(invUomActions.createRecord({
         id: newId, ...formData, status: 'ACTIVE'
       }));
       dispatch(logAction({
@@ -92,8 +92,8 @@ export function UomMaster() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        title="UOM Master" 
+      <PageHeader
+        title="UOM Master"
         breadcrumbs="Inventory / UOM"
         actions={
           !isGM && (
@@ -110,12 +110,12 @@ export function UomMaster() {
           <CardHeader><CardTitle>{editingId ? 'Edit UOM' : 'Create New UOM'}</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input label="UOM Code" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} placeholder="e.g. KG" />
-              <Input label="UOM Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Kilogram" />
+              <Input label="UOM Code" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="e.g. KG" />
+              <Input label="UOM Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Kilogram" />
               <Select
                 label="Type"
                 value={formData.type}
-                onChange={e => setFormData({...formData, type: e.target.value})}
+                onChange={e => setFormData({ ...formData, type: e.target.value })}
                 options={[
                   { value: 'WEIGHT', label: 'Weight' },
                   { value: 'VOLUME', label: 'Volume' },
@@ -135,15 +135,15 @@ export function UomMaster() {
       <Card>
         <div className="p-4 border-b border-border bg-gray-50/50">
           <div className="w-full md:w-72">
-            <SearchInput 
-              placeholder="Search UOM..." 
-              value={search} 
-              onChange={handleSearchChange} 
+            <SearchInput
+              placeholder="Search UOM..."
+              value={search}
+              onChange={handleSearchChange}
               onClear={() => { setSearch(''); setCurrentPage(1); }}
             />
           </div>
         </div>
-        
+
         <div className="overflow-x-auto w-full">
           <Table>
             <thead>
@@ -178,10 +178,10 @@ export function UomMaster() {
             </tbody>
           </Table>
         </div>
-        <Pagination 
-          currentPage={currentPage} 
-          totalPages={totalPages} 
-          onPageChange={setCurrentPage} 
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
         />
       </Card>
     </div>

@@ -29,7 +29,17 @@ export function GMOrders() {
   const getTableName = (id) => tables.find(t => t.id === id)?.tableNumber || id;
   const getCustomerName = (id) => customers.find(c => c.id === id)?.name || id;
   const getUserName = (id) => users.find(u => u.id === id)?.name || id;
-  const shortId = (id) => id ? (id.length > 8 ? id.substring(0, 8) + '...' : id) : '-';
+  const shortId = (id) => {
+    if (!id) return '-';
+    const str = String(id);
+    if (str.includes('-')) {
+      const parts = str.split('-');
+      if (parts.length >= 2) {
+        return `${parts[0].toUpperCase()}-${parts[1].substring(0, 4).toUpperCase()}`;
+      }
+    }
+    return str.substring(0, 8).toUpperCase();
+  };
   const getSafeNum = (val) => (typeof val === 'number' && !isNaN(val)) ? val : 0;
 
   const filteredOrders = useMemo(() => {

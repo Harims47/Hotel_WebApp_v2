@@ -23,6 +23,18 @@ const fmtDate = (d) => {
 
 const getSafeNum = (val) => (typeof val === 'number' && !isNaN(val)) ? val : 0;
 
+const shortId = (id) => {
+  if (!id) return '-';
+  const str = String(id);
+  if (str.includes('-')) {
+    const parts = str.split('-');
+    if (parts.length >= 2) {
+      return `${parts[0].toUpperCase()}-${parts[1].substring(0, 4).toUpperCase()}`;
+    }
+  }
+  return str.substring(0, 8).toUpperCase();
+};
+
 // Calculate expected delivery time (assuming 45 mins from order creation)
 const getExpectedTime = (createdAt) => {
   if (!createdAt) return null;
@@ -255,7 +267,7 @@ export function GMDelivery() {
                       <TableCell>
                         <div className="flex flex-col gap-1 items-start">
                           <span className="font-mono text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded" title={d.id}>
-                            {d.deliveryNumber || `DLV-${d.id.split('-')[0]}`}
+                            {d.deliveryNumber || shortId(d.id)}
                           </span>
                           {isDelayed && d.status !== 'DELIVERED' && (
                             <span className="text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">DELAYED {delayMin}m</span>
@@ -264,7 +276,7 @@ export function GMDelivery() {
                       </TableCell>
                       <TableCell>
                         <span className="font-mono text-xs text-text-muted bg-gray-100 px-2 py-1 rounded" title={d.orderId}>
-                          {order?.orderNumber || `ORD-${d.orderId?.split('-')[0]}`}
+                          {order?.orderNumber || shortId(d.orderId)}
                         </span>
                       </TableCell>
                       <TableCell className="text-sm font-medium text-text-main">

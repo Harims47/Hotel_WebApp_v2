@@ -8,7 +8,17 @@ import { formatCurrency } from '../../utils/currency';
 import { Receipt } from 'lucide-react';
 
 const getSafeNum = (val) => (typeof val === 'number' && !isNaN(val)) ? val : 0;
-const shortId = (id) => id ? (id.length > 8 ? id.substring(0, 8) + '...' : id) : '-';
+const shortId = (id) => {
+  if (!id) return '-';
+  const str = String(id);
+  if (str.includes('-')) {
+    const parts = str.split('-');
+    if (parts.length >= 2) {
+      return `${parts[0].toUpperCase()}-${parts[1].substring(0, 4).toUpperCase()}`;
+    }
+  }
+  return str.substring(0, 8).toUpperCase();
+};
 
 export function GMBills() {
   const bills = useSelector(state => state.billing?.data || []);
