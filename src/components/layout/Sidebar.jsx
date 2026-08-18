@@ -38,7 +38,6 @@ import { cn } from '../../utils/cn';
 
 const ROLE_NAV = {
   SUPER_ADMIN: [
-    { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { section: 'Management' },
     { name: 'Mgmt Dashboard', path: '/management/dashboard', icon: TrendingUp },
     { name: 'Mgmt Reports', path: '/management/reports', icon: BarChart2 },

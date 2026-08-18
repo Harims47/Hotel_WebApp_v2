@@ -203,13 +203,10 @@ export function IssueNew() {
                           options={[{ value: '', label: 'Select item...' }, ...activeItems.map(i => ({ value: i.id, label: i.name }))]} />
                       </div>
                       {ii.itemId && <p className="text-xs text-text-muted">Available: <span className={avail <= 0 ? 'text-red-500 font-bold' : 'text-green-600 font-medium'}>{avail}</span></p>}
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2">
                         <div><label className="text-xs text-text-muted block mb-1">Quantity *</label>
                           <Input label="Quantity" hideLabel type="number" min="0.1" step="0.1" value={ii.quantity} onChange={e => handleChange(ii.id, 'quantity', e.target.value)} /></div>
-                        <div><label className="text-xs text-text-muted block mb-1">Rate (₹)</label>
-                          <Input label="Rate" hideLabel type="number" min="0" step="0.01" value={ii.unitRate} onChange={e => handleChange(ii.id, 'unitRate', e.target.value)} /></div>
                       </div>
-                      <div className="flex justify-end text-sm font-medium">{formatCurrency(calcAmount(ii))}</div>
                     </div>
                   );
                 })}
@@ -221,12 +218,10 @@ export function IssueNew() {
                     <Table.Th>Item *</Table.Th>
                     <Table.Th>Available Stock</Table.Th>
                     <Table.Th>Quantity *</Table.Th>
-                    <Table.Th>Rate (₹)</Table.Th>
-                    <Table.Th>Amount</Table.Th>
                     <Table.Th align="right"></Table.Th>
                   </tr></thead>
                   <tbody>
-                    {issueItems.length === 0 ? <tr><td colSpan="6" className="text-center py-8 text-text-muted">Add items to issue</td></tr> :
+                    {issueItems.length === 0 ? <tr><td colSpan="4" className="text-center py-8 text-text-muted">Add items to issue</td></tr> :
                       issueItems.map(ii => {
                         const avail = getAvailableStock(ii.itemId, header.fromLocationId);
                         return (
@@ -243,10 +238,6 @@ export function IssueNew() {
                             <Table.Td className="min-w-[120px]">
                               <Input label="Quantity" hideLabel type="number" min="0.1" step="0.1" value={ii.quantity} onChange={e => handleChange(ii.id, 'quantity', e.target.value)} />
                             </Table.Td>
-                            <Table.Td className="min-w-[120px]">
-                              <Input label="Rate" hideLabel type="number" min="0" step="0.01" value={ii.unitRate} onChange={e => handleChange(ii.id, 'unitRate', e.target.value)} />
-                            </Table.Td>
-                            <Table.Td className="font-medium">{formatCurrency(calcAmount(ii))}</Table.Td>
                             <Table.Td align="right">
                               <button onClick={() => handleRemove(ii.id)} className="p-2 text-text-muted hover:text-status-danger"><Trash2 className="w-4 h-4" /></button>
                             </Table.Td>
@@ -267,10 +258,6 @@ export function IssueNew() {
             <CardContent>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between"><span className="text-text-muted">Total Items</span><span className="font-medium">{issueItems.length}</span></div>
-                <div className="pt-3 border-t border-border flex justify-between items-center">
-                  <span className="font-bold text-text-main">Total Value</span>
-                  <span className="text-xl font-bold text-primary">{formatCurrency(total)}</span>
-                </div>
               </div>
             </CardContent>
           </Card>

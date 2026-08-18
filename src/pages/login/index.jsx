@@ -25,11 +25,12 @@ export function Login() {
   });
 
   if (isAuthenticated && currentUser) {
-    const rolePrefix = currentUser.role === 'SUPER_ADMIN' ? 'admin' :
-      currentUser.role === 'DELIVERY_BOY' ? 'delivery' :
-        currentUser.role === 'INVENTORY_MANAGER' ? 'inventory' :
-          currentUser.role === 'GM' ? 'management' :
-            currentUser.role.toLowerCase();
+    if (currentUser.role === 'SUPER_ADMIN') return <Navigate to="/admin/users" replace />;
+    
+    const rolePrefix = currentUser.role === 'DELIVERY_BOY' ? 'delivery' :
+      currentUser.role === 'INVENTORY_MANAGER' ? 'inventory' :
+        currentUser.role === 'GM' ? 'management' :
+          currentUser.role.toLowerCase();
     return <Navigate to={`/${rolePrefix}/dashboard`} replace />;
   }
 
@@ -38,12 +39,15 @@ export function Login() {
 
     if (user) {
       dispatch(login(user));
-      const rolePrefix = user.role === 'SUPER_ADMIN' ? 'admin' :
-        user.role === 'DELIVERY_BOY' ? 'delivery' :
+      if (user.role === 'SUPER_ADMIN') {
+        navigate('/admin/users');
+      } else {
+        const rolePrefix = user.role === 'DELIVERY_BOY' ? 'delivery' :
           user.role === 'INVENTORY_MANAGER' ? 'inventory' :
             user.role === 'GM' ? 'management' :
               user.role.toLowerCase();
-      navigate(`/${rolePrefix}/dashboard`);
+        navigate(`/${rolePrefix}/dashboard`);
+      }
     } else {
       setError('root', { type: 'manual', message: 'Invalid username or password' });
     }

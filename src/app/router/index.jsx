@@ -4,7 +4,6 @@ import { AppShell } from '../../components/layout/AppShell';
 import { Login } from '../../pages/login';
 
 // Dashboards & Waiter
-import { AdminDashboard } from '../../pages/admin/AdminDashboard';
 import { GMDashboard } from '../../pages/gm/GMDashboard';
 import { GMOrders } from '../../pages/gm/GMOrders';
 import { GMKOT } from '../../pages/gm/GMKOT';
@@ -100,7 +99,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/login" replace /> },
       
       // Admin Routes
-      { path: 'admin/dashboard', element: <AdminDashboard /> },
+      { path: 'admin/dashboard', element: <Navigate to="/admin/users" replace /> },
       { path: 'admin/restaurant', element: <AdminRestaurant /> },
       { path: 'admin/users', element: <AdminUsers /> },
       { path: 'admin/tables', element: <AdminTables /> },
