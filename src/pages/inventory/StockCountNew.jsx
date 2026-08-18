@@ -141,7 +141,7 @@ export function StockCountNew() {
     setCountItems(countItems.filter(i => i.id !== id));
   };
 
-  const handleSave = (isConfirming = false) => {
+  const handleSave = async (isConfirming = false) => {
     if (!header.locationId) {
       toast.error('Please select a location');
       return;
@@ -178,11 +178,11 @@ export function StockCountNew() {
 
     if (isConfirming) {
       try {
-        dispatch(confirmStockCount(payload, currentUser));
+        await dispatch(confirmStockCount({ stockCount: payload, currentUser })).unwrap();
         toast.success(`Stock Count ${countNumber} confirmed`);
         navigate('/inventory/stock-counts');
       } catch (err) {
-        toast.error(err.message);
+        toast.error(err?.message || err || 'Unable to confirm stock count');
         setConfirmModal(false);
       }
     } else {

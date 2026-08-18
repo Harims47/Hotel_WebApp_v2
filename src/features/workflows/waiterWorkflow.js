@@ -99,6 +99,22 @@ export const sendOrderToKOT = (tableId, waiterId, items) => (dispatch, getState)
     description: `Sent items to KOT ${kotNumber}`,
     createdAt: now
   }));
+
+  // Notify Kitchen
+  dispatch(addNotification({
+    id: `notif-${uuidv4()}`,
+    userId: null,
+    role: 'KITCHEN',
+    type: 'NEW_KOT',
+    title: 'New KOT Received',
+    message: `KOT ${kotNumber} for Table ${tableId.replace('t', 'T')}`,
+    referenceId: kotId,
+    entityType: 'KOT',
+    entityId: kotId,
+    actionUrl: '/kot/orders',
+    priority: 'INFO',
+    eventKey: `NEW_KOT:${kotId}:KITCHEN`,
+  }));
 };
 
 export const pickupItem = (orderId, orderItemId, waiterId) => (dispatch, getState) => {
@@ -217,12 +233,15 @@ export const cancelItem = (orderId, orderItemId, waiterId, reason) => (dispatch,
         id: `notif-${uuidv4()}`,
         userId: null,
         role: 'KITCHEN',
-        type: 'ITEM_CANCELLED',
+        type: 'ORDER_CANCELLED',
         title: 'Item Cancelled',
         message: `Table ${order.tableId.replace('t', 'T')} (Order ${order.orderNumber}): ${menuItem?.name || 'Item'} cancelled. Reason: ${reason}`,
         referenceId: kot.id,
-        isRead: false,
-        createdAt: now
+        entityType: 'KOT',
+        entityId: kot.id,
+        actionUrl: '/kot/orders',
+        priority: 'WARNING',
+        eventKey: `ORDER_CANCELLED:${kot.id}:KITCHEN`,
       }));
       
       // Check if this completes/cancels the whole KOT

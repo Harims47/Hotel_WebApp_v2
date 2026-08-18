@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Toaster } from 'sonner';
-import { AudioNotifier } from '../AudioNotifier';
+import { NotificationPresenter } from '../NotificationPresenter';
 import { TimerEngine } from '../TimerEngine';
 import { addNotification } from '../../features/notifications/notificationsSlice';
 import { v4 as uuidv4 } from 'uuid';
@@ -44,13 +44,17 @@ export function AppShell() {
         if (!wasLow) {
           dispatch(addNotification({
             id: `LOW_STOCK:${item.id}:${Date.now()}`,
+            userId: null,
             role: 'INVENTORY_MANAGER',
+            type: 'LOW_STOCK',
             title: 'Low Stock Alert',
             message: `${item.name} is at or below reorder level: ${totalStock} remaining (Reorder Level: ${item.reorderLevel}).`,
-            isRead: false,
-            actionRequired: 'NONE',
             referenceId: item.id,
-            createdAt: new Date().toISOString()
+            entityType: 'INVENTORY_ITEM',
+            entityId: item.id,
+            actionUrl: '/inventory/stock',
+            priority: 'WARNING',
+            eventKey: `LOW_STOCK:${item.id}:INVENTORY_MANAGER`,
           }));
         }
       }
@@ -87,7 +91,7 @@ export function AppShell() {
   return (
     <div className="flex h-screen bg-canvas overflow-hidden relative">
       <Toaster position="top-right" richColors expand={false} gap={8} />
-      <AudioNotifier />
+      <NotificationPresenter />
       <TimerEngine />
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">

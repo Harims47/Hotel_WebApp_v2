@@ -123,7 +123,7 @@ export function AdjustmentNew() {
     };
   });
 
-  const handleSave = (confirm) => {
+  const handleSave = async (confirm) => {
     if (!validate()) return;
     const finalItems = buildFinalItems();
     const timestamp = new Date().toISOString();
@@ -141,8 +141,14 @@ export function AdjustmentNew() {
     dispatch(logAction({ id: `log-${uuidv4()}`, userId: currentUser?.id, action: 'ADJUSTMENT_CREATED', entityType: 'ADJUSTMENT', entityId: newId, description: `Created Adjustment ${adjNumber}`, createdAt: timestamp }));
 
     if (confirm) {
-      try { dispatch(confirmAdjustment(newAdj, currentUser)); toast.success(`Adjustment ${adjNumber} confirmed`); }
-      catch (err) { toast.error(err.message); navigate('/inventory/adjustments'); return; }
+      try {
+        await dispatch(confirmAdjustment({ adjustment: newAdj, currentUser })).unwrap();
+        toast.success(`Adjustment ${adjNumber} confirmed`);
+      } catch (err) {
+        toast.error(err?.message || err || 'Unable to confirm adjustment');
+        navigate('/inventory/adjustments');
+        return;
+      }
     } else { toast.success('Draft saved'); }
     navigate('/inventory/adjustments');
   };

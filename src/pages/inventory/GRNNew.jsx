@@ -182,7 +182,7 @@ export function GRNNew() {
     return `GRN-${String(count).padStart(5, '0')}`;
   };
 
-  const handleSave = (status) => {
+  const handleSave = async (status) => {
     if (!validateGRN()) return;
 
     const newGrnId = `grn-${uuidv4().substring(0, 8)}`;
@@ -232,8 +232,14 @@ export function GRNNew() {
     dispatch(createGRN(newGRN));
 
     if (status === 'CONFIRMED') {
-      // Execute the atomic confirmation thunk
-      dispatch(confirmGRN(newGRN, currentUser));
+      try {
+        await dispatch(confirmGRN({ grn: newGRN, currentUser })).unwrap();
+        toast.success(`GRN ${grnNumber} confirmed`);
+      } catch (err) {
+        toast.error(err?.message || err || 'Unable to confirm GRN');
+        navigate('/inventory/grn');
+        return;
+      }
     } else {
       // Just a DRAFT
       dispatch(logAction({

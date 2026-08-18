@@ -42,13 +42,13 @@ export function AdjustmentDetails() {
     setConfirmModal(null);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     try {
-      dispatch(confirmAdjustment(adjustment, currentUser));
+      await dispatch(confirmAdjustment({ adjustment, currentUser })).unwrap();
       toast.success(`Adjustment ${adjustment.adjustmentNumber} confirmed`);
       setConfirmModal(null);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err?.message || err || 'Unable to confirm adjustment');
       setConfirmModal(null);
     }
   };

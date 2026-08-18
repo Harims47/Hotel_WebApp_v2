@@ -42,13 +42,13 @@ export function WasteDetails() {
     setConfirmModal(null);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     try {
-      dispatch(confirmWaste(waste, currentUser));
+      await dispatch(confirmWaste({ waste, currentUser })).unwrap();
       toast.success(`Waste ${waste.wasteNumber} confirmed`);
       setConfirmModal(null);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err?.message || err || 'Unable to confirm waste');
       setConfirmModal(null);
     }
   };

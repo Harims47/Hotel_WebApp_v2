@@ -65,7 +65,6 @@ const ROLE_NAV = {
     { name: 'Reimbursements', path: '/inventory/reimbursements', icon: Banknote },
     { name: 'Current Stock', path: '/inventory/stock', icon: Box },
     { name: 'Stock Ledger', path: '/inventory/stock-ledger', icon: FileText },
-    { name: 'Valuation', path: '/inventory/valuation', icon: Calculator },
     { name: 'Alerts', path: '/inventory/alerts', icon: Bell },
     { name: 'Inv Reports', path: '/inventory/reports', icon: PieChart },
     { section: 'Inv Master Data' },
@@ -98,7 +97,6 @@ const ROLE_NAV = {
     { name: 'Reimbursements', path: '/inventory/reimbursements', icon: Banknote },
     { name: 'Current Stock', path: '/inventory/stock', icon: Box },
     { name: 'Stock Ledger', path: '/inventory/stock-ledger', icon: FileText },
-    { name: 'Valuation', path: '/inventory/valuation', icon: Calculator },
     { name: 'Alerts', path: '/inventory/alerts', icon: Bell },
     { name: 'Inv Reports', path: '/inventory/reports', icon: PieChart },
     { section: 'Inv Master Data' },
@@ -122,7 +120,6 @@ const ROLE_NAV = {
     { name: 'Reimbursements', path: '/inventory/reimbursements', icon: Banknote },
     { name: 'Current Stock', path: '/inventory/stock', icon: Box },
     { name: 'Stock Ledger', path: '/inventory/stock-ledger', icon: FileText },
-    { name: 'Valuation', path: '/inventory/valuation', icon: Calculator },
     { name: 'Alerts', path: '/inventory/alerts', icon: Bell },
     { name: 'Reports', path: '/inventory/reports', icon: PieChart },
     { section: 'Master Data' },
@@ -253,17 +250,7 @@ export function Sidebar({ isOpen, onClose }) {
 
         {/* User + logout */}
         <div className="border-t border-white/5 p-4 shrink-0 flex flex-col gap-3">
-          <div className="bg-sidebar-item rounded-xl p-4 flex flex-col gap-2 border border-white/5">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                {currentUser?.name?.charAt(0) || 'U'}
-              </div>
-              <div>
-                <p className="text-white text-sm font-bold leading-tight">{currentUser?.name || 'User'}</p>
-                <p className="text-primary text-[10px] font-bold uppercase tracking-wider">{currentUser?.role?.replace('_', ' ') || 'User'}</p>
-              </div>
-            </div>
-          </div>
+
           
           <button
             onClick={handleLogout}

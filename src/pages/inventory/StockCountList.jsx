@@ -8,6 +8,7 @@ import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
+import { Pagination } from '../../components/ui/Pagination';
 import { Plus, Eye } from 'lucide-react';
 
 export function StockCountList() {
@@ -19,6 +20,8 @@ export function StockCountList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [locationFilter, setLocationFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   const filteredCounts = stockCounts.filter(sc => {
     const matchesSearch = sc.countNumber.toLowerCase().includes(searchTerm.toLowerCase());
@@ -26,6 +29,19 @@ export function StockCountList() {
     const matchesLocation = locationFilter === 'ALL' || sc.locationId === locationFilter;
     return matchesSearch && matchesStatus && matchesLocation;
   }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const totalPages = Math.ceil(filteredCounts.length / itemsPerPage);
+  const paginatedCounts = filteredCounts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (setter, value) => {
+    setter(value);
+    setCurrentPage(1);
+  };
 
   const getLocationName = id => locations.find(l => l.id === id)?.name || 'Unknown';
 
@@ -57,19 +73,20 @@ export function StockCountList() {
 
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex flex-col md:flex-row gap-4 mb-6 items-end">
             <div className="flex-1">
               <SearchInput 
                 placeholder="Search count number..." 
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
+                onClear={() => { setSearchTerm(''); setCurrentPage(1); }}
               />
             </div>
             <div className="w-full md:w-48">
               <Select
                 label="Status"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => handleFilterChange(setStatusFilter, e.target.value)}
                 options={[
                   { value: 'ALL', label: 'All Statuses' },
                   { value: 'DRAFT', label: 'Draft' },
@@ -82,7 +99,7 @@ export function StockCountList() {
               <Select
                 label="Location"
                 value={locationFilter}
-                onChange={(e) => setLocationFilter(e.target.value)}
+                onChange={(e) => handleFilterChange(setLocationFilter, e.target.value)}
                 options={[
                   { value: 'ALL', label: 'All Locations' },
                   ...locations.map(l => ({ value: l.id, label: l.name }))
@@ -104,14 +121,14 @@ export function StockCountList() {
                 </tr>
               </thead>
               <tbody>
-                {filteredCounts.length === 0 ? (
+                {paginatedCounts.length === 0 ? (
                   <tr>
                     <Table.Td colSpan={6} className="text-center py-8 text-text-muted">
                       No stock counts found.
                     </Table.Td>
                   </tr>
                 ) : (
-                  filteredCounts.map((sc) => (
+                  paginatedCounts.map((sc) => (
                     <tr key={sc.id}>
                       <Table.Td className="font-medium text-text-main">
                         {sc.countNumber}
@@ -140,6 +157,11 @@ export function StockCountList() {
               </tbody>
             </Table>
           </div>
+          <Pagination 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+            onPageChange={setCurrentPage} 
+          />
         </CardContent>
       </Card>
     </div>

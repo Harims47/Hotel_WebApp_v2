@@ -1,109 +1,132 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
+import { Badge } from '../../components/ui/Badge';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { SearchInput } from '../../components/ui/SearchInput';
+import { Select } from '../../components/ui/Select';
+import { formatCurrency } from '../../utils/currency';
+
+const STATUS_COLORS = {
+  NEW: 'bg-blue-100 text-blue-800',
+  IN_PROGRESS: 'bg-amber-100 text-amber-800',
+  BILL_REQUESTED: 'bg-purple-100 text-purple-800',
+  READY: 'bg-orange-100 text-orange-800',
+  COMPLETED: 'bg-green-100 text-green-800',
+  CANCELLED: 'bg-red-100 text-red-800',
+};
 
 export function GMOrders() {
-  const orders = useSelector(state => state.orders.data) || [];
-  const users = useSelector(state => state.users.data) || [];
-  const tables = useSelector(state => state.tables.data) || [];
-  const customers = useSelector(state => state.customers.data) || [];
-  
+  const orders = useSelector(state => state.orders?.data || []);
+  const users = useSelector(state => state.users?.data || []);
+  const tables = useSelector(state => state.tables?.data || []);
+  const customers = useSelector(state => state.customers?.data || []);
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const getTableName = (id) => tables.find(t => t.id === id)?.tableNumber || id;
   const getCustomerName = (id) => customers.find(c => c.id === id)?.name || id;
   const getUserName = (id) => users.find(u => u.id === id)?.name || id;
-  const shortId = (id) => id ? (id.length > 12 ? id.substring(0, 12) + '...' : id) : '-';
+  const shortId = (id) => id ? (id.length > 8 ? id.substring(0, 8) + '...' : id) : '-';
+  const getSafeNum = (val) => (typeof val === 'number' && !isNaN(val)) ? val : 0;
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
-      const matchesSearch = 
-        o.id?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        getTableName(o.tableId)?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        getCustomerName(o.customerId)?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesType = typeFilter === 'ALL' || o.type === typeFilter;
-      const matchesStatus = statusFilter === 'ALL' || o.status === statusFilter;
-      
-      return matchesSearch && matchesType && matchesStatus;
+      if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
+
+      if (searchTerm) {
+        const q = searchTerm.toLowerCase();
+        const tName = getTableName(o.tableId)?.toString().toLowerCase() || '';
+        const cName = getCustomerName(o.customerId)?.toLowerCase() || '';
+        return o.id?.toLowerCase().includes(q) || o.orderNumber?.toLowerCase().includes(q) || tName.includes(q) || cName.includes(q);
+      }
+      return true;
     });
-  }, [orders, searchTerm, typeFilter, statusFilter, tables, customers]);
+  }, [orders, searchTerm, statusFilter, tables, customers]);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-main">Orders Overview</h1>
-      
-      <Card>
-        <CardContent className="p-4 flex flex-col md:flex-row gap-4">
-          <input 
-            type="text" 
-            placeholder="Search Order ID, Table, Customer..." 
-            className="border p-2 rounded flex-1"
+    <div className="space-y-6 max-w-screen-2xl  pb-10">
+      <PageHeader
+        title="Orders Overview"
+        breadcrumbs="RESTAURANT OPS / ORDERS"
+      />
+
+      <Card className="border-border/50">
+        <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center">
+          <SearchInput
+            placeholder="Search Order ID, Table, Customer..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={setSearchTerm}
+            className="flex-1 min-w-[200px]"
           />
-          <select 
-            className="border p-2 rounded w-full md:w-48"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-          >
-            <option value="ALL">All Types</option>
-            <option value="DINE_IN">DINE_IN</option>
-            <option value="TAKEAWAY">TAKEAWAY</option>
-          </select>
-          <select 
-            className="border p-2 rounded w-full md:w-48"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="NEW">NEW</option>
-            <option value="IN_PROGRESS">IN_PROGRESS</option>
-            <option value="READY">READY</option>
-            <option value="COMPLETED">COMPLETED</option>
-            <option value="CANCELLED">CANCELLED</option>
-          </select>
+          <div className="w-full md:w-48">
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="NEW">NEW</option>
+              <option value="IN_PROGRESS">IN PROGRESS</option>
+              <option value="BILL_REQUESTED">BILL REQUESTED</option>
+              <option value="READY">READY</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-border/50 shadow-sm">
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b">
-                <th className="p-4 font-semibold text-sm">Order ID</th>
-                <th className="p-4 font-semibold text-sm">Type</th>
-                <th className="p-4 font-semibold text-sm">Table/Customer</th>
-                <th className="p-4 font-semibold text-sm">Staff</th>
-                <th className="p-4 font-semibold text-sm">Status</th>
-                <th className="p-4 font-semibold text-sm">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50/50">
+                <TableHead className="whitespace-nowrap">Order ID</TableHead>
+                <TableHead className="whitespace-nowrap">Customer / Table</TableHead>
+                <TableHead className="whitespace-nowrap">Assigned Staff</TableHead>
+                <TableHead className="whitespace-nowrap">Status</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredOrders.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="p-4 text-center text-gray-500">No orders found.</td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12 text-text-muted">
+                    No orders available for the selected filters.
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredOrders.map(order => (
-                  <tr key={order.id} className="border-b hover:bg-gray-50">
-                    <td className="p-4 text-sm font-mono text-gray-600" title={order.id}>{shortId(order.id)}</td>
-                    <td className="p-4 text-sm">{order.type}</td>
-                    <td className="p-4 text-sm">{order.type === 'DINE_IN' ? `Table ${getTableName(order.tableId)}` : (order.customerId ? getCustomerName(order.customerId) : 'Walk-in')}</td>
-                    <td className="p-4 text-sm">{getUserName(order.waiterId || order.cashierId) || '-'}</td>
-                    <td className="p-4 text-sm">
-                      <span className="px-2 py-1 rounded bg-gray-100 text-xs font-medium">
-                        {order.status}
+                  <TableRow key={order.id} className="hover:bg-gray-50/50 transition-colors">
+                    <TableCell className="whitespace-nowrap">
+                      <span className="font-mono text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded" title={order.id}>
+                        {order.orderNumber || shortId(order.id)}
                       </span>
-                    </td>
-                    <td className="p-4 text-sm font-medium">₹{order.totalAmount || 0}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="text-sm whitespace-nowrap">
+                      {order.type === 'DINE_IN'
+                        ? <span className="font-semibold text-primary">Table {getTableName(order.tableId)}</span>
+                        : (order.customerId ? getCustomerName(order.customerId) : <span className="text-gray-400 italic">Walk-in</span>)
+                      }
+                    </TableCell>
+                    <TableCell className="text-sm text-text-muted whitespace-nowrap">
+                      {getUserName(order.waiterId || order.cashierId) || '-'}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <Badge className={STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'} variant="outline">
+                        {order.status?.replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-sm whitespace-nowrap">
+                      {formatCurrency(getSafeNum(order.totalAmount || order.grandTotal))}
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

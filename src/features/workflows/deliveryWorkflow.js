@@ -16,12 +16,15 @@ export const assignDeliveryBoy = (deliveryId, deliveryBoyUserId, cashierId) => (
     id: `notif-${uuidv4()}`,
     userId: deliveryBoyUserId,
     role: 'DELIVERY_BOY',
+    type: 'DELIVERY_ASSIGNED',
     title: 'New Delivery Assigned',
     message: `Order: ${delivery.orderId} - ${delivery.customerName}`,
-    type: 'INFO',
     referenceId: deliveryId,
-    isRead: false,
-    createdAt: now,
+    entityType: 'DELIVERY',
+    entityId: deliveryId,
+    actionUrl: `/delivery/orders/${deliveryId}`,
+    priority: 'INFO',
+    eventKey: `DELIVERY_ASSIGNED:${deliveryId}:${deliveryBoyUserId}`,
   }));
 
   dispatch(logAction({
@@ -47,12 +50,15 @@ export const pickupDeliveryOrder = (deliveryId, deliveryBoyId) => (dispatch, get
     id: `notif-${uuidv4()}`,
     userId: null,
     role: 'CASHIER',
+    type: 'DELIVERY_PICKED_UP',
     title: 'Delivery Picked Up',
     message: `Order ${delivery.orderId} picked up by Delivery Boy`,
-    type: 'INFO',
     referenceId: deliveryId,
-    isRead: false,
-    createdAt: now,
+    entityType: 'DELIVERY',
+    entityId: deliveryId,
+    actionUrl: '/cashier/delivery',
+    priority: 'INFO',
+    eventKey: `DELIVERY_PICKED_UP:${deliveryId}:CASHIER`,
   }));
 
   dispatch(logAction({
@@ -78,12 +84,15 @@ export const startDelivery = (deliveryId, deliveryBoyId) => (dispatch, getState)
     id: `notif-${uuidv4()}`,
     userId: null,
     role: 'CASHIER',
+    type: 'DELIVERY_STARTED',
     title: 'Out for Delivery',
     message: `Order ${delivery.orderId} is out for delivery`,
-    type: 'INFO',
     referenceId: deliveryId,
-    isRead: false,
-    createdAt: now,
+    entityType: 'DELIVERY',
+    entityId: deliveryId,
+    actionUrl: '/cashier/delivery',
+    priority: 'INFO',
+    eventKey: `DELIVERY_STARTED:${deliveryId}:CASHIER`,
   }));
 
   dispatch(logAction({
@@ -116,12 +125,15 @@ export const confirmDelivery = (deliveryId, paymentMethod, deliveryBoyId) => (di
     id: `notif-${uuidv4()}`,
     userId: null,
     role: 'CASHIER',
+    type: 'DELIVERY_COMPLETED',
     title: 'Order Delivered',
     message: `Order ${delivery.orderId} delivered successfully. Payment: ${paymentMethod}`,
-    type: 'SUCCESS',
     referenceId: deliveryId,
-    isRead: false,
-    createdAt: now,
+    entityType: 'DELIVERY',
+    entityId: deliveryId,
+    actionUrl: '/cashier/delivery',
+    priority: 'SUCCESS',
+    eventKey: `DELIVERY_COMPLETED:${deliveryId}:CASHIER`,
   }));
 
   dispatch(logAction({

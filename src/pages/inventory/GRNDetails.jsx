@@ -72,10 +72,15 @@ export function GRNDetails() {
     setConfirmModal(null);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (isGM) return;
-    dispatch(confirmGRN(grn, currentUser));
-    navigate('/inventory/grn');
+    try {
+      await dispatch(confirmGRN({ grn, currentUser })).unwrap();
+      toast.success(`GRN ${grn.grnNumber} confirmed`);
+      navigate('/inventory/grn');
+    } catch (err) {
+      toast.error(err?.message || err || 'Unable to confirm GRN');
+    }
   };
 
   return (

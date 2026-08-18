@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   IndianRupee, Receipt, XCircle, Percent, Calculator,
   ChefHat, Truck, UtensilsCrossed, Activity, BarChart2
 } from 'lucide-react';
@@ -68,52 +68,52 @@ export function ManagementDashboard() {
   const today = new Date().toISOString().split('T')[0];
   const [dateRange, setDateRange] = useState({ preset: 'TODAY', from: today, to: today });
 
-  const bills     = useSelector(s => s.billing.data)       || [];
-  const orders    = useSelector(s => s.orders.data)        || [];
-  const payments  = useSelector(s => s.payments.data)      || [];
-  const kots      = useSelector(s => s.kot.data)           || [];
-  const deliveries= useSelector(s => s.delivery.data)      || [];
-  const tables    = useSelector(s => s.tables.data)        || [];
-  const logs      = useSelector(s => s.audit.logs)         || [];
-  const invStock  = useSelector(s => s.invStock.data)      || [];
-  const invItems  = useSelector(s => s.invItems.data)      || [];
+  const bills = useSelector(s => s.billing.data) || [];
+  const orders = useSelector(s => s.orders.data) || [];
+  const payments = useSelector(s => s.payments.data) || [];
+  const kots = useSelector(s => s.kot.data) || [];
+  const deliveries = useSelector(s => s.delivery.data) || [];
+  const tables = useSelector(s => s.tables.data) || [];
+  const logs = useSelector(s => s.audit.logs) || [];
+  const invStock = useSelector(s => s.invStock.data) || [];
+  const invItems = useSelector(s => s.invItems.data) || [];
   const purchaseOrders = useSelector(s => s.purchaseOrders.data) || [];
   const reimbursements = useSelector(s => s.reimbursements.data) || [];
 
   const { from, to } = getDateBounds(dateRange.preset, dateRange.from, dateRange.to);
 
-  const fBills     = useMemo(() => bills.filter(b => inRange(b.createdAt, from, to)), [bills, from, to]);
-  const fOrders    = useMemo(() => orders.filter(o => inRange(o.createdAt, from, to)), [orders, from, to]);
-  const fPayments  = useMemo(() => payments.filter(p => inRange(p.createdAt, from, to)), [payments, from, to]);
-  const fKots      = useMemo(() => kots.filter(k => inRange(k.createdAt, from, to)), [kots, from, to]);
-  const fDeliveries= useMemo(() => deliveries.filter(d => inRange(d.createdAt, from, to)), [deliveries, from, to]);
-  const fLogs      = useMemo(() => logs.filter(l => inRange(l.timestamp, from, to)), [logs, from, to]);
+  const fBills = useMemo(() => bills.filter(b => inRange(b.createdAt, from, to)), [bills, from, to]);
+  const fOrders = useMemo(() => orders.filter(o => inRange(o.createdAt, from, to)), [orders, from, to]);
+  const fPayments = useMemo(() => payments.filter(p => inRange(p.createdAt, from, to)), [payments, from, to]);
+  const fKots = useMemo(() => kots.filter(k => inRange(k.createdAt, from, to)), [kots, from, to]);
+  const fDeliveries = useMemo(() => deliveries.filter(d => inRange(d.createdAt, from, to)), [deliveries, from, to]);
+  const fLogs = useMemo(() => logs.filter(l => inRange(l.timestamp, from, to)), [logs, from, to]);
 
   // --- SALES ---
-  const grossSales  = useMemo(() => fBills.reduce((s, b) => s + (b.subtotal || 0), 0), [fBills]);
-  const discounts   = useMemo(() => fBills.reduce((s, b) => s + (b.discountAmount || 0), 0), [fBills]);
-  const taxCollected= useMemo(() => fBills.reduce((s, b) => s + (b.taxAmount || 0), 0), [fBills]);
-  const netSales    = useMemo(() => fBills.reduce((s, b) => s + (b.grandTotal || 0), 0), [fBills]);
-  const paidAmt     = useMemo(() => fPayments.filter(p => p.status === 'PAID').reduce((s, p) => s + (p.amount || 0), 0), [fPayments]);
-  const pendingAmt  = Math.max(0, netSales - paidAmt);
+  const grossSales = useMemo(() => fBills.reduce((s, b) => s + (b.subtotal || 0), 0), [fBills]);
+  const discounts = useMemo(() => fBills.reduce((s, b) => s + (b.discountAmount || 0), 0), [fBills]);
+  const taxCollected = useMemo(() => fBills.reduce((s, b) => s + (b.taxAmount || 0), 0), [fBills]);
+  const netSales = useMemo(() => fBills.reduce((s, b) => s + (b.grandTotal || 0), 0), [fBills]);
+  const paidAmt = useMemo(() => fPayments.filter(p => p.status === 'PAID').reduce((s, p) => s + (p.amount || 0), 0), [fPayments]);
+  const pendingAmt = Math.max(0, netSales - paidAmt);
 
   // --- ORDERS ---
-  const orderTotal  = fOrders.length;
+  const orderTotal = fOrders.length;
   const cancelledOrders = fOrders.filter(o => o.status === 'CANCELLED').length;
   const aov = orderTotal > 0 ? netSales / orderTotal : 0;
 
   const getTypeStats = (type) => {
     const list = fOrders.filter(o => o.type === type);
-    const amt  = list.reduce((s, o) => {
+    const amt = list.reduce((s, o) => {
       const bill = fBills.find(b => b.orderId === o.id);
       return s + (bill?.grandTotal || 0);
     }, 0);
     return { count: list.length, amount: amt };
   };
-  const dineIn   = useMemo(() => getTypeStats('DINE_IN'),   [fOrders, fBills]);
-  const takeaway = useMemo(() => getTypeStats('TAKEAWAY'),  [fOrders, fBills]);
-  const delivery = useMemo(() => getTypeStats('DELIVERY'),  [fOrders, fBills]);
-  const phone    = useMemo(() => getTypeStats('PHONE'),     [fOrders, fBills]);
+  const dineIn = useMemo(() => getTypeStats('DINE_IN'), [fOrders, fBills]);
+  const takeaway = useMemo(() => getTypeStats('TAKEAWAY'), [fOrders, fBills]);
+  const delivery = useMemo(() => getTypeStats('DELIVERY'), [fOrders, fBills]);
+  const phone = useMemo(() => getTypeStats('PHONE'), [fOrders, fBills]);
 
   // --- PAYMENTS ---
   const getMethodStats = (method) => {
@@ -121,28 +121,28 @@ export function ManagementDashboard() {
     return { count: list.length, amount: list.reduce((s, p) => s + (p.amount || 0), 0) };
   };
   const cash = useMemo(() => getMethodStats('CASH'), [fPayments]);
-  const upi  = useMemo(() => getMethodStats('UPI'),  [fPayments]);
+  const upi = useMemo(() => getMethodStats('UPI'), [fPayments]);
   const card = useMemo(() => getMethodStats('CARD'), [fPayments]);
 
   // --- KOT ---
-  const kotNew       = fKots.filter(k => k.status === 'NEW').length;
+  const kotNew = fKots.filter(k => k.status === 'NEW').length;
   const kotPreparing = fKots.filter(k => k.status === 'PREPARING').length;
-  const kotReady     = fKots.filter(k => k.status === 'READY').length;
+  const kotReady = fKots.filter(k => k.status === 'READY').length;
   const kotCompleted = fKots.filter(k => k.status === 'COMPLETED').length;
   const kotCancelled = fKots.filter(k => k.status === 'CANCELLED').length;
 
   // --- DELIVERY ---
-  const delTotal     = fDeliveries.length;
-  const delPending   = fDeliveries.filter(d => d.status === 'PENDING').length;
-  const delAssigned  = fDeliveries.filter(d => d.status === 'ASSIGNED').length;
-  const delPickedUp  = fDeliveries.filter(d => d.status === 'PICKED_UP').length;
-  const delOut       = fDeliveries.filter(d => d.status === 'OUT_FOR_DELIVERY').length;
+  const delTotal = fDeliveries.length;
+  const delPending = fDeliveries.filter(d => d.status === 'PENDING').length;
+  const delAssigned = fDeliveries.filter(d => d.status === 'ASSIGNED').length;
+  const delPickedUp = fDeliveries.filter(d => d.status === 'PICKED_UP').length;
+  const delOut = fDeliveries.filter(d => d.status === 'OUT_FOR_DELIVERY').length;
   const delDelivered = fDeliveries.filter(d => d.status === 'DELIVERED').length;
 
   // --- TABLES ---
-  const totalTables    = tables.length;
+  const totalTables = tables.length;
   const occupiedTables = tables.filter(t => t.status === 'OCCUPIED').length;
-  const availableTables= tables.filter(t => t.status === 'AVAILABLE').length;
+  const availableTables = tables.filter(t => t.status === 'AVAILABLE').length;
 
   // --- INVENTORY COMPACT ---
   // Low stock based on invStock vs invItems minStockLevel
@@ -152,9 +152,9 @@ export function ManagementDashboard() {
       return item && s.quantity <= (item.minStockLevel || 0);
     }).length;
   }, [invStock, invItems]);
-  const pendingPOs     = purchaseOrders.filter(p => p.status === 'PENDING' || p.status === 'DRAFT').length;
-  const pendingReimb   = reimbursements.filter(r => r.status === 'PENDING').length;
-  const approvedReimb  = reimbursements.filter(r => r.status === 'APPROVED').length;
+  const pendingPOs = purchaseOrders.filter(p => p.status === 'PENDING' || p.status === 'DRAFT').length;
+  const pendingReimb = reimbursements.filter(r => r.status === 'PENDING').length;
+  const approvedReimb = reimbursements.filter(r => r.status === 'APPROVED').length;
 
   const orderMax = Math.max(dineIn.count, takeaway.count, delivery.count, phone.count, 1);
 

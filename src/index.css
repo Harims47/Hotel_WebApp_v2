@@ -181,3 +181,20 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #B0AEAB;
 }
+
+@keyframes shake {
+  0% { transform: rotate(0); }
+  10% { transform: rotate(20deg); }
+  20% { transform: rotate(-20deg); }
+  30% { transform: rotate(15deg); }
+  40% { transform: rotate(-15deg); }
+  50% { transform: rotate(10deg); }
+  60% { transform: rotate(-10deg); }
+  70% { transform: rotate(0); }
+  100% { transform: rotate(0); }
+}
+.animate-shake {
+  animation: shake 1.5s ease-in-out infinite;
+  transform-origin: top center;
+  display: inline-block;
+}

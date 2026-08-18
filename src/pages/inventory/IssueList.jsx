@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
@@ -6,6 +6,8 @@ import { Button } from '../../components/ui/Button';
 import { Table } from '../../components/ui/Table';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SearchInput } from '../../components/ui/SearchInput';
+import { Pagination } from '../../components/ui/Pagination';
 import { Badge } from '../../components/ui/Badge';
 import { ArrowUpRight, Plus, Eye } from 'lucide-react';
 
@@ -18,9 +20,27 @@ export function IssueList() {
   const locations = useSelector(state => state.invLocations.data) || [];
   const isGM = currentUser?.role === 'GM';
 
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
   const getLocation = id => locations.find(l => l.id === id)?.name || id || '—';
 
   const sorted = [...issues].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const filtered = sorted.filter(i => 
+    !search || 
+    i.issueNumber.toLowerCase().includes(search.toLowerCase()) ||
+    i.department?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -35,7 +55,17 @@ export function IssueList() {
         )}
       />
       <Card>
-        <div className="overflow-x-auto">
+        <div className="p-4 border-b border-border bg-gray-50/50">
+          <div className="w-full md:w-80">
+            <SearchInput 
+              placeholder="Search by issue number or department..." 
+              value={search} 
+              onChange={handleSearchChange} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto w-full">
           <Table>
             <thead>
               <tr>
@@ -49,11 +79,11 @@ export function IssueList() {
               </tr>
             </thead>
             <tbody>
-              {sorted.length === 0 ? (
+              {paginated.length === 0 ? (
                 <tr><td colSpan="7">
-                  <EmptyState icon={ArrowUpRight} title="No issues yet" description="Create a stock issue to record inventory movement." />
+                  <EmptyState icon={ArrowUpRight} title={search ? "No matches found" : "No issues yet"} description={search ? "Try adjusting your search." : "Create a stock issue to record inventory movement."} />
                 </td></tr>
-              ) : sorted.map(issue => (
+              ) : paginated.map(issue => (
                 <tr key={issue.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/inventory/issues/${issue.id}`)}>
                   <Table.Td className="font-semibold text-text-main">{issue.issueNumber}</Table.Td>
                   <Table.Td>{new Date(issue.issueDate).toLocaleDateString()}</Table.Td>
@@ -71,6 +101,11 @@ export function IssueList() {
             </tbody>
           </Table>
         </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       </Card>
     </div>
   );

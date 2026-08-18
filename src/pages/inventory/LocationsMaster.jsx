@@ -11,6 +11,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
+import { Pagination } from '../../components/ui/Pagination';
 import { Plus, Power, PowerOff, MapPin } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
@@ -24,6 +25,9 @@ export function LocationsMaster() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
   const [formData, setFormData] = useState({ code: '', name: '', type: 'STORE', description: '' });
 
   const isGM = currentUser?.role === 'GM';
@@ -33,6 +37,15 @@ export function LocationsMaster() {
     l.name.toLowerCase().includes(search.toLowerCase()) || 
     l.code.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredLocations.length / itemsPerPage);
+  const paginatedLocations = filteredLocations.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
+
 
   const resetForm = () => {
     setFormData({ code: '', name: '', type: 'STORE', description: '' });
@@ -139,8 +152,8 @@ export function LocationsMaster() {
             <SearchInput 
               placeholder="Search locations..." 
               value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              onClear={() => setSearch('')}
+              onChange={handleSearchChange} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
             />
           </div>
         </div>
@@ -158,14 +171,14 @@ export function LocationsMaster() {
               </tr>
             </thead>
             <tbody>
-              {filteredLocations.length === 0 ? (
+              {paginatedLocations.length === 0 ? (
                 <tr>
                   <td colSpan={isGM ? 5 : 6}>
                     <EmptyState icon={MapPin} title="No locations found" description="Try adjusting your search criteria." />
                   </td>
                 </tr>
               ) : (
-                filteredLocations.map(loc => (
+                paginatedLocations.map(loc => (
                   <tr key={loc.id} className={!isGM ? "cursor-pointer hover:bg-gray-50" : ""} onClick={() => handleEdit(loc)}>
                     <Table.Td className="font-semibold text-text-main whitespace-nowrap">{loc.code}</Table.Td>
                     <Table.Td className="font-bold text-text-main whitespace-nowrap">{loc.name}</Table.Td>
@@ -189,6 +202,11 @@ export function LocationsMaster() {
             </tbody>
           </Table>
         </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       </Card>
     </div>
   );

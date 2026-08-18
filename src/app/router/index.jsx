@@ -73,7 +73,6 @@ import { StockCountList } from '../../pages/inventory/StockCountList';
 import { StockCountNew } from '../../pages/inventory/StockCountNew';
 import { StockCountDetails } from '../../pages/inventory/StockCountDetails';
 import { InventoryAlerts } from '../../pages/inventory/InventoryAlerts';
-import { StockValuation } from '../../pages/inventory/StockValuation';
 import { InventoryReports } from '../../pages/inventory/InventoryReports';
 import { ReimbursementList } from '../../pages/inventory/ReimbursementList';
 import { ReimbursementNew } from '../../pages/inventory/ReimbursementNew';
@@ -82,6 +81,9 @@ import { ReimbursementDetails } from '../../pages/inventory/ReimbursementDetails
 // Management Routes
 import { ManagementDashboard } from '../../pages/management/ManagementDashboard';
 import { ManagementReports } from '../../pages/management/ManagementReports';
+
+// Notifications
+import { NotificationsList } from '../../pages/notifications/NotificationsList';
 
 // Placeholders for other routes so there are no broken links in Sidebar
 const Placeholder = ({ title }) => <div className="p-6 text-text-main font-semibold text-xl">{title} Placeholder</div>;
@@ -179,7 +181,6 @@ const router = createBrowserRouter([
       { path: 'inventory/stock-counts/new', element: <StockCountNew /> },
       { path: 'inventory/stock-counts/:countId', element: <StockCountDetails /> },
       { path: 'inventory/alerts', element: <InventoryAlerts /> },
-      { path: 'inventory/valuation', element: <StockValuation /> },
       { path: 'inventory/reports', element: <InventoryReports /> },
       { path: 'inventory/reimbursements', element: <ReimbursementList /> },
       { path: 'inventory/reimbursements/new', element: <ReimbursementNew /> },
@@ -188,6 +189,9 @@ const router = createBrowserRouter([
       // Management Routes
       { path: 'management/dashboard', element: <ManagementDashboard /> },
       { path: 'management/reports', element: <ManagementReports /> },
+      
+      // Notifications
+      { path: 'notifications', element: <NotificationsList /> },
       
       // Catch-all
       { path: '*', element: <Navigate to="/login" replace /> },

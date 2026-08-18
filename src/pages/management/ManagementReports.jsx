@@ -20,8 +20,8 @@ const fmt = (n) => `₹${(n || 0).toLocaleString('en-IN', { minimumFractionDigit
 function getDateBounds(preset, from, to) {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
-  if (preset === 'ALL')       return { from: '1900-01-01', to: '2999-12-31' };
-  if (preset === 'TODAY')     return { from: today, to: today };
+  if (preset === 'ALL') return { from: '1900-01-01', to: '2999-12-31' };
+  if (preset === 'TODAY') return { from: today, to: today };
   if (preset === 'YESTERDAY') {
     const y = new Date(now); y.setDate(y.getDate() - 1);
     const s = y.toISOString().split('T')[0];
@@ -67,14 +67,14 @@ function EmptyRow({ cols }) {
 // TABS CONFIG
 // ------------------------------------------------------------------
 const TABS = [
-  { id: 'sales',       label: 'Sales',          icon: FileText },
-  { id: 'orders',      label: 'Orders',         icon: ShoppingBag },
-  { id: 'payments',    label: 'Payments',       icon: CreditCard },
-  { id: 'kot',         label: 'KOT',            icon: ChefHat },
-  { id: 'delivery',    label: 'Delivery',       icon: Truck },
-  { id: 'cancellation',label: 'Cancellations',  icon: XCircle },
-  { id: 'discount',    label: 'Discounts',      icon: Percent },
-  { id: 'activity',   label: 'Staff Activity', icon: Activity },
+  { id: 'sales', label: 'Sales', icon: FileText },
+  { id: 'orders', label: 'Orders', icon: ShoppingBag },
+  { id: 'payments', label: 'Payments', icon: CreditCard },
+  { id: 'kot', label: 'KOT', icon: ChefHat },
+  { id: 'delivery', label: 'Delivery', icon: Truck },
+  { id: 'cancellation', label: 'Cancellations', icon: XCircle },
+  { id: 'discount', label: 'Discounts', icon: Percent },
+  { id: 'activity', label: 'Staff Activity', icon: Activity },
 ];
 
 // ------------------------------------------------------------------
@@ -89,22 +89,22 @@ export function ManagementReports() {
   const [filterType, setFilterType] = useState('ALL');
   const [filterUser, setFilterUser] = useState('ALL');
 
-  const bills      = useSelector(s => s.billing.data)   || [];
-  const orders     = useSelector(s => s.orders.data)    || [];
-  const payments   = useSelector(s => s.payments.data)  || [];
-  const kots       = useSelector(s => s.kot.data)       || [];
-  const deliveries = useSelector(s => s.delivery.data)  || [];
-  const logs       = useSelector(s => s.audit.logs)     || [];
-  const users      = useSelector(s => s.users.data)     || [];
+  const bills = useSelector(s => s.billing.data) || [];
+  const orders = useSelector(s => s.orders.data) || [];
+  const payments = useSelector(s => s.payments.data) || [];
+  const kots = useSelector(s => s.kot.data) || [];
+  const deliveries = useSelector(s => s.delivery.data) || [];
+  const logs = useSelector(s => s.audit.logs) || [];
+  const users = useSelector(s => s.users.data) || [];
 
   const { from, to } = getDateBounds(dateRange.preset, dateRange.from, dateRange.to);
 
-  const fBills     = useMemo(() => bills.filter(b => inRange(b.createdAt, from, to)), [bills, from, to]);
-  const fOrders    = useMemo(() => orders.filter(o => inRange(o.createdAt, from, to)), [orders, from, to]);
-  const fPayments  = useMemo(() => payments.filter(p => inRange(p.createdAt, from, to)), [payments, from, to]);
-  const fKots      = useMemo(() => kots.filter(k => inRange(k.createdAt, from, to)), [kots, from, to]);
-  const fDeliveries= useMemo(() => deliveries.filter(d => inRange(d.createdAt, from, to)), [deliveries, from, to]);
-  const fLogs      = useMemo(() => logs.filter(l => inRange(l.timestamp, from, to)), [logs, from, to]);
+  const fBills = useMemo(() => bills.filter(b => inRange(b.createdAt, from, to)), [bills, from, to]);
+  const fOrders = useMemo(() => orders.filter(o => inRange(o.createdAt, from, to)), [orders, from, to]);
+  const fPayments = useMemo(() => payments.filter(p => inRange(p.createdAt, from, to)), [payments, from, to]);
+  const fKots = useMemo(() => kots.filter(k => inRange(k.createdAt, from, to)), [kots, from, to]);
+  const fDeliveries = useMemo(() => deliveries.filter(d => inRange(d.createdAt, from, to)), [deliveries, from, to]);
+  const fLogs = useMemo(() => logs.filter(l => inRange(l.timestamp, from, to)), [logs, from, to]);
 
   const userOptions = useMemo(() => {
     const ids = [...new Set(logs.map(l => l.userId).filter(Boolean))];
@@ -257,11 +257,10 @@ export function ManagementReports() {
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors whitespace-nowrap ${
-                  isActive
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors whitespace-nowrap ${isActive
                     ? 'border-primary text-primary bg-primary/5'
                     : 'border-transparent text-text-muted hover:text-text-main hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {tab.label}

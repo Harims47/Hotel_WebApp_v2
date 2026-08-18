@@ -64,24 +64,32 @@ export const markItemReady = (kotId, kotItemId, kitchenUserId) => (dispatch, get
     if (order.orderType === 'TAKEAWAY') {
       dispatch(addNotification({
         id: `notif-${uuidv4()}`,
-        userId: order.waiterId, // The cashier who created it
-        type: 'ITEM_READY',
+        userId: order.waiterId,
+        type: 'ORDER_READY',
         title: 'Takeaway Order Ready',
         message: `${order.orderNumber} - ${order.customerName || 'Customer'}: ${itemName} ×${kotItem.quantity} is ready for pickup.`,
         referenceId: order.id,
-        isRead: false,
-        createdAt: now
+        entityType: 'ORDER',
+        entityId: order.id,
+        actionUrl: '/cashier/takeaway',
+        priority: 'SUCCESS',
+        eventKey: `ORDER_READY:${order.id}:${order.waiterId}`,
       }));
     } else if (order.waiterId) {
       dispatch(addNotification({
         id: `notif-${uuidv4()}`,
         userId: order.waiterId,
-        type: 'ITEM_READY',
+        type: 'ORDER_READY',
         title: 'Item Ready',
         message: `Table ${table ? table.tableNumber : kot.tableId}: ${itemName} ×${kotItem.quantity} is ready for pickup.`,
         referenceId: order.id,
-        isRead: false,
-        createdAt: now
+        entityType: 'ORDER',
+        entityId: order.id,
+        actionUrl: `/waiter/tables/${table ? table.id : kot.tableId}`,
+        priority: 'INFO',
+        actionRequired: 'SNOOZE',
+        orderItemId: kotItem.orderItemId,
+        eventKey: `ORDER_READY:${order.id}:${order.waiterId}`,
       }));
     }
   }
@@ -107,10 +115,13 @@ export const markItemReady = (kotId, kotItemId, kitchenUserId) => (dispatch, get
           role: 'CASHIER',
           title: 'Delivery Order Ready for Billing',
           message: `Order: ${order.orderNumber} - ${order.customerName}. Bill is ready for Cashier review.`,
-          type: 'INFO',
+          type: 'BILL_REQUESTED',
           referenceId: delivery.id,
-          isRead: false,
-          createdAt: now
+          entityType: 'DELIVERY',
+          entityId: delivery.id,
+          actionUrl: '/cashier/delivery',
+          priority: 'INFO',
+          eventKey: `BILL_REQUESTED:${delivery.id}:CASHIER`,
         }));
       }
     }

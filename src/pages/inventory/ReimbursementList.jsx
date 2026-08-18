@@ -7,6 +7,7 @@ import { Table } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Pagination } from '../../components/ui/Pagination';
 import { Plus, Search, Filter, ArrowRight } from 'lucide-react';
 import { formatCurrency } from '../../utils/currency';
 
@@ -27,6 +28,8 @@ export function ReimbursementList() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   const filteredReimbursements = reimbursements
     .filter(r => {
@@ -44,6 +47,19 @@ export function ReimbursementList() {
       return true;
     })
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const totalPages = Math.ceil(filteredReimbursements.length / itemsPerPage);
+  const paginatedReimbursements = filteredReimbursements.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -65,7 +81,7 @@ export function ReimbursementList() {
             type="text"
             placeholder="Search by Employee, Supplier, PO, GRN..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-primary/50"
             aria-label="Search reimbursements"
           />
@@ -75,7 +91,7 @@ export function ReimbursementList() {
             <Filter className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={handleFilterChange}
               className="pl-10 pr-8 py-2 border border-border rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none"
               aria-label="Filter by status"
             >
@@ -90,34 +106,38 @@ export function ReimbursementList() {
         </div>
       </Card>
 
-      {filteredReimbursements.length === 0 ? (
-        <EmptyState
-          icon={ArrowRight}
-          title="No Reimbursements Found"
-          description={searchTerm ? "Try adjusting your search or filters." : "Create a new reimbursement request."}
-          action={!isGM ? (
-            <Button onClick={() => navigate('/inventory/reimbursements/new')}>
-              Create Reimbursement
-            </Button>
-          ) : undefined}
-        />
-      ) : (
-        <Card className="overflow-hidden border-border/50">
-          <div className="overflow-x-auto">
-            <Table>
-              <thead>
+      <Card className="overflow-hidden border-border/50">
+        <div className="overflow-x-auto">
+          <Table>
+            <thead>
+              <tr>
+                <Table.Th>Reimbursement No</Table.Th>
+                <Table.Th>Date</Table.Th>
+                <Table.Th>Employee</Table.Th>
+                <Table.Th>Source / Links</Table.Th>
+                <Table.Th>Amount</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th>Actions</Table.Th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedReimbursements.length === 0 ? (
                 <tr>
-                  <Table.Th>Reimbursement No</Table.Th>
-                  <Table.Th>Date</Table.Th>
-                  <Table.Th>Employee</Table.Th>
-                  <Table.Th>Source / Links</Table.Th>
-                  <Table.Th>Amount</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Actions</Table.Th>
+                  <td colSpan="7">
+                    <EmptyState
+                      icon={ArrowRight}
+                      title="No Reimbursements Found"
+                      description={searchTerm ? "Try adjusting your search or filters." : "Create a new reimbursement request."}
+                      action={!isGM ? (
+                        <Button onClick={() => navigate('/inventory/reimbursements/new')}>
+                          Create Reimbursement
+                        </Button>
+                      ) : undefined}
+                    />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filteredReimbursements.map(reimb => (
+              ) : (
+                paginatedReimbursements.map(reimb => (
                   <tr key={reimb.id}>
                     <Table.Td className="font-medium">{reimb.reimbursementNo}</Table.Td>
                     <Table.Td>{new Date(reimb.reimbursementDate).toLocaleDateString()}</Table.Td>
@@ -142,12 +162,17 @@ export function ReimbursementList() {
                       </Button>
                     </Table.Td>
                   </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        </Card>
-      )}
+                ))
+              )}
+            </tbody>
+          </Table>
+        </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
+      </Card>
     </div>
   );
 }

@@ -87,14 +87,17 @@ export const completeOrder = (orderId, waiterId) => (dispatch, getState) => {
     : `${order.orderType === 'TAKEAWAY' ? (order.fulfillmentType === 'DELIVERY' ? 'Delivery' : 'Takeaway') : 'Order'}${order.customerName ? ` (${order.customerName})` : ''}`;
   dispatch(addNotification({
     id: `notif-${uuidv4()}`,
-    userId: null, // Broadcast to roles if we supported it, but we can target CASHIER users
+    userId: null,
     role: 'CASHIER',
+    type: 'BILL_REQUESTED',
     title: 'New Bill Request',
     message: `${orderLocationLabel} (Order #${order.orderNumber}) requested bill. Total: ₹${grandTotal.toFixed(2)}`,
-    type: 'INFO',
     referenceId: billId,
-    isRead: false,
-    createdAt: now,
+    entityType: 'BILL',
+    entityId: billId,
+    actionUrl: '/cashier/bills',
+    priority: 'INFO',
+    eventKey: `BILL_REQUESTED:${billId}:CASHIER`,
   }));
 
   dispatch(logAction({
@@ -314,12 +317,15 @@ export const createTakeawayOrder = (source, customerName, customerPhone, notes, 
     id: `notif-${uuidv4()}`,
     userId: null,
     role: 'KOT',
+    type: 'ORDER_CREATED',
     title: 'New Takeaway Order',
     message: `Takeaway (${source}): ${customerName || 'Customer'} - ${kotItems.length} items`,
-    type: 'INFO',
     referenceId: kotId,
-    isRead: false,
-    createdAt: now,
+    entityType: 'KOT',
+    entityId: kotId,
+    actionUrl: '/kot/orders',
+    priority: 'INFO',
+    eventKey: `ORDER_CREATED:${kotId}:KOT`,
   }));
 
   dispatch(logAction({

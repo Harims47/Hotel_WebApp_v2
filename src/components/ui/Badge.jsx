@@ -47,7 +47,7 @@ export function StatusPill({ status, className, showDot = true, size = 'sm' }) {
 
   return (
     <span className={cn(
-      'inline-flex items-center rounded-full font-semibold',
+      'inline-flex items-center rounded-full font-semibold whitespace-nowrap',
       config.bg, config.text, sizeClass, className
     )}>
       {showDot && <span className={cn('rounded-full shrink-0', config.dot, dotSize)} />}
@@ -73,7 +73,7 @@ export function Badge({ className, variant = 'default', children, ...props }) {
   return (
     <div
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap',
         variants[variant],
         className
       )}

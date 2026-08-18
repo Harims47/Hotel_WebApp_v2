@@ -5,8 +5,8 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { formatCurrency } from '../../utils/currency';
-import { 
-  Package, Tags, Building2, AlertTriangle, ShoppingCart, FileText, 
+import {
+  Package, Tags, Building2, AlertTriangle, ShoppingCart, FileText,
   ArrowRightLeft, SlidersHorizontal, ClipboardList, TrendingUp, TrendingDown,
   Bell, CheckCircle, Clock, Banknote, DollarSign
 } from 'lucide-react';
@@ -76,7 +76,7 @@ export function InventoryDashboard() {
   // --- MOVEMENT KPIs (Today) ---
   const todayStr = new Date().toISOString().split('T')[0];
   const todaysLedger = ledger.filter(l => l.transactionDate.startsWith(todayStr));
-  
+
   const todayStockIn = todaysLedger.filter(l => l.transactionType === 'STOCK_IN').reduce((sum, l) => sum + l.quantity, 0);
   const todayStockOut = todaysLedger.filter(l => l.transactionType === 'STOCK_OUT').reduce((sum, l) => sum + Math.abs(l.quantity), 0);
   const todayWaste = todaysLedger.filter(l => l.transactionType === 'WASTE').reduce((sum, l) => sum + Math.abs(l.quantity), 0);
@@ -96,7 +96,7 @@ export function InventoryDashboard() {
 
   // --- RECENT ACTIVITY ---
   const inventoryActionTypes = [
-    'GRN_CONFIRMED', 'STOCK_ISSUE_CONFIRMED', 'WASTE_CONFIRMED', 
+    'GRN_CONFIRMED', 'STOCK_ISSUE_CONFIRMED', 'WASTE_CONFIRMED',
     'TRANSFER_CONFIRMED', 'ADJUSTMENT_CONFIRMED', 'STOCK_COUNT_CONFIRMED'
   ];
   const recentActivities = [...audits]
@@ -106,8 +106,8 @@ export function InventoryDashboard() {
 
   return (
     <div className="space-y-8">
-      <PageHeader 
-        title="Inventory Control Dashboard" 
+      <PageHeader
+        title="Inventory Control Dashboard"
         breadcrumbs="Inventory / Dashboard"
       />
 
@@ -120,7 +120,7 @@ export function InventoryDashboard() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
+
         {/* OPERATIONAL KPIs */}
         <div className="xl:col-span-2 space-y-6">
           <h3 className="text-lg font-bold text-text-main flex items-center gap-2">

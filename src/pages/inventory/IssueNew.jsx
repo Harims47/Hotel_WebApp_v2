@@ -106,7 +106,7 @@ export function IssueNew() {
     };
   });
 
-  const handleSave = (confirm) => {
+  const handleSave = async (confirm) => {
     if (!validate()) return;
     const finalItems = buildFinalItems();
     const timestamp = new Date().toISOString();
@@ -132,10 +132,10 @@ export function IssueNew() {
 
     if (confirm) {
       try {
-        dispatch(confirmStockIssue(newIssue, currentUser));
+        await dispatch(confirmStockIssue({ issue: newIssue, currentUser })).unwrap();
         toast.success(`Issue ${issueNumber} confirmed`);
       } catch (err) {
-        toast.error(err.message);
+        toast.error(err?.message || err || 'Unable to confirm stock issue');
         navigate('/inventory/issues');
         return;
       }

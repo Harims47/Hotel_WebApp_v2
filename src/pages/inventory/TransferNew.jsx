@@ -88,7 +88,7 @@ export function TransferNew() {
     return { id: ti.id, itemId: ti.itemId, itemCode: itemDef?.code || '', itemName: itemDef?.name || '', uomId: itemDef?.baseUomId || '', uomName: uomDef?.code || '', quantity: parseFloat(ti.quantity), unitRate: parseFloat(ti.unitRate) || 0, amount: calcAmount(ti) };
   });
 
-  const handleSave = (confirm) => {
+  const handleSave = async (confirm) => {
     if (!validate()) return;
     const finalItems = buildFinalItems();
     const timestamp = new Date().toISOString();
@@ -106,8 +106,14 @@ export function TransferNew() {
     dispatch(logAction({ id: `log-${uuidv4()}`, userId: currentUser?.id, action: 'TRANSFER_CREATED', entityType: 'TRANSFER', entityId: newId, description: `Created Transfer ${transferNumber}`, createdAt: timestamp }));
 
     if (confirm) {
-      try { dispatch(confirmTransfer(newTransfer, currentUser)); toast.success(`Transfer ${transferNumber} confirmed`); }
-      catch (err) { toast.error(err.message); navigate('/inventory/transfers'); return; }
+      try {
+        await dispatch(confirmTransfer({ transfer: newTransfer, currentUser })).unwrap();
+        toast.success(`Transfer ${transferNumber} confirmed`);
+      } catch (err) {
+        toast.error(err?.message || err || 'Unable to confirm transfer');
+        navigate('/inventory/transfers');
+        return;
+      }
     } else { toast.success('Draft saved'); }
     navigate('/inventory/transfers');
   };

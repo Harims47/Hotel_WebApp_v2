@@ -10,6 +10,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/Input';
+import { Pagination } from '../../components/ui/Pagination';
 import { Plus, Power, PowerOff, Tags } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
@@ -23,6 +24,9 @@ export function CategoriesMaster() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
   const [formData, setFormData] = useState({ code: '', name: '', description: '' });
 
   const isGM = currentUser?.role === 'GM';
@@ -32,6 +36,14 @@ export function CategoriesMaster() {
     c.name.toLowerCase().includes(search.toLowerCase()) || 
     c.code.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+  const paginatedCategories = filteredCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   const resetForm = () => {
     setFormData({ code: '', name: '', description: '' });
@@ -127,8 +139,8 @@ export function CategoriesMaster() {
             <SearchInput 
               placeholder="Search categories..." 
               value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              onClear={() => setSearch('')}
+              onChange={handleSearchChange} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
             />
           </div>
         </div>
@@ -145,14 +157,14 @@ export function CategoriesMaster() {
               </tr>
             </thead>
             <tbody>
-              {filteredCategories.length === 0 ? (
+              {paginatedCategories.length === 0 ? (
                 <tr>
                   <td colSpan={isGM ? 4 : 5}>
                     <EmptyState icon={Tags} title="No categories found" description="Try adjusting your search criteria." />
                   </td>
                 </tr>
               ) : (
-                filteredCategories.map(cat => (
+                paginatedCategories.map(cat => (
                   <tr key={cat.id} className={!isGM ? "cursor-pointer hover:bg-gray-50" : ""} onClick={() => handleEdit(cat)}>
                     <Table.Td className="font-semibold text-text-main whitespace-nowrap">{cat.code}</Table.Td>
                     <Table.Td className="font-bold text-text-main whitespace-nowrap">{cat.name}</Table.Td>
@@ -175,6 +187,11 @@ export function CategoriesMaster() {
             </tbody>
           </Table>
         </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       </Card>
     </div>
   );

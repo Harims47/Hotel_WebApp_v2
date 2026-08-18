@@ -35,8 +35,18 @@ export function TimerEngine() {
             const table = tables.find(t => t.id === order.tableId);
             const tableStr = table ? table.tableNumber : order.tableId;
             
-            // Check for 5-minute GM Escalation FIRST
-            if (timeElapsed >= ESCALATION_THRESHOLD_MS && !item.escalatedAt) {
+            // Determine if we should Escalate or Remind
+            const snoozedUntil = item.snoozedUntil ? new Date(item.snoozedUntil).getTime() : null;
+            const reminderSentAt = item.reminderSentAt ? new Date(item.reminderSentAt).getTime() : null;
+            
+            let shouldEscalate = false;
+            if (reminderSentAt && (now - reminderSentAt >= 2 * 60 * 1000)) {
+              shouldEscalate = true;
+            } else if (!reminderSentAt && !snoozedUntil && timeElapsed >= ESCALATION_THRESHOLD_MS) {
+              shouldEscalate = true;
+            }
+
+            if (shouldEscalate && !item.escalatedAt) {
               // Dispatch GM Escalation Notification
               dispatch(addNotification({
                 id: `notif-${uuidv4()}`,
@@ -46,8 +56,11 @@ export function TimerEngine() {
                 title: 'Pickup Escalation',
                 message: `Table ${tableStr} (Order ${order.orderNumber}): ${itemName} has not been picked up within the expected pickup window.`,
                 referenceId: order.id,
-                isRead: false,
-                createdAt: new Date().toISOString()
+                entityType: 'ORDER_ITEM',
+                entityId: item.id,
+                actionUrl: '/gm/dashboard', // Example URL for GM
+                priority: 'CRITICAL',
+                eventKey: `PICKUP_ESCALATION:${item.id}:GM`,
               }));
               
               // Dispatch Audit Event
@@ -69,31 +82,38 @@ export function TimerEngine() {
               }));
             }
             
-            // Check for 3-minute Waiter Reminder
-            else if (timeElapsed >= REMINDER_THRESHOLD_MS && !item.reminderSentAt) {
-              // Check if snoozed
-              if (!item.snoozedUntil || now > new Date(item.snoozedUntil).getTime()) {
-                // Dispatch Waiter Reminder Notification
-                dispatch(addNotification({
-                  id: `notif-${uuidv4()}`,
-                  userId: order.waiterId,
-                  type: 'PICKUP_REMINDER',
-                  title: 'Pickup Reminder',
-                  message: `Table ${tableStr} (Order ${order.orderNumber}): ${itemName} has been ready for pickup.`,
-                  referenceId: order.id,
-                  isRead: false,
-                  actionRequired: 'SNOOZE', // Hint for the UI to show a snooze button
-                  orderItemId: item.id, // Pass item ID for snooze action
-                  createdAt: new Date().toISOString()
-                }));
-                
-                // Mark as reminded
-                dispatch(updateOrderItem({
-                  orderId: order.id,
-                  orderItemId: item.id,
-                  updates: { reminderSentAt: new Date().toISOString() }
-                }));
+            let shouldRemind = false;
+            if (!reminderSentAt && !item.escalatedAt && !shouldEscalate) {
+              if (snoozedUntil && now >= snoozedUntil) {
+                shouldRemind = true;
+              } else if (!snoozedUntil && timeElapsed >= REMINDER_THRESHOLD_MS) {
+                shouldRemind = true;
               }
+            }
+
+            if (shouldRemind) {
+              // Dispatch Waiter Reminder Notification
+              dispatch(addNotification({
+                id: `notif-${uuidv4()}`,
+                userId: order.waiterId,
+                type: 'PICKUP_REMINDER',
+                title: 'Pickup Reminder',
+                message: `Table ${tableStr} (Order ${order.orderNumber}): ${itemName} has been ready for pickup.`,
+                referenceId: order.id,
+                entityType: 'ORDER_ITEM',
+                entityId: item.id,
+                actionUrl: `/waiter/tables/${order.tableId}`,
+                actionRequired: 'NONE', // Don't offer snooze again
+                priority: 'WARNING',
+                eventKey: `PICKUP_REMINDER:${item.id}:${order.waiterId}`,
+              }));
+              
+              // Mark as reminded
+              dispatch(updateOrderItem({
+                orderId: order.id,
+                orderItemId: item.id,
+                updates: { reminderSentAt: new Date().toISOString() }
+              }));
             }
           }
         });

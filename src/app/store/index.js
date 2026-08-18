@@ -1,4 +1,4 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { loadState, saveState } from '../../services/persistence/localStorage';
 
 import authReducer from '../../features/auth/authSlice';
@@ -48,41 +48,74 @@ const preloadedState = {
   reimbursements: rawPreloadedState.reimbursements || { data: [] },
 };
 
+const appReducer = combineReducers({
+  auth: authReducer,
+  restaurant: restaurantReducer,
+  users: usersReducer,
+  tables: tablesReducer,
+  menu: menuReducer,
+  orders: ordersReducer,
+  kot: kotReducer,
+  billing: billingReducer,
+  payments: paymentsReducer,
+  customers: customersReducer,
+  delivery: deliveryReducer,
+  notifications: notificationsReducer,
+  audit: auditReducer,
+  invCategories: invCategoriesReducer,
+  invUom: invUomReducer,
+  invLocations: invLocationsReducer,
+  invSuppliers: invSuppliersReducer,
+  invItems: invItemsReducer,
+  invStock: invStockReducer,
+  purchaseOrders: purchaseOrdersReducer,
+  grn: grnReducer,
+  stockLedger: stockLedgerReducer,
+  invIssues: issueReducer,
+  invWaste: wasteReducer,
+  invTransfers: transferReducer,
+  invAdjustments: adjustmentReducer,
+  invStockCounts: stockCountReducer,
+  reimbursements: reimbursementsReducer,
+});
+
+const rootReducer = (state, action) => {
+  if (action.type === 'HYDRATE_STATE') {
+    return {
+      ...state,
+      ...action.payload,
+    };
+  }
+  return appReducer(state, action);
+};
+
 export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    restaurant: restaurantReducer,
-    users: usersReducer,
-    tables: tablesReducer,
-    menu: menuReducer,
-    orders: ordersReducer,
-    kot: kotReducer,
-    billing: billingReducer,
-    payments: paymentsReducer,
-    customers: customersReducer,
-    delivery: deliveryReducer,
-    notifications: notificationsReducer,
-    audit: auditReducer,
-    invCategories: invCategoriesReducer,
-    invUom: invUomReducer,
-    invLocations: invLocationsReducer,
-    invSuppliers: invSuppliersReducer,
-    invItems: invItemsReducer,
-    invStock: invStockReducer,
-    purchaseOrders: purchaseOrdersReducer,
-    grn: grnReducer,
-    stockLedger: stockLedgerReducer,
-    invIssues: issueReducer,
-    invWaste: wasteReducer,
-    invTransfers: transferReducer,
-    invAdjustments: adjustmentReducer,
-    invStockCounts: stockCountReducer,
-    reimbursements: reimbursementsReducer,
-  },
+  reducer: rootReducer,
   preloadedState,
 });
 
+// Setup cross-tab sync
+window.addEventListener('storage', (e) => {
+  if (e.key === 'restaurant_os_v1_state') {
+    try {
+      const newState = JSON.parse(e.newValue);
+      if (newState) {
+        // Remove version before hydrating to avoid mismatch
+        const { _version, ...stateWithoutVersion } = newState;
+        store.dispatch({ type: 'HYDRATE_STATE', payload: stateWithoutVersion });
+      }
+    } catch (err) {
+      console.error('Failed to sync state across tabs:', err);
+    }
+  }
+});
+
+let isSaving = false;
+
 store.subscribe(() => {
+  if (isSaving) return;
+  isSaving = true;
+  
   saveState({
     auth: store.getState().auth,
     restaurant: store.getState().restaurant,
@@ -113,4 +146,7 @@ store.subscribe(() => {
     invStockCounts: store.getState().invStockCounts,
     reimbursements: store.getState().reimbursements,
   });
+  
+  // setTimeout to allow event loop to breathe if multiple syncs happen
+  setTimeout(() => { isSaving = false; }, 100);
 });

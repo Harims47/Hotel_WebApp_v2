@@ -44,13 +44,13 @@ export function StockCountDetails() {
     setConfirmModal(null);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     try {
-      dispatch(confirmStockCount(stockCount, currentUser));
+      await dispatch(confirmStockCount({ stockCount, currentUser })).unwrap();
       toast.success(`Stock Count ${stockCount.countNumber} confirmed`);
       setConfirmModal(null);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err?.message || err || 'Unable to confirm stock count');
       setConfirmModal(null);
     }
   };

@@ -77,18 +77,29 @@ export function PurchaseOrderNew() {
   // re-fire — and re-add the item — on every subsequent re-render).
   const prefillAppliedRef = useRef(false);
   const prefilledItemId = location.state?.prefilledItem;
+  const prefilledSupplierId = location.state?.prefilledSupplierId;
+  const prefilledQty = location.state?.prefilledQty;
+  const prefilledRate = location.state?.prefilledRate;
   useEffect(() => {
     if (!editId && prefilledItemId && !prefillAppliedRef.current) {
       prefillAppliedRef.current = true;
       const item = items.find(i => i.id === prefilledItemId);
       if (item && item.status === 'ACTIVE') {
-        if (item.preferredSupplierId) {
-          const supplier = activeSuppliers.find(s => s.id === item.preferredSupplierId);
+        // Supplier: prefer the one passed from LowStock, else the item's preferredSupplierId
+        const supplierId = prefilledSupplierId || item.preferredSupplierId;
+        if (supplierId) {
+          const supplier = activeSuppliers.find(s => s.id === supplierId);
           if (supplier) {
             setPoData(prev => ({ ...prev, supplierId: supplier.id }));
           }
         }
-        handleAddEmptyItem(item.id);
+        // Add the item with prefilled qty/rate
+        setPoItems(prev => [...prev, {
+          id: uuidv4(),
+          itemId: prefilledItemId,
+          quantity: prefilledQty || 1,
+          unitRate: prefilledRate || item.currentRate || 0,
+        }]);
       }
       window.history.replaceState({}, document.title);
     }

@@ -41,13 +41,13 @@ export function WaiterOrders() {
         const idMatch = order.orderNumber.toLowerCase().includes(q);
         return tableMatch || idMatch;
       }
-      
+
       return true;
     });
   }, [myOrders, activeTab, searchQuery, tables]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div>
@@ -66,8 +66,8 @@ export function WaiterOrders() {
                 onClick={() => setActiveTab(tab)}
                 className={cn(
                   "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all",
-                  activeTab === tab 
-                    ? "bg-primary text-white shadow-primary-sm" 
+                  activeTab === tab
+                    ? "bg-primary text-white shadow-primary-sm"
                     : "text-text-muted hover:bg-canvas hover:text-text-main"
                 )}
               >
@@ -104,13 +104,13 @@ export function WaiterOrders() {
           filteredOrders.map(order => {
             const table = tables.find(t => t.id === order.tableId);
             const totalItems = order.items.reduce((sum, i) => sum + i.quantity, 0);
-            
+
             // Get KOT workflow visualization
             const hasOrdered = order.items.some(i => i.status === 'ORDERED');
             const hasPreparing = order.items.some(i => i.status === 'PREPARING');
             const hasReady = order.items.some(i => i.status === 'READY');
             const allServed = order.items.every(i => i.status === 'SERVED' || i.status === 'CANCELLED');
-            
+
             let workflowStatus = [];
             if (order.status === 'CANCELLED') workflowStatus.push('CANCELLED');
             else if (order.status === 'CLOSED') workflowStatus.push('COMPLETED');
@@ -122,13 +122,13 @@ export function WaiterOrders() {
             }
 
             return (
-              <div 
-                key={order.id} 
+              <div
+                key={order.id}
                 className={cn(
                   "bg-surface border rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 transition-all hover:shadow-sm cursor-pointer",
                   order.status === 'CANCELLED' ? "border-status-danger/30 bg-status-danger-bg/5" :
-                  order.status === 'CLOSED' ? "border-border/50 bg-gray-50/50" : 
-                  "border-border"
+                    order.status === 'CLOSED' ? "border-border/50 bg-gray-50/50" :
+                      "border-border"
                 )}
                 onClick={() => navigate(`/waiter/tables/${order.tableId}`)}
               >
@@ -173,10 +173,10 @@ export function WaiterOrders() {
                       {workflowStatus.map((s, i) => (
                         <React.Fragment key={i}>
                           <span className={cn(
-                            s === 'READY' ? 'text-status-success' : 
-                            s === 'PREPARING' ? 'text-status-preparing' : 
-                            s === 'COMPLETED' ? 'text-primary' : 
-                            s === 'ORDERED' ? 'text-text-main' : ''
+                            s === 'READY' ? 'text-status-success' :
+                              s === 'PREPARING' ? 'text-status-preparing' :
+                                s === 'COMPLETED' ? 'text-primary' :
+                                  s === 'ORDERED' ? 'text-text-main' : ''
                           )}>
                             {s}
                           </span>
@@ -185,10 +185,10 @@ export function WaiterOrders() {
                       ))}
                     </div>
                   )}
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="h-9 px-4 text-xs font-bold rounded-lg shrink-0"
                   >
                     View Order <ChevronRight className="w-3.5 h-3.5 ml-1" />

@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
 import { Table } from '../../components/ui/Table';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SearchInput } from '../../components/ui/SearchInput';
+import { Pagination } from '../../components/ui/Pagination';
 import { Badge } from '../../components/ui/Badge';
 import { PackageSearch, MoreVertical, Package, Tags, ArrowRightLeft, SlidersHorizontal } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -19,6 +21,10 @@ export function CurrentStock() {
   const locations = useSelector(state => state.invLocations.data) || [];
   const uoms = useSelector(state => state.invUom.data) || [];
   
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
   const activeItems = items.filter(i => i.status === 'ACTIVE');
 
   // Group stock by item and location
@@ -70,6 +76,21 @@ export function CurrentStock() {
   // Sort by item name
   stockData.sort((a, b) => a.item.name.localeCompare(b.item.name));
 
+  const filteredStockData = stockData.filter(row => 
+    !search || 
+    row.item.name.toLowerCase().includes(search.toLowerCase()) ||
+    row.item.code.toLowerCase().includes(search.toLowerCase()) ||
+    row.location?.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredStockData.length / itemsPerPage);
+  const paginatedStockData = filteredStockData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader 
@@ -78,7 +99,17 @@ export function CurrentStock() {
       />
 
       <Card>
-        <div className="overflow-x-auto">
+        <div className="p-4 border-b border-border bg-gray-50/50">
+          <div className="w-full md:w-80">
+            <SearchInput 
+              placeholder="Search by item name, code, or location..." 
+              value={search} 
+              onChange={handleSearchChange} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto w-full">
           <Table>
             <thead>
               <tr>
@@ -93,18 +124,18 @@ export function CurrentStock() {
               </tr>
             </thead>
             <tbody>
-              {stockData.length === 0 ? (
+              {paginatedStockData.length === 0 ? (
                 <tr>
                   <td colSpan={isGM ? "7" : "8"}>
                     <EmptyState 
                       icon={PackageSearch} 
-                      title="No Stock Found" 
-                      description="No active items found in the system." 
+                      title={search ? "No matches found" : "No Stock Found"} 
+                      description={search ? "Try adjusting your search." : "No active items found in the system."} 
                     />
                   </td>
                 </tr>
               ) : (
-                stockData.map(row => (
+                paginatedStockData.map(row => (
                   <tr key={row.id}>
                     <Table.Td>
                       <div>
@@ -144,6 +175,11 @@ export function CurrentStock() {
             </tbody>
           </Table>
         </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       </Card>
     </div>
   );

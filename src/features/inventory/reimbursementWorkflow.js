@@ -28,11 +28,17 @@ export const createReimbursement = (reimbursementData, currentUser) => (dispatch
 
   dispatch(addNotification({
     id: `notif-${uuidv4()}`,
+    userId: null,
+    role: 'INVENTORY_MANAGER',
+    type: 'REIMBURSEMENT_PENDING',
     title: 'Reimbursement Submitted',
     message: `Reimbursement ${newReimbursement.reimbursementNo} submitted by ${newReimbursement.employeeName} — ${formatCurrency(newReimbursement.amount)}`,
-    type: 'INFO',
-    createdAt: new Date().toISOString(),
-    isRead: false
+    referenceId: newReimbursement.id,
+    entityType: 'REIMBURSEMENT',
+    entityId: newReimbursement.id,
+    actionUrl: '/inventory/reimbursements',
+    priority: 'INFO',
+    eventKey: `REIMBURSEMENT_PENDING:${newReimbursement.id}:INVENTORY_MANAGER`,
   }));
 };
 
@@ -69,11 +75,17 @@ export const approveReimbursement = (reimbursement, currentUser) => (dispatch) =
 
   dispatch(addNotification({
     id: `notif-${uuidv4()}`,
+    userId: null,
+    role: 'INVENTORY_MANAGER',
+    type: 'REIMBURSEMENT_APPROVED',
     title: 'Reimbursement Approved',
     message: `Reimbursement ${reimbursement.reimbursementNo} approved — ${formatCurrency(reimbursement.amount)}`,
-    type: 'SUCCESS',
-    createdAt: new Date().toISOString(),
-    isRead: false
+    referenceId: reimbursement.id,
+    entityType: 'REIMBURSEMENT',
+    entityId: reimbursement.id,
+    actionUrl: '/inventory/reimbursements',
+    priority: 'SUCCESS',
+    eventKey: `REIMBURSEMENT_APPROVED:${reimbursement.id}:INVENTORY_MANAGER`,
   }));
 };
 
@@ -127,10 +139,16 @@ export const markReimbursementPaid = (reimbursement, paymentDetails, currentUser
 
   dispatch(addNotification({
     id: `notif-${uuidv4()}`,
+    userId: null,
+    role: 'INVENTORY_MANAGER',
+    type: 'REIMBURSEMENT_PAID',
     title: 'Reimbursement Paid',
     message: `Reimbursement ${reimbursement.reimbursementNo} paid — ${formatCurrency(reimbursement.amount)}`,
-    type: 'SUCCESS',
-    createdAt: new Date().toISOString(),
-    isRead: false
+    referenceId: reimbursement.id,
+    entityType: 'REIMBURSEMENT',
+    entityId: reimbursement.id,
+    actionUrl: '/inventory/reimbursements',
+    priority: 'SUCCESS',
+    eventKey: `REIMBURSEMENT_PAID:${reimbursement.id}:INVENTORY_MANAGER`,
   }));
 };

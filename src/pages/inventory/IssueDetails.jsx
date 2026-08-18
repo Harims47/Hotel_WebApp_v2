@@ -46,13 +46,13 @@ export function IssueDetails() {
     setConfirmModal(null);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     try {
-      dispatch(confirmStockIssue(issue, currentUser));
+      await dispatch(confirmStockIssue({ issue, currentUser })).unwrap();
       toast.success(`Issue ${issue.issueNumber} confirmed`);
       setConfirmModal(null);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err?.message || err || 'Unable to confirm stock issue');
       setConfirmModal(null);
     }
   };

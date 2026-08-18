@@ -41,13 +41,13 @@ export function TransferDetails() {
     setConfirmModal(null);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     try {
-      dispatch(confirmTransfer(transfer, currentUser));
+      await dispatch(confirmTransfer({ transfer, currentUser })).unwrap();
       toast.success(`Transfer ${transfer.transferNumber} confirmed`);
       setConfirmModal(null);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err?.message || err || 'Unable to confirm transfer');
       setConfirmModal(null);
     }
   };

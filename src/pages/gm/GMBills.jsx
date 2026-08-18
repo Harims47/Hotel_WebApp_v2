@@ -1,73 +1,107 @@
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
+import { Badge } from '../../components/ui/Badge';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { formatCurrency } from '../../utils/currency';
+import { Receipt } from 'lucide-react';
+
+const getSafeNum = (val) => (typeof val === 'number' && !isNaN(val)) ? val : 0;
+const shortId = (id) => id ? (id.length > 8 ? id.substring(0, 8) + '...' : id) : '-';
 
 export function GMBills() {
-  const bills = useSelector(state => state.billing.data) || [];
-  const orders = useSelector(state => state.orders.data) || [];
-  
-  const billRequests = bills.filter(b => b.status === 'REQUESTED');
+  const bills = useSelector(state => state.billing?.data || []);
+  const orders = useSelector(state => state.orders?.data || []);
+
+  const billRequests = bills.filter(b => b.status === 'PENDING' || b.status === 'REQUESTED');
   const printedBills = bills.filter(b => b.status === 'PRINTED');
   const paidBills = bills.filter(b => b.status === 'PAID');
-  const paymentPending = bills.filter(b => b.status !== 'PAID');
-  const shortId = (id) => id ? (id.length > 8 ? id.substring(0, 8) + '...' : id) : '-';
+  const paymentPending = bills.filter(b => b.status !== 'PAID' && b.status !== 'CANCELLED');
 
-  const getOrderType = (orderId) => orders.find(o => o.id === orderId)?.type || '-';
+  const getOrderType = (orderId) => orders.find(o => o.id === orderId)?.type?.replace('_', ' ') || '-';
 
-  const renderBillTable = (billsList, title) => (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="text-lg text-text-main">{title} ({billsList.length})</CardTitle>
+  const renderBillTable = (billsList, title, iconColor) => (
+    <Card className="mb-6 border-border/50 shadow-sm">
+      <CardHeader className="bg-gray-50/50 border-b border-border/50 pb-3">
+        <CardTitle className="text-base text-text-main flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Receipt className={`w-4 h-4 ${iconColor}`} />
+            {title}
+          </div>
+          <Badge variant="outline" className="bg-white text-gray-600">{billsList.length}</Badge>
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b">
-              <th className="p-4 font-semibold text-sm">Bill ID</th>
-              <th className="p-4 font-semibold text-sm">Order ID</th>
-              <th className="p-4 font-semibold text-sm">Type</th>
-              <th className="p-4 font-semibold text-sm">Status</th>
-              <th className="p-4 font-semibold text-sm">Payment</th>
-              <th className="p-4 font-semibold text-sm">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Bill / Order</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Bill Status</TableHead>
+              <TableHead>Payment</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {billsList.length === 0 ? (
-              <tr><td colSpan="6" className="p-4 text-center text-gray-500">No records found.</td></tr>
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-text-muted">
+                  No bills in this category.
+                </TableCell>
+              </TableRow>
             ) : (
-              billsList.map(bill => (
-                <tr key={bill.id} className="border-b hover:bg-gray-50">
-                  <td className="p-4 text-sm font-mono text-gray-600" title={bill.id}>{shortId(bill.id)}</td>
-                  <td className="p-4 text-sm font-mono text-gray-600" title={bill.orderId}>{shortId(bill.orderId)}</td>
-                  <td className="p-4 text-sm">{getOrderType(bill.orderId)}</td>
-                  <td className="p-4 text-sm">{bill.status}</td>
-                  <td className="p-4 text-sm">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${bill.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                      {bill.status === 'PAID' ? 'PAID' : 'PENDING'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-sm font-medium">₹{bill.grandTotal || 0}</td>
-                </tr>
-              ))
+              billsList.map(bill => {
+                const order = orders.find(o => o.id === bill.orderId);
+                return (
+                  <TableRow key={bill.id} className="hover:bg-gray-50/50 transition-colors">
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-mono font-bold text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded w-fit" title={bill.id}>{bill.billNumber || `BILL-${shortId(bill.id)}`}</span>
+                        <span className="text-[10px] font-mono text-gray-400 px-1.5" title={bill.orderId}>{order?.orderNumber || `ORD-${shortId(bill.orderId)}`}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{getOrderType(bill.orderId)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-gray-50 text-gray-600">
+                        {bill.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {bill.status === 'PAID' ? (
+                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">PAID</Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-orange-300 text-orange-700 bg-orange-50">PENDING</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm font-bold text-right text-text-main">
+                      {formatCurrency(getSafeNum(bill.grandTotal))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-main">Billing Visibility</h1>
-      
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div>
-          {renderBillTable(billRequests, "Bill Requests")}
-          {renderBillTable(paymentPending, "Payment Pending")}
+    <div className="space-y-6 max-w-screen-2xl  pb-10">
+      <PageHeader
+        title="Billing Visibility"
+        breadcrumbs="RESTAURANT OPS / BILLS"
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="space-y-6">
+          {renderBillTable(billRequests, "Bill Requests / Pending", "text-blue-500")}
+          {renderBillTable(paymentPending, "Awaiting Payment", "text-orange-500")}
         </div>
-        <div>
-          {renderBillTable(printedBills, "Printed Bills")}
-          {renderBillTable(paidBills, "Paid Bills")}
+        <div className="space-y-6">
+          {renderBillTable(printedBills, "Printed Bills", "text-purple-500")}
+          {renderBillTable(paidBills, "Paid Bills", "text-emerald-500")}
         </div>
       </div>
     </div>

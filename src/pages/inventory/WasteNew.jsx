@@ -17,9 +17,12 @@ import { Trash2, Plus, Save, CheckCircle } from 'lucide-react';
 
 const WASTE_REASONS = [
   { value: '', label: 'Select reason...' },
-  { value: 'EXPIRED', label: 'Expired' },
   { value: 'SPOILED', label: 'Spoiled' },
+  { value: 'EXPIRED', label: 'Expired' },
   { value: 'DAMAGED', label: 'Damaged' },
+  { value: 'OVERPRODUCTION', label: 'Overproduction' },
+  { value: 'PREPARATION_WASTE', label: 'Preparation Waste' },
+  { value: 'RETURNED', label: 'Returned' },
   { value: 'QUALITY_ISSUE', label: 'Quality Issue' },
   { value: 'OTHER', label: 'Other' }
 ];
@@ -96,7 +99,7 @@ export function WasteNew() {
     return { id: wi.id, itemId: wi.itemId, itemCode: itemDef?.code || '', itemName: itemDef?.name || '', uomId: itemDef?.baseUomId || '', uomName: uomDef?.code || '', quantity: parseFloat(wi.quantity), unitRate: parseFloat(wi.unitRate) || 0, amount: calcAmount(wi) };
   });
 
-  const handleSave = (confirm) => {
+  const handleSave = async (confirm) => {
     if (!validate()) return;
     const finalItems = buildFinalItems();
     const timestamp = new Date().toISOString();
@@ -114,8 +117,14 @@ export function WasteNew() {
     dispatch(logAction({ id: `log-${uuidv4()}`, userId: currentUser?.id, action: 'WASTE_CREATED', entityType: 'WASTE', entityId: newId, description: `Created Waste ${wasteNumber}`, createdAt: timestamp }));
 
     if (confirm) {
-      try { dispatch(confirmWaste(newWaste, currentUser)); toast.success(`Waste ${wasteNumber} confirmed`); }
-      catch (err) { toast.error(err.message); navigate('/inventory/waste'); return; }
+      try {
+        await dispatch(confirmWaste({ waste: newWaste, currentUser })).unwrap();
+        toast.success(`Waste ${wasteNumber} confirmed`);
+      } catch (err) {
+        toast.error(err?.message || err || 'Unable to confirm waste');
+        navigate('/inventory/waste');
+        return;
+      }
     } else { toast.success('Draft saved'); }
     navigate('/inventory/waste');
   };

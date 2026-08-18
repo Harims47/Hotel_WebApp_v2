@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
@@ -6,6 +6,8 @@ import { Button } from '../../components/ui/Button';
 import { Table } from '../../components/ui/Table';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SearchInput } from '../../components/ui/SearchInput';
+import { Pagination } from '../../components/ui/Pagination';
 import { Badge } from '../../components/ui/Badge';
 import { ShoppingCart, Plus, Eye } from 'lucide-react';
 import { formatCurrency } from '../../utils/currency';
@@ -17,6 +19,10 @@ export function PurchaseOrdersList() {
   const suppliers = useSelector(state => state.invSuppliers.data) || [];
   
   const isGM = currentUser?.role === 'GM';
+
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   const getStatusBadgeVariant = (status) => {
     switch (status) {
@@ -30,6 +36,20 @@ export function PurchaseOrdersList() {
   };
 
   const sortedPOs = [...pos].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const filteredPOs = sortedPOs.filter(po => 
+    !search || 
+    po.poNumber.toLowerCase().includes(search.toLowerCase()) ||
+    suppliers.find(s => s.id === po.supplierId)?.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredPOs.length / itemsPerPage);
+  const paginatedPOs = filteredPOs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -47,7 +67,17 @@ export function PurchaseOrdersList() {
       />
 
       <Card>
-        <div className="overflow-x-auto">
+        <div className="p-4 border-b border-border bg-gray-50/50">
+          <div className="w-full md:w-80">
+            <SearchInput 
+              placeholder="Search by PO number or supplier..." 
+              value={search} 
+              onChange={handleSearchChange} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto w-full">
           <Table>
             <thead>
               <tr>
@@ -61,18 +91,18 @@ export function PurchaseOrdersList() {
               </tr>
             </thead>
             <tbody>
-              {sortedPOs.length === 0 ? (
+              {paginatedPOs.length === 0 ? (
                 <tr>
                   <td colSpan="7">
                     <EmptyState 
                       icon={ShoppingCart} 
-                      title="No Purchase Orders" 
-                      description="You haven't created any purchase orders yet." 
+                      title={search ? "No matches found" : "No Purchase Orders"} 
+                      description={search ? "Try adjusting your search." : "You haven't created any purchase orders yet."} 
                     />
                   </td>
                 </tr>
               ) : (
-                sortedPOs.map(po => {
+                paginatedPOs.map(po => {
                   const supplier = suppliers.find(s => s.id === po.supplierId);
                   
                   return (
@@ -104,6 +134,11 @@ export function PurchaseOrdersList() {
             </tbody>
           </Table>
         </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       </Card>
     </div>
   );

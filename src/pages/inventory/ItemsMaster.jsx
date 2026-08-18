@@ -11,6 +11,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
+import { Pagination } from '../../components/ui/Pagination';
 import { Plus, Power, PowerOff, Package } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
@@ -27,6 +28,9 @@ export function ItemsMaster() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
   const [formData, setFormData] = useState({ 
     code: '', name: '', categoryId: '', baseUomId: '', purchaseUomId: '', 
     conversionFactor: 1, reorderLevel: 0, minimumStock: 0, maximumStock: 0, preferredSupplierId: ''
@@ -43,6 +47,15 @@ export function ItemsMaster() {
     i.name.toLowerCase().includes(search.toLowerCase()) || 
     i.code.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
+
 
   const resetForm = () => {
     setFormData({ 
@@ -195,8 +208,8 @@ export function ItemsMaster() {
             <SearchInput 
               placeholder="Search by code or name..." 
               value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              onClear={() => setSearch('')}
+              onChange={handleSearchChange} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
             />
           </div>
         </div>
@@ -215,14 +228,15 @@ export function ItemsMaster() {
               </tr>
             </thead>
             <tbody>
-              {filteredItems.length === 0 ? (
+              {paginatedItems.length === 0 ? (
                 <tr>
                   <td colSpan={isGM ? 5 : 6}>
                     <EmptyState icon={Package} title="No items found" description="Try adjusting your search criteria." />
                   </td>
                 </tr>
               ) : (
-                filteredItems.map(item => {
+                paginatedItems.map(item => {
+
                   const category = categories.find(c => c.id === item.categoryId);
                   const baseUom = uoms.find(u => u.id === item.baseUomId);
                   
@@ -261,6 +275,11 @@ export function ItemsMaster() {
             </tbody>
           </Table>
         </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       </Card>
     </div>
   );

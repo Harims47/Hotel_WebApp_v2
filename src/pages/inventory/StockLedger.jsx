@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Card } from '../../components/ui/Card';
 import { Table } from '../../components/ui/Table';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SearchInput } from '../../components/ui/SearchInput';
+import { Pagination } from '../../components/ui/Pagination';
 import { Badge } from '../../components/ui/Badge';
 import { FileText } from 'lucide-react';
 import { formatCurrency } from '../../utils/currency';
@@ -14,8 +16,27 @@ export function StockLedger() {
   const uoms = useSelector(state => state.invUom.data) || [];
   const users = useSelector(state => state.users.data) || [];
   
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
   // Sort descending by date
   const sortedLedger = [...ledger].sort((a, b) => new Date(b.transactionDate) - new Date(a.transactionDate));
+
+  const filteredLedger = sortedLedger.filter(entry => 
+    !search || 
+    entry.itemName?.toLowerCase().includes(search.toLowerCase()) ||
+    entry.itemCode?.toLowerCase().includes(search.toLowerCase()) ||
+    entry.referenceNumber?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredLedger.length / itemsPerPage);
+  const paginatedLedger = filteredLedger.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -25,7 +46,17 @@ export function StockLedger() {
       />
 
       <Card>
-        <div className="overflow-x-auto">
+        <div className="p-4 border-b border-border bg-gray-50/50">
+          <div className="w-full md:w-80">
+            <SearchInput 
+              placeholder="Search by item name, code, or ref..." 
+              value={search} 
+              onChange={handleSearchChange} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto w-full">
           <Table>
             <thead>
               <tr>
@@ -41,18 +72,18 @@ export function StockLedger() {
               </tr>
             </thead>
             <tbody>
-              {sortedLedger.length === 0 ? (
+              {paginatedLedger.length === 0 ? (
                 <tr>
                   <td colSpan="9">
                     <EmptyState 
                       icon={FileText} 
-                      title="No Transactions" 
-                      description="No stock ledger entries exist yet." 
+                      title={search ? "No matches found" : "No Transactions"} 
+                      description={search ? "Try adjusting your search." : "No stock ledger entries exist yet."} 
                     />
                   </td>
                 </tr>
               ) : (
-                sortedLedger.map(entry => {
+                paginatedLedger.map(entry => {
                   const location = locations.find(l => l.id === entry.locationId);
                   const uom = uoms.find(u => u.id === entry.uomId);
                   const user = users.find(u => u.id === entry.createdBy);
@@ -102,6 +133,11 @@ export function StockLedger() {
             </tbody>
           </Table>
         </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       </Card>
     </div>
   );

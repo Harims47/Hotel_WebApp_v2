@@ -5,8 +5,25 @@ const notificationsSlice = createSlice({
   initialState: { data: [] },
   reducers: {
     addNotification: (state, action) => {
-      // unshift to put newest first
-      state.data.unshift(action.payload);
+      const newNotif = action.payload;
+      
+      // Deduplication check
+      if (newNotif.eventKey) {
+        const isDuplicate = state.data.some(n => 
+          n.eventKey === newNotif.eventKey && !n.isRead
+        );
+        if (isDuplicate) return;
+      }
+
+      const fullNotif = {
+        isRead: false,
+        isActioned: false,
+        priority: 'INFO',
+        ...newNotif,
+        createdAt: newNotif.createdAt || new Date().toISOString()
+      };
+
+      state.data.unshift(fullNotif);
     },
     markNotificationRead: (state, action) => {
       const notification = state.data.find(n => n.id === action.payload);

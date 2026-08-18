@@ -60,19 +60,6 @@ export function CashierBillDetails() {
 
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  if (!bill) return <div className="p-8 text-center text-text-muted">Bill not found</div>;
-
-  const isLocked = bill.status === 'PRINTED' || bill.status === 'PAID';
-
-  const handleRateChange = (index, newRate) => {
-    if (isLocked) return;
-    const rate = parseFloat(newRate) || 0;
-    const newItems = [...items];
-    newItems[index].billRate = rate;
-    newItems[index].lineTotal = rate * newItems[index].quantity;
-    setItems(newItems);
-  };
-
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
     
@@ -106,6 +93,18 @@ export function CashierBillDetails() {
       setPaymentAmount((totals.grandTotal ?? 0).toFixed(2));
     }
   }, [paymentModalOpen, bill, totals.grandTotal]);
+
+  if (!bill) return <div className="p-8 text-center text-text-muted">Bill not found</div>;
+  const isLocked = bill.status === 'PRINTED' || bill.status === 'PAID';
+
+  const handleRateChange = (index, newRate) => {
+    if (isLocked) return;
+    const rate = parseFloat(newRate) || 0;
+    const newItems = [...items];
+    newItems[index].billRate = rate;
+    newItems[index].lineTotal = rate * newItems[index].quantity;
+    setItems(newItems);
+  };
 
   const handleSaveChanges = () => {
     if (isLocked) return;

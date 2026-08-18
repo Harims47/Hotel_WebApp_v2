@@ -40,25 +40,7 @@ export function Header({ onToggleSidebar }) {
   const dropdownRef = useRef(null);
   const toastedIds = useRef(new Set());
 
-  useEffect(() => {
-    notifications.forEach(n => {
-      if (!n.isRead && !toastedIds.current.has(n.id)) {
-        toastedIds.current.add(n.id);
-        toast(n.title, {
-          description: n.message,
-          action: {
-            label: 'View',
-            onClick: () => {
-              dispatch(markNotificationRead(n.id));
-              if (n.referenceId && currentUser?.role === 'WAITER') {
-                navigate('/waiter/tables');
-              }
-            }
-          }
-        });
-      }
-    });
-  }, [notifications, dispatch, navigate, currentUser?.role]);
+  // Notification presentation logic has been moved to NotificationPresenter.jsx
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -74,7 +56,9 @@ export function Header({ onToggleSidebar }) {
   const handleNotificationClick = (n) => {
     dispatch(markNotificationRead(n.id));
     setShowDropdown(false);
-    if (n.referenceId && currentUser?.role === 'WAITER') navigate('/waiter/tables');
+    if (n.actionUrl) {
+      navigate(n.actionUrl);
+    }
   };
 
   const handleSnooze = (e, n) => {
@@ -123,7 +107,7 @@ export function Header({ onToggleSidebar }) {
             onClick={() => setShowDropdown(v => !v)}
             aria-label="Notifications"
           >
-            <Bell className="w-5 h-5" />
+            <Bell id="header-notification-bell" className="w-5 h-5" />
             {unreadCount > 0 && (
               <span className="absolute top-1.5 right-1.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-primary text-[9px] font-bold text-white ring-2 ring-surface">
                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -165,41 +149,68 @@ export function Header({ onToggleSidebar }) {
                   <div className="py-12 text-center">
                     <Bell className="w-8 h-8 text-border mx-auto mb-3" />
                     <p className="text-sm font-medium text-text-muted">No notifications yet</p>
+                    <p className="text-xs text-text-muted mt-1">You're all caught up.</p>
                   </div>
                 ) : (
-                  notifications.map(n => (
-                    <div
-                      key={n.id}
-                      className={cn(
-                        'px-4 py-3.5 cursor-pointer hover:bg-canvas transition-colors',
-                        !n.isRead && 'bg-primary-lighter'
-                      )}
-                      onClick={() => handleNotificationClick(n)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={cn(
-                          'mt-0.5 w-2 h-2 rounded-full shrink-0',
-                          !n.isRead ? 'bg-primary' : 'bg-transparent'
-                        )} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-semibold text-text-main leading-tight">{n.title}</p>
-                            <span className="text-[10px] text-text-muted shrink-0 mt-0.5">{timeAgo(n.createdAt)}</span>
+                  notifications.map(n => {
+                    let dotColor = 'bg-primary';
+                    if (n.priority === 'SUCCESS') dotColor = 'bg-green-500';
+                    if (n.priority === 'WARNING') dotColor = 'bg-amber-500';
+                    if (n.priority === 'CRITICAL') dotColor = 'bg-red-500';
+                    
+                    return (
+                      <div
+                        key={n.id}
+                        className={cn(
+                          'px-4 py-3.5 cursor-pointer hover:bg-canvas transition-colors',
+                          !n.isRead && 'bg-primary-lighter/30'
+                        )}
+                        onClick={() => handleNotificationClick(n)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={cn(
+                            'mt-1 w-2 h-2 rounded-full shrink-0',
+                            !n.isRead ? dotColor : 'bg-transparent border border-border'
+                          )} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-sm font-semibold text-text-main leading-tight">{n.title}</p>
+                              <span className="text-[10px] text-text-muted shrink-0 mt-0.5">{timeAgo(n.createdAt)}</span>
+                            </div>
+                            <p className="text-xs text-text-muted mt-1.5 leading-relaxed">{n.message}</p>
+                            
+                            <div className="mt-3 flex items-center gap-3">
+                              {n.actionUrl && (
+                                <button
+                                  className="text-[11px] font-bold text-primary hover:text-primary-dark transition-colors uppercase tracking-wider"
+                                >
+                                  View Details
+                                </button>
+                              )}
+                              
+                              {n.actionRequired === 'SNOOZE' && !n.isRead && (
+                                <button
+                                  onClick={(e) => handleSnooze(e, n)}
+                                  className="text-[11px] font-bold text-amber-600 hover:text-amber-700 transition-colors uppercase tracking-wider"
+                                >
+                                  Snooze 5m
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-xs text-text-muted mt-1 leading-relaxed">{n.message}</p>
-                          {n.actionRequired === 'SNOOZE' && !n.isRead && (
-                            <button
-                              onClick={(e) => handleSnooze(e, n)}
-                              className="mt-2 text-xs font-semibold text-primary hover:text-primary-dark"
-                            >
-                              Snooze 5 min
-                            </button>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
+              </div>
+              <div className="px-4 py-3 border-t border-border bg-surface text-center">
+                <button
+                  onClick={() => { setShowDropdown(false); navigate('/notifications'); }}
+                  className="text-xs font-bold text-text-main hover:text-primary transition-colors uppercase tracking-wider"
+                >
+                  View all notifications
+                </button>
               </div>
             </div>
           )}

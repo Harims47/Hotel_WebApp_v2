@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
@@ -6,6 +6,8 @@ import { Button } from '../../components/ui/Button';
 import { Table } from '../../components/ui/Table';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SearchInput } from '../../components/ui/SearchInput';
+import { Pagination } from '../../components/ui/Pagination';
 import { Badge } from '../../components/ui/Badge';
 import { Truck, Plus, Eye, ShoppingCart } from 'lucide-react';
 import { formatCurrency } from '../../utils/currency';
@@ -19,6 +21,10 @@ export function GRNList() {
   
   const isGM = currentUser?.role === 'GM';
 
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
   const getStatusBadgeVariant = (status) => {
     switch (status) {
       case 'DRAFT': return 'secondary';
@@ -29,6 +35,20 @@ export function GRNList() {
   };
 
   const sortedGRNs = [...grns].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const filteredGRNs = sortedGRNs.filter(grn => 
+    !search || 
+    grn.grnNumber.toLowerCase().includes(search.toLowerCase()) ||
+    grn.supplierSnapshot?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredGRNs.length / itemsPerPage);
+  const paginatedGRNs = filteredGRNs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -52,7 +72,17 @@ export function GRNList() {
       />
 
       <Card>
-        <div className="overflow-x-auto">
+        <div className="p-4 border-b border-border bg-gray-50/50">
+          <div className="w-full md:w-80">
+            <SearchInput 
+              placeholder="Search by GRN number or supplier..." 
+              value={search} 
+              onChange={handleSearchChange} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto w-full">
           <Table>
             <thead>
               <tr>
@@ -67,18 +97,18 @@ export function GRNList() {
               </tr>
             </thead>
             <tbody>
-              {sortedGRNs.length === 0 ? (
+              {paginatedGRNs.length === 0 ? (
                 <tr>
                   <td colSpan="8">
                     <EmptyState 
                       icon={Truck} 
-                      title="No GRNs" 
-                      description="You haven't received any goods yet." 
+                      title={search ? "No matches found" : "No GRNs"} 
+                      description={search ? "Try adjusting your search." : "You haven't received any goods yet."} 
                     />
                   </td>
                 </tr>
               ) : (
-                sortedGRNs.map(grn => {
+                paginatedGRNs.map(grn => {
                   const location = locations.find(l => l.id === grn.locationId);
                   const po = purchaseOrders.find(p => p.id === grn.poId);
                   const reference = po ? po.poNumber : 'Direct Purchase';
@@ -116,6 +146,11 @@ export function GRNList() {
             </tbody>
           </Table>
         </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       </Card>
     </div>
   );

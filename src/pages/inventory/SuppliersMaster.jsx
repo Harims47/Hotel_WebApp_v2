@@ -10,6 +10,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/Input';
+import { Pagination } from '../../components/ui/Pagination';
 import { Plus, Power, PowerOff, Building2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
@@ -24,6 +25,9 @@ export function SuppliersMaster() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
   const [formData, setFormData] = useState({ 
     code: '', name: '', contactPerson: '', phone: '', email: '', address: '', gstNumber: '', suppliedCategoryIds: []
   });
@@ -37,6 +41,14 @@ export function SuppliersMaster() {
     s.contactPerson.toLowerCase().includes(search.toLowerCase()) ||
     s.phone.includes(search)
   );
+
+  const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage);
+  const paginatedSuppliers = filteredSuppliers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   const resetForm = () => {
     setFormData({ code: '', name: '', contactPerson: '', phone: '', email: '', address: '', gstNumber: '', suppliedCategoryIds: [] });
@@ -171,8 +183,8 @@ export function SuppliersMaster() {
             <SearchInput 
               placeholder="Search by code, name, person, or phone..." 
               value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              onClear={() => setSearch('')}
+              onChange={handleSearchChange} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
             />
           </div>
         </div>
@@ -189,14 +201,14 @@ export function SuppliersMaster() {
               </tr>
             </thead>
             <tbody>
-              {filteredSuppliers.length === 0 ? (
+              {paginatedSuppliers.length === 0 ? (
                 <tr>
                   <td colSpan={isGM ? 4 : 5}>
                     <EmptyState icon={Building2} title="No suppliers found" description="Try adjusting your search criteria." />
                   </td>
                 </tr>
               ) : (
-                filteredSuppliers.map(sup => (
+                paginatedSuppliers.map(sup => (
                   <tr key={sup.id} className={!isGM ? "cursor-pointer hover:bg-gray-50" : ""} onClick={() => handleEdit(sup)}>
                     <Table.Td className="font-semibold text-text-main whitespace-nowrap">{sup.code}</Table.Td>
                     <Table.Td>
@@ -225,6 +237,11 @@ export function SuppliersMaster() {
             </tbody>
           </Table>
         </div>
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={setCurrentPage} 
+        />
       </Card>
     </div>
   );
