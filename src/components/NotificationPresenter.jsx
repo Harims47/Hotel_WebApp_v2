@@ -53,7 +53,6 @@ export function NotificationPresenter() {
         }
       });
       isInitialized.current = true;
-      return;
     }
 
     // Detect NEW notifications
@@ -65,9 +64,15 @@ export function NotificationPresenter() {
       const addedToQueue = [];
       newNotifications.forEach(n => {
         presentedIds.current.add(n.id);
-        addedToQueue.push(n);
+        
+        // Only show the intrusive SweetAlert/Alarm popup for WAITER and KITCHEN flows
+        if (['WAITER', 'KITCHEN'].includes(currentUser.role)) {
+          addedToQueue.push(n);
+        }
       });
-      setQueue(prev => [...prev, ...addedToQueue]);
+      if (addedToQueue.length > 0) {
+        setQueue(prev => [...prev, ...addedToQueue]);
+      }
     }
   }, [notifications, currentUser]);
 

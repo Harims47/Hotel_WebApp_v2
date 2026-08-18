@@ -28,7 +28,8 @@ export function Login() {
     const rolePrefix = currentUser.role === 'SUPER_ADMIN' ? 'admin' :
       currentUser.role === 'DELIVERY_BOY' ? 'delivery' :
         currentUser.role === 'INVENTORY_MANAGER' ? 'inventory' :
-          currentUser.role.toLowerCase();
+          currentUser.role === 'GM' ? 'management' :
+            currentUser.role.toLowerCase();
     return <Navigate to={`/${rolePrefix}/dashboard`} replace />;
   }
 
@@ -40,7 +41,8 @@ export function Login() {
       const rolePrefix = user.role === 'SUPER_ADMIN' ? 'admin' :
         user.role === 'DELIVERY_BOY' ? 'delivery' :
           user.role === 'INVENTORY_MANAGER' ? 'inventory' :
-            user.role.toLowerCase();
+            user.role === 'GM' ? 'management' :
+              user.role.toLowerCase();
       navigate(`/${rolePrefix}/dashboard`);
     } else {
       setError('root', { type: 'manual', message: 'Invalid username or password' });

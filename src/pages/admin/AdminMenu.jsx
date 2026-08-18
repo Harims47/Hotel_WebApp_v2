@@ -12,6 +12,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
+import { Pagination } from '../../components/ui/Pagination';
 import { Plus, Power, PowerOff, ListOrdered, Utensils } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
@@ -23,16 +24,28 @@ export function AdminMenu() {
 
   const [activeTab, setActiveTab] = useState('ITEMS');
   const [search, setSearch] = useState('');
+  
+  // Pagination state for items
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', displayOrder: categories.length + 1 });
 
   const [showCreateItem, setShowCreateItem] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', categoryId: categories[0]?.id || '', price: '', description: '' });
+  const [newItem, setNewItem] = useState({ name: '', categoryId: categories[0]?.id || '', price: '', description: '', image: '' });
   const [priceEdits, setPriceEdits] = useState({});
 
   const filteredCategories = categories.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()));
   const filteredItems = items.filter(i => !search || i.name.toLowerCase().includes(search.toLowerCase()));
+  
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handleCreateCategory = () => {
     if (!newCategory.name) return toast.error('Name required');
@@ -67,7 +80,7 @@ export function AdminMenu() {
     }));
     toast.success('Menu item created');
     setShowCreateItem(false);
-    setNewItem({ name: '', categoryId: categories[0]?.id || '', price: '', description: '' });
+    setNewItem({ name: '', categoryId: categories[0]?.id || '', price: '', description: '', image: '' });
   };
 
   const toggleCategoryStatus = (cat) => {
@@ -161,7 +174,7 @@ export function AdminMenu() {
         <Card className="animate-in fade-in slide-in-from-top-4">
           <CardHeader><CardTitle>Create New Menu Item</CardTitle></CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <Input label="Item Name" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} />
               <Select 
                 label="Category" 
@@ -170,6 +183,24 @@ export function AdminMenu() {
                 options={categories.map(c => ({ value: c.id, label: c.name }))}
               />
               <Input type="number" label="Price (₹)" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} />
+              <div>
+                <label className="block text-sm font-semibold text-text-main mb-1.5">Image Upload</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setNewItem({ ...newItem, image: reader.result });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="w-full text-sm text-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:cursor-pointer pt-0.5"
+                />
+              </div>
               <Input label="Description" value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} />
             </div>
             <div className="mt-6 flex justify-end space-x-3">
@@ -186,8 +217,8 @@ export function AdminMenu() {
             <SearchInput 
               placeholder={`Search ${activeTab.toLowerCase()}...`} 
               value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              onClear={() => setSearch('')}
+              onChange={handleSearch} 
+              onClear={() => { setSearch(''); setCurrentPage(1); }}
             />
           </div>
         </div>
@@ -243,14 +274,15 @@ export function AdminMenu() {
               </tr>
             </thead>
             <tbody>
-              {filteredItems.length === 0 ? (
+              {paginatedItems.length === 0 ? (
                 <tr>
                   <td colSpan="5">
                     <EmptyState icon={Utensils} title="No menu items found" description="Try adjusting your search criteria or add a new menu item." />
                   </td>
                 </tr>
               ) : (
-                filteredItems.map(item => (
+                paginatedItems.map(item => {
+                  return (
                   <tr key={item.id}>
                     <Table.Td>
                       <p className="font-bold text-text-main">{item.name}</p>
@@ -279,10 +311,19 @@ export function AdminMenu() {
                       </Button>
                     </Table.Td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </Table>
+        )}
+
+        {activeTab === 'ITEMS' && filteredItems.length > itemsPerPage && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         )}
       </Card>
     </div>
