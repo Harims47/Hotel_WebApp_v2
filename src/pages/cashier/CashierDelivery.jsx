@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Button } from '../../components/ui/Button';
-import { PageHeader } from '../../components/ui/PageHeader';
-import { Tabs, TabsList, TabsTrigger } from '../../components/ui/Tabs';
+
 import { Package, User, MapPin, Truck, Phone, Receipt, Search } from 'lucide-react';
 import { assignDeliveryBoy } from '../../features/workflows/deliveryWorkflow';
 import { StatusPill } from '../../components/ui/Badge';
@@ -13,6 +12,7 @@ export function CashierDelivery() {
   const { currentUser } = useSelector(state => state.auth);
   const deliveryData = useSelector(state => state.delivery.data);
   const bills = useSelector(state => state.billing.data);
+  const orders = useSelector(state => state.orders.data);
   const users = useSelector(state => state.users.data);
 
   const [activeTab, setActiveTab] = useState('READY'); // READY, ASSIGNED, OUT_FOR_DELIVERY, DELIVERED
@@ -58,45 +58,54 @@ export function CashierDelivery() {
 
   return (
     <div className="flex flex-col h-full bg-canvas max-w-7xl mx-auto w-full">
-      <div className="px-4 md:px-6 pt-4 pb-2">
-        <PageHeader 
-          title="Delivery Management" 
-          description="Assign and track delivery orders."
-        />
-        <div className="mt-4">
-          <Tabs>
-            <TabsList>
-              <TabsTrigger isActive={activeTab === 'READY'} onClick={() => setActiveTab('READY')}>
-                Ready for Assignment
-                <span className={cn(
-                  "ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold border",
-                  readyOrders.length > 0 ? "bg-status-warning/10 text-status-warning border-status-warning/20" : "bg-surface text-text-muted border-border"
-                )}>{readyOrders.length}</span>
-              </TabsTrigger>
-              <TabsTrigger isActive={activeTab === 'ASSIGNED'} onClick={() => setActiveTab('ASSIGNED')}>
-                Assigned
-                <span className="ml-2 bg-surface text-text-muted px-2 py-0.5 rounded-full text-[10px] font-bold border border-border">{assignedOrders.length}</span>
-              </TabsTrigger>
-              <TabsTrigger isActive={activeTab === 'OUT_FOR_DELIVERY'} onClick={() => setActiveTab('OUT_FOR_DELIVERY')}>
-                Out for Delivery
-                <span className="ml-2 bg-surface text-text-muted px-2 py-0.5 rounded-full text-[10px] font-bold border border-border">{outForDeliveryOrders.length}</span>
-              </TabsTrigger>
-              <TabsTrigger isActive={activeTab === 'DELIVERED'} onClick={() => setActiveTab('DELIVERED')}>
-                Delivered
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <div className="mt-4 flex items-center relative max-w-md">
-            <Search className="w-4 h-4 text-text-muted absolute left-3" />
-            <input 
-              type="text" 
-              placeholder="Search by Order ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-            />
-          </div>
+      <div className="px-4 md:px-6 pt-4 pb-2 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-center relative w-full lg:max-w-md">
+          <Search className="w-4 h-4 text-text-muted absolute left-3" />
+          <input 
+            type="text" 
+            placeholder="Search by Order ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-white text-sm font-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-sm"
+          />
+        </div>
+        <div className="hidden lg:inline-flex items-center rounded-xl bg-canvas p-1.5 border border-border/60">
+          <button 
+            onClick={() => setActiveTab('READY')}
+            className={cn(
+              "flex items-center gap-2 px-5 py-2 rounded-lg text-[15px] font-bold transition-all whitespace-nowrap",
+              activeTab === 'READY' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-text-muted hover:text-text-main hover:bg-surface/60"
+            )}
+          >
+            Ready for Assignment <span className={cn("inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-black", activeTab === 'READY' ? "bg-white/20 text-white" : "bg-white text-text-main shadow-sm")}>{readyOrders.length}</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('ASSIGNED')}
+            className={cn(
+              "flex items-center gap-2 px-5 py-2 rounded-lg text-[15px] font-bold transition-all whitespace-nowrap",
+              activeTab === 'ASSIGNED' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-text-muted hover:text-text-main hover:bg-surface/60"
+            )}
+          >
+            Assigned <span className={cn("inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-black", activeTab === 'ASSIGNED' ? "bg-white/20 text-white" : "bg-white text-text-main shadow-sm")}>{assignedOrders.length}</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('OUT_FOR_DELIVERY')}
+            className={cn(
+              "flex items-center gap-2 px-5 py-2 rounded-lg text-[15px] font-bold transition-all whitespace-nowrap",
+              activeTab === 'OUT_FOR_DELIVERY' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-text-muted hover:text-text-main hover:bg-surface/60"
+            )}
+          >
+            Out for Delivery <span className={cn("inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-black", activeTab === 'OUT_FOR_DELIVERY' ? "bg-white/20 text-white" : "bg-white text-text-main shadow-sm")}>{outForDeliveryOrders.length}</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('DELIVERED')}
+            className={cn(
+              "flex items-center gap-2 px-5 py-2 rounded-lg text-[15px] font-bold transition-all whitespace-nowrap",
+              activeTab === 'DELIVERED' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-text-muted hover:text-text-main hover:bg-surface/60"
+            )}
+          >
+            Delivered <span className={cn("inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-black", activeTab === 'DELIVERED' ? "bg-white/20 text-white" : "bg-white text-text-main shadow-sm")}>{deliveredOrders.length}</span>
+          </button>
         </div>
       </div>
 
@@ -108,94 +117,101 @@ export function CashierDelivery() {
             <p className="text-sm text-text-muted mt-1">There are currently no orders that match this filter.</p>
           </div>
         ) : (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-max">
-            {displayedOrders.map(delivery => {
-              const bill = bills.find(b => b.orderId === delivery.orderId);
-              
-              return (
-                <div 
-                  key={delivery.id} 
-                  className={cn(
-                    "flex flex-col bg-white rounded-xl border border-border shadow-sm overflow-hidden transition-all",
-                    delivery.status === 'READY' ? "ring-1 ring-status-warning/30 border-status-warning/30" : "hover:border-border-strong hover:shadow-md"
-                  )}
-                >
-                  {/* Header */}
-                  <div className="px-4 py-3 border-b border-border bg-surface/50 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-text-main text-sm">{delivery.orderId.replace('ord-', 'ORD-').toUpperCase()}</span>
-                    </div>
-                    <StatusPill status={delivery.status} />
-                  </div>
-
-                  {/* Body */}
-                  <div className="p-4 flex-1 flex flex-col space-y-4">
+          <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-sm text-left min-w-[1000px]">
+                <thead className="bg-surface/50 text-text-muted border-b border-border">
+                  <tr>
+                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs w-[120px]">Order ID</th>
+                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs w-[100px]">Time</th>
+                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs">Customer</th>
+                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs w-[250px]">Address</th>
+                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs w-[120px] text-right">Amount</th>
+                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs w-[200px]">Delivery Person</th>
+                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs w-[140px] text-center">Status</th>
+                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs w-[140px] text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {displayedOrders.map(delivery => {
+                    const bill = bills.find(b => b.orderId === delivery.orderId);
+                    const order = orders.find(o => o.id === delivery.orderId);
                     
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <p className="text-xs text-text-muted uppercase tracking-wider font-bold mb-0.5">Customer</p>
-                        <p className="text-sm font-bold text-text-main flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-text-sub" /> {delivery.customerName}
-                        </p>
-                        {delivery.customerPhone && (
-                          <p className="text-xs text-text-sub flex items-center gap-1 mt-1">
-                            <Phone className="w-3 h-3" /> {delivery.customerPhone}
-                          </p>
+                    return (
+                      <tr 
+                        key={delivery.id} 
+                        className={cn(
+                          "hover:bg-surface/30 transition-colors group",
+                          delivery.status === 'READY' ? "bg-status-warning/5" : ""
                         )}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-text-muted uppercase tracking-wider font-bold mb-0.5">Amount</p>
-                        <p className="text-lg font-black text-primary leading-none">
-                          ₹{bill?.grandTotal.toFixed(2) || '0.00'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="bg-surface/50 p-3 rounded-lg border border-border/60 flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <p className="text-xs text-text-sub font-medium leading-relaxed">
-                        {delivery.address}, {delivery.area}, {delivery.city} {delivery.pincode}
-                      </p>
-                    </div>
-
-                    {delivery.status === 'READY' && (
-                      <div className="mt-auto pt-2 border-t border-dashed border-border/60">
-                        <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Assign Delivery Person</label>
-                        <div className="flex gap-2">
-                          <select 
-                            className="flex-1 border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
-                            value={selectedDeliveryBoy[delivery.id] || ''}
-                            onChange={(e) => setSelectedDeliveryBoy(prev => ({ ...prev, [delivery.id]: e.target.value }))}
-                          >
-                            <option value="" disabled>Select person</option>
-                            {deliveryBoys.map(boy => (
-                              <option key={boy.id} value={boy.id}>{boy.name}</option>
-                            ))}
-                          </select>
-                          <Button 
-                            className="font-bold shadow-md shadow-primary/20"
-                            onClick={() => handleAssign(delivery.id)}
-                            disabled={!selectedDeliveryBoy[delivery.id]}
-                          >
-                            Assign
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {delivery.assignedDeliveryUserId && delivery.status !== 'READY' && (
-                      <div className="mt-auto pt-3 border-t border-dashed border-border/60 flex justify-between items-center">
-                        <p className="text-xs text-text-muted uppercase tracking-wider font-bold">Assigned To</p>
-                        <p className="font-bold text-sm text-text-main flex items-center bg-primary/10 text-primary px-2 py-1 rounded-md">
-                          <Truck className="w-3.5 h-3.5 mr-1.5" />
-                          {users.find(u => u.id === delivery.assignedDeliveryUserId)?.name || 'Unknown'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                      >
+                        <td className="px-5 py-4">
+                          <span className="font-bold text-text-main font-mono text-sm">{order?.orderNumber || delivery.orderId.substring(0, 8).toUpperCase()}</span>
+                        </td>
+                        <td className="px-5 py-4 text-text-sub font-semibold">
+                          {formatTime(delivery.createdAt || bill?.createdAt)}
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-text-main flex items-center gap-1.5">
+                              {delivery.customerName}
+                            </span>
+                            {delivery.customerPhone && (
+                              <span className="text-xs text-text-muted font-medium mt-0.5">{delivery.customerPhone}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="text-sm text-text-sub font-medium line-clamp-2">
+                            {delivery.address}, {delivery.area}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <span className="font-black text-text-main text-base">
+                            ₹{bill?.grandTotal.toFixed(2) || '0.00'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          {delivery.status === 'READY' ? (
+                            <select 
+                              className="w-full border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white h-11"
+                              value={selectedDeliveryBoy[delivery.id] || ''}
+                              onChange={(e) => setSelectedDeliveryBoy(prev => ({ ...prev, [delivery.id]: e.target.value }))}
+                            >
+                              <option value="" disabled>Select person</option>
+                              {deliveryBoys.map(boy => (
+                                <option key={boy.id} value={boy.id}>{boy.name}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div className="font-bold text-sm text-text-main flex items-center bg-primary/10 text-primary px-3 py-2 rounded-lg w-max">
+                              <Truck className="w-4 h-4 mr-2" />
+                              {users.find(u => u.id === delivery.assignedDeliveryUserId)?.name || 'Assigned'}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <StatusPill status={delivery.status} />
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex justify-center">
+                            {delivery.status === 'READY' && (
+                              <Button 
+                                className="w-full font-bold h-11 bg-primary hover:bg-primary/90 text-white min-w-[100px]"
+                                onClick={() => handleAssign(delivery.id)}
+                                disabled={!selectedDeliveryBoy[delivery.id]}
+                              >
+                                Assign
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

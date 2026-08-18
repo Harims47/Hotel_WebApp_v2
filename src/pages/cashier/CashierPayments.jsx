@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { CreditCard, Receipt, Clock, User, CheckCircle2, Search } from 'lucide-react';
-import { PageHeader } from '../../components/ui/PageHeader';
 import { StatusPill } from '../../components/ui/Badge';
 import { cn } from '../../utils/cn';
 
@@ -38,19 +37,15 @@ export function CashierPayments() {
 
   return (
     <div className="flex flex-col h-full bg-canvas max-w-7xl mx-auto w-full">
-      <div className="px-4 md:px-6 pt-4 pb-2">
-        <PageHeader 
-          title="Payment History" 
-          description="View all recorded payments and their details."
-        />
-        <div className="mt-4 flex items-center relative max-w-md">
+      <div className="px-4 md:px-6 pt-4 pb-2 flex justify-start">
+        <div className="flex items-center relative w-full md:w-[300px] lg:w-[400px]">
           <Search className="w-4 h-4 text-text-muted absolute left-3" />
           <input 
             type="text" 
             placeholder="Search by Payment ID or Bill No..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+            className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-white text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-sm"
           />
         </div>
       </div>
@@ -70,7 +65,7 @@ export function CashierPayments() {
                   <tr>
                     <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs">Payment ID</th>
                     <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs">Bill No</th>
-                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs">Amount</th>
+                    <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs text-right">Amount</th>
                     <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs">Method</th>
                     <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs">Status</th>
                     <th className="px-5 py-4 font-bold uppercase tracking-wider text-xs">Received By</th>
@@ -96,7 +91,7 @@ export function CashierPayments() {
                             {bill?.billNumber || 'Unknown'}
                           </Link>
                         </td>
-                        <td className="px-5 py-3 font-black text-text-main text-base">
+                        <td className="px-5 py-3 font-black text-text-main text-base text-right">
                           ₹{payment.amount.toFixed(2)}
                         </td>
                         <td className="px-5 py-3">

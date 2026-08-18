@@ -81,6 +81,8 @@ export function AppShell() {
   }
 
   const isOrderEntry = path.startsWith('/waiter/tables/') && path !== '/waiter/tables';
+  const isNewTakeaway = path === '/cashier/takeaway/new';
+  const noScrollMain = isOrderEntry || isNewTakeaway;
 
   return (
     <div className="flex h-screen bg-canvas overflow-hidden relative">
@@ -91,7 +93,8 @@ export function AppShell() {
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         {!isOrderEntry && <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />}
         <main className={cn(
-          "flex-1 overflow-y-auto custom-scrollbar",
+          "flex flex-col flex-1 custom-scrollbar",
+          noScrollMain ? "overflow-hidden" : "overflow-y-auto",
           isOrderEntry ? "p-0" : "p-4 md:p-6"
         )}>
           <Outlet />

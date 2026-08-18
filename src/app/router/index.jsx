@@ -123,7 +123,7 @@ const router = createBrowserRouter([
       { path: 'waiter/kot', element: <WaiterKOT /> },
       
       // KOT Routes
-      { path: 'kot/dashboard', element: <KOTDashboard /> },
+      { path: 'kot/dashboard', element: <Navigate to="/kot/orders" replace /> },
       { path: 'kot/orders', element: <KOTNewOrders /> },
       { path: 'kot/preparing', element: <KOTPreparing /> },
       { path: 'kot/ready', element: <KOTReady /> },
@@ -139,7 +139,7 @@ const router = createBrowserRouter([
       { path: 'cashier/delivery', element: <CashierDelivery /> },
       
       // Delivery Routes
-      { path: 'delivery/dashboard', element: <DeliveryDashboard /> },
+      { path: 'delivery/dashboard', element: <Navigate to="/delivery/orders" replace /> },
       { path: 'delivery/orders', element: <DeliveryOrders /> },
       { path: 'delivery/orders/:id', element: <DeliveryOrderDetails /> },
       

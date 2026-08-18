@@ -138,7 +138,6 @@ const ROLE_NAV = {
     { name: 'Menu', path: '/waiter/menu', icon: ListOrdered },
   ],
   KOT: [
-    { name: 'Dashboard', path: '/kot/dashboard', icon: LayoutDashboard },
     { name: 'New Orders', path: '/kot/orders', icon: Receipt },
     { name: 'Preparing', path: '/kot/preparing', icon: ChefHat },
     { name: 'Ready', path: '/kot/ready', icon: ChefHat },
@@ -151,7 +150,6 @@ const ROLE_NAV = {
     { name: 'Payments', path: '/cashier/payments', icon: Receipt },
   ],
   DELIVERY_BOY: [
-    { name: 'Dashboard', path: '/delivery/dashboard', icon: LayoutDashboard },
     { name: 'Orders', path: '/delivery/orders', icon: Truck },
   ],
 };
