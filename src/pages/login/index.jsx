@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { login } from '../../features/auth/authSlice';
+import { loginAsync } from '../../features/auth/authSlice';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -14,46 +14,60 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+// Map backend role → dashboard path
+function roleToDashboardPath(role) {
+  switch (role) {
+    case 'SUPER_ADMIN':       return '/admin/users';
+    case 'GM':                return '/management/dashboard';
+    case 'WAITER':            return '/waiter/tables';
+    case 'CASHIER':           return '/cashier/bills';
+    case 'KOT':               return '/kot/orders';
+    case 'DELIVERY_BOY':      return '/delivery/orders';
+    case 'INVENTORY_MANAGER': return '/inventory/dashboard';
+    default:                  return '/waiter/tables';
+  }
+}
+
 export function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const users = useSelector(state => state.users.data) || [];
-  const { isAuthenticated, currentUser } = useSelector(state => state.auth);
+  const { isAuthenticated, initialized, loading, error, currentUser } = useSelector(state => state.auth);
 
-  const { register, handleSubmit, formState: { errors }, setError } = useForm({
+  const { register, handleSubmit, formState: { errors }, setError, clearErrors } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
-  if (isAuthenticated && currentUser) {
-    if (currentUser.role === 'SUPER_ADMIN') return <Navigate to="/admin/users" replace />;
-    
-    const rolePrefix = currentUser.role === 'DELIVERY_BOY' ? 'delivery' :
-      currentUser.role === 'INVENTORY_MANAGER' ? 'inventory' :
-        currentUser.role === 'GM' ? 'management' :
-          currentUser.role.toLowerCase();
-    return <Navigate to={`/${rolePrefix}/dashboard`} replace />;
+  // Redirect if already authenticated (e.g., session recovered on refresh)
+  if (initialized && isAuthenticated && currentUser) {
+    return <Navigate to={roleToDashboardPath(currentUser.role)} replace />;
   }
 
-  const onSubmit = (data) => {
-    const user = users.find(u => u.username === data.username && u.password === data.password);
+  const onSubmit = async (data) => {
+    clearErrors('root');
+    const result = await dispatch(loginAsync({ username: data.username, password: data.password }));
 
-    if (user) {
-      dispatch(login(user));
-      if (user.role === 'SUPER_ADMIN') {
-        navigate('/admin/users');
-      } else {
-        const rolePrefix = user.role === 'DELIVERY_BOY' ? 'delivery' :
-          user.role === 'INVENTORY_MANAGER' ? 'inventory' :
-            user.role === 'GM' ? 'management' :
-              user.role.toLowerCase();
-        navigate(`/${rolePrefix}/dashboard`);
-      }
+    if (loginAsync.fulfilled.match(result)) {
+      const role = result.payload?.user ? (result.payload.memberships?.[0]?.roles?.[0] || 'WAITER') : 'WAITER';
+      // Navigation happens automatically via the isAuthenticated redirect above,
+      // but we push here too for immediate response.
+      const me = result.payload;
+      const activeRole = me?.memberships?.[0]?.roles?.[0] || 'WAITER';
+      navigate(roleToDashboardPath(activeRole), { replace: true });
     } else {
-      setError('root', { type: 'manual', message: 'Invalid username or password' });
+      const err = result.payload;
+      let msg = 'Invalid username or password';
+      if (err?.status === 429) {
+        msg = 'Too many failed attempts. Please wait 15 minutes before trying again.';
+      } else if (err?.status === 403) {
+        msg = 'Your account is inactive. Please contact your administrator.';
+      } else if (err?.status === 0) {
+        msg = 'Cannot connect to server. Please check your network connection.';
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      setError('root', { type: 'manual', message: msg });
     }
   };
-
-
 
   return (
     <div className="min-h-screen flex">
@@ -126,12 +140,22 @@ export function Login() {
                 </div>
               )}
 
-              <Button type="submit" size="lg" className="w-full font-bold text-base mt-2">
-                SIGN IN TO POS
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full font-bold text-base mt-2"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Signing in…
+                  </span>
+                ) : (
+                  'SIGN IN TO POS'
+                )}
               </Button>
             </form>
-
-
           </Card>
         </div>
       </div>

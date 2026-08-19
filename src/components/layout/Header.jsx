@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Bell, X, Menu, ChevronRight } from 'lucide-react';
-import { resetDemoData } from '../../services/persistence/localStorage';
+import { Bell, X, Menu, LogOut } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { markNotificationRead } from '../../features/notifications/notificationsSlice';
 import { updateOrderItem } from '../../features/orders/ordersSlice';
+import { logoutAsync } from '../../features/auth/authSlice';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../utils/cn';
@@ -26,6 +26,11 @@ export function Header({ onToggleSidebar }) {
   const { currentUser } = useSelector(state => state.auth);
   const restaurant = useSelector(state => state.restaurant.data);
   const allNotifications = useSelector(state => state.notifications.data);
+
+  const handleLogout = async () => {
+    await dispatch(logoutAsync());
+    navigate('/login', { replace: true });
+  };
 
   const notifications = React.useMemo(() => {
     return allNotifications
@@ -94,10 +99,11 @@ export function Header({ onToggleSidebar }) {
         <Button
           variant="ghost"
           size="xs"
-          onClick={resetDemoData}
-          className="hidden sm:inline-flex text-text-muted text-xs"
+          onClick={handleLogout}
+          className="hidden sm:inline-flex text-text-muted text-xs gap-1.5"
         >
-          Reset Data
+          <LogOut className="w-3.5 h-3.5" />
+          Logout
         </Button>
 
         {/* Notifications */}

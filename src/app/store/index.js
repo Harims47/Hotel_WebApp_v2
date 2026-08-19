@@ -32,10 +32,22 @@ import {
   invStockReducer
 } from '../../features/inventory/inventorySlices';
 
-// A modified loadState that injects initial states for new modules
-const { _version, ...rawPreloadedState } = loadState();
+// Load persisted business/demo state (auth is EXCLUDED — always resolved from server)
+const { _version, auth: _authIgnored, ...rawPreloadedState } = loadState();
 const preloadedState = {
   ...rawPreloadedState,
+  // Auth always starts uninitialized — checkAuthAsync will populate it on boot
+  auth: {
+    initialized: false,
+    loading: false,
+    isAuthenticated: false,
+    currentUser: null,
+    memberships: [],
+    activeContext: null,
+    roles: [],
+    permissions: [],
+    error: null,
+  },
   invStock: rawPreloadedState.invStock || { data: [] },
   purchaseOrders: rawPreloadedState.purchaseOrders || { data: [] },
   grn: rawPreloadedState.grn || { data: [] },
@@ -117,7 +129,7 @@ store.subscribe(() => {
   isSaving = true;
   
   saveState({
-    auth: store.getState().auth,
+    // auth is intentionally excluded — it is recovered from the server on each boot
     restaurant: store.getState().restaurant,
     users: store.getState().users,
     tables: store.getState().tables,

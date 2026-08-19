@@ -10,24 +10,37 @@ import { addNotification } from '../../features/notifications/notificationsSlice
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '../../utils/cn';
 
+// Derive the allowed route prefixes from the backend role string
+function getAllowedPrefixes(role) {
+  if (!role) return [];
+  switch (role) {
+    case 'SUPER_ADMIN':      return null; // null = allow everything
+    case 'GM':               return ['/management', '/gm', '/inventory'];
+    case 'WAITER':           return ['/waiter'];
+    case 'CASHIER':          return ['/cashier'];
+    case 'KOT':              return ['/kot'];
+    case 'DELIVERY_BOY':     return ['/delivery'];
+    case 'INVENTORY_MANAGER':return ['/inventory'];
+    default:                 return [];
+  }
+}
+
 export function AppShell() {
   const dispatch = useDispatch();
-  const { isAuthenticated, currentUser } = useSelector(state => state.auth);
+  const { initialized, isAuthenticated, currentUser } = useSelector(state => state.auth);
   const items = useSelector(state => state.invItems?.data) || [];
   const stock = useSelector(state => state.invStock?.data) || [];
   
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Track which items were LOW in the previous render cycle.
-  // An item transitions from NORMAL→LOW only when it was NOT low before.
-  // This prevents spam on re-renders, refreshes, or navigation.
   const prevLowItemIds = useRef(new Set());
 
-  // Watch for Low Stock and notify INVENTORY_MANAGER / SUPER_ADMIN
+  // Watch for Low Stock — notify INVENTORY_MANAGER / SUPER_ADMIN
   React.useEffect(() => {
     if (!isAuthenticated) return;
-    if (currentUser?.role !== 'SUPER_ADMIN' && currentUser?.role !== 'INVENTORY_MANAGER') return;
+    const role = currentUser?.role;
+    if (role !== 'SUPER_ADMIN' && role !== 'INVENTORY_MANAGER') return;
     
     const activeItems = items.filter(i => i.status === 'ACTIVE');
     const currentLowItemIds = new Set();
@@ -39,7 +52,6 @@ export function AppShell() {
 
       if (isLow) {
         currentLowItemIds.add(item.id);
-        // Only fire if this item was NOT low in the previous render (LOW→NORMAL→LOW transition)
         const wasLow = prevLowItemIds.current.has(item.id);
         if (!wasLow) {
           dispatch(addNotification({
@@ -60,27 +72,42 @@ export function AppShell() {
       }
     });
 
-    // Update the ref for next render
     prevLowItemIds.current = currentLowItemIds;
   }, [items, stock, isAuthenticated, currentUser, dispatch]);
 
+  // ── Initialization guard: show nothing while /me is still loading ─────────
+  // This prevents the brief redirect-to-login flash on page refresh.
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-canvas">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-text-muted font-medium">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Auth guard ────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Basic check to ensure the user doesn't access other roles' paths
-  // SUPER_ADMIN can access anything.
+  // ── Role-based route protection ───────────────────────────────────────────
   const path = location.pathname;
-  if (currentUser.role !== 'SUPER_ADMIN') {
-    let allowedPrefixes = [];
-    if (currentUser.role === 'DELIVERY_BOY') allowedPrefixes = ['/delivery'];
-    else if (currentUser.role === 'INVENTORY_MANAGER') allowedPrefixes = ['/inventory'];
-    else if (currentUser.role === 'GM') allowedPrefixes = ['/management', '/gm', '/inventory'];
-    else allowedPrefixes = [`/${currentUser.role.toLowerCase()}`];
+  const allowedPrefixes = getAllowedPrefixes(currentUser?.role);
 
+  if (allowedPrefixes !== null) {
     const isAllowed = allowedPrefixes.some(prefix => path.startsWith(prefix));
     if (!isAllowed && path !== '/') {
-      return <Navigate to={`${allowedPrefixes[0]}/dashboard`} replace />;
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-canvas">
+          <div className="text-center p-8">
+            <h1 className="text-2xl font-bold text-status-danger mb-2">Access Denied</h1>
+            <p className="text-text-muted">You do not have permission to view this page.</p>
+          </div>
+        </div>
+      );
     }
   }
 
