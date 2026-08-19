@@ -41,7 +41,7 @@ This document outlines the security architecture, threat model, and mitigation s
 ## 3. Input & File Security
 
 ### A. SQL Injection (SQLi)
-- **Mitigation:** Parameterized SQL query execution enforced by SQLAlchemy ORM. Raw string queries are forbidden.
+- **Mitigation:** Parameterized SQL query execution enforced by the `pg` driver. Raw string queries are forbidden.
 
 ### B. Upload Exploits
 - **Threat:** Uploading malicious executables disguised as image/PDF receipts.

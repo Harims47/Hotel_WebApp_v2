@@ -13,5 +13,5 @@ const ${slice}Slice = createSlice({
 
 export default ${slice}Slice.reducer;
 `;
-  fs.writeFileSync(`src/features/${slice}/${slice}Slice.js`, code);
+  fs.writeFileSync(`../frontend/src/features/${slice}/${slice}Slice.js`, code);
 });

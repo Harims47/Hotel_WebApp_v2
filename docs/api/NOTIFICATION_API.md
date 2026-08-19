@@ -11,7 +11,7 @@ This document details the WebSocket real-time notification stream and notificati
    ↓
 [WSS Request: /api/v1/notifications/ws]
    ↓
-[FastAPI: Extracts session cookie from headers]
+[Fastify: Extracts session cookie from headers]
    ↓
 [Authentication Middleware: Validates user session]
    ↓
@@ -25,7 +25,7 @@ This document details the WebSocket real-time notification stream and notificati
   - role:{role_name}]
 ```
 
-*Note: Redis Pub/Sub manages the horizontal distribution of event payloads across multi-instance server deployments. It is not used for client authorization; FastAPI filters and validates all socket events before broadcasting them.*
+*Note: Redis Pub/Sub manages the horizontal distribution of event payloads across multi-instance server deployments. It is not used for client authorization; Fastify filters and validates all socket events before broadcasting them.*
 
 ---
 

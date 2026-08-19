@@ -11,7 +11,7 @@ Every request directed to the system traverses a standardized path to enforce se
 ```mermaid
 graph TD
     Client[Web Client] -->|HTTPS Requests| ReverseProxy[Nginx Gateway]
-    ReverseProxy -->|Forward /api/v1| FastAPI[FastAPI App Router]
+    ReverseProxy -->|Forward /api/v1| Fastify[Fastify App Router]
     
     subgraph Middleware Layer
         Auth[Authentication Middleware]
@@ -19,24 +19,24 @@ graph TD
         RBAC[RBAC check dependency]
     end
     
-    FastAPI --> Auth
+    Fastify --> Auth
     Auth --> TenantContext
     TenantContext --> RBAC
     
     subgraph Application Code
         Router[API Endpoint Router]
-        Pydantic[Request Validation - Pydantic]
+        Validation[Request Validation - Zod / Fastify Schema]
         Service[Service Business Layer]
         Repo[Data Repository Layer]
     end
     
     RBAC --> Router
-    Router --> Pydantic
-    Pydantic --> Service
+    Router --> Validation
+    Validation --> Service
     Service --> Repo
     
     subgraph Database
-        Session[SQLAlchemy Unit-of-Work]
+        Session[Transaction Boundary / Connection Pool]
         DB[(PostgreSQL + RLS)]
     end
     
@@ -47,13 +47,13 @@ graph TD
 ### Layer Responsibilities
 
 1. **Nginx Reverse Proxy:** Terminates TLS/SSL, manages CORS policy limits, checks basic request size boundaries (max 2MB), and serves static React assets.
-2. **FastAPI Router:** Routes inbound HTTP endpoints, parses path/query parameters, and coordinates middleware execution.
+2. **Fastify Router:** Routes inbound HTTP endpoints, parses path/query parameters, and coordinates middleware/hook execution.
 3. **Authentication Middleware:** Extracts server-side session IDs from secure cookies, validates them against the active cache, and identifies the core user.
 4. **Tenant Context Resolver:** Looks up `restaurant_memberships` and `user_roles` to extract the user's tenant ID, active location ID, and active roles. Sets these parameters in request state.
 5. **RBAC Dependency:** Verifies the user's role has the required permission tags (e.g. `order:create`) before invoking application code.
-6. **Request Validation (Pydantic):** Parses the JSON payload, validating constraints (e.g., non-empty strings, numeric ranges, valid UUID formats) and throwing HTTP 422 if invalid.
+6. **Request Validation (Zod / Fastify Schema):** Parses the JSON payload, validating constraints (e.g., non-empty strings, numeric ranges, valid UUID formats) and throwing HTTP 422 if invalid.
 7. **Service Layer:** Houses the core business logic. Coordinates complex multi-table mutations, ledger rules, and dispatches real-time event alerts. This layer is decoupled from web framework classes.
-8. **Repository Layer:** Abstracted data-access layer using SQLAlchemy 2.x to handle queries. Sets connection session variables `SET LOCAL app.current_tenant_id` and `SET LOCAL app.current_location_id` to initialize Row Level Security.
+8. **Repository Layer:** Abstracted data-access layer using `pg` driver to handle queries. Executes within a transaction block `BEGIN` where `SET LOCAL app.current_tenant_id` and `SET LOCAL app.current_location_id` are initialized for Row Level Security.
 
 ---
 
@@ -97,7 +97,7 @@ All API endpoints must return structured JSON envelopes.
 - **403 Forbidden:** Authenticated user lacks permission to invoke the endpoint (RBAC check failure).
 - **404 Not Found:** Resource does not exist, OR belongs to another tenant/location (intentionally hidden to prevent ID enumeration).
 - **409 Conflict:** Business rule violation (e.g., paying a bill that is already closed, duplicate GRN number).
-- **422 Unprocessable Entity:** Payload schema validation failure (Pydantic).
+- **422 Unprocessable Entity:** Payload schema validation failure (Zod / Fastify Schema).
 - **429 Too Many Requests:** Rate limit exceeded.
 - **500 Internal Server Error:** Unexpected database or application failure.
 

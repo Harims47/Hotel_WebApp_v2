@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const uiDir = path.join(__dirname, 'src', 'components', 'ui');
+const uiDir = path.join(__dirname, '..', 'frontend', 'src', 'components', 'ui');
 if (!fs.existsSync(uiDir)) fs.mkdirSync(uiDir, { recursive: true });
 
 const components = {

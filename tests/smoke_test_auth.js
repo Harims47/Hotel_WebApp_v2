@@ -29,7 +29,7 @@ async function run() {
     headers: { 'Content-Type': 'application/json' }
   }, JSON.stringify({ username: 'superadmin', password: 'superadmin123' }));
 
-  console.log(`[1] POST /auth/login → ${loginRes.status}`);
+  console.log(`[1] POST /auth/login → ${loginRes.status} | Body: ${JSON.stringify(loginRes.body)}`);
   console.assert(loginRes.status === 200, `Expected 200 got ${loginRes.status}`);
   console.assert(loginRes.body.success === true, 'Expected success:true');
   console.assert(!loginRes.body.data?.session_id, 'session_id must NOT be in JSON');

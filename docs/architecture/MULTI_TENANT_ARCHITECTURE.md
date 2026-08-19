@@ -9,9 +9,9 @@ This document defines the production multi-tenant SaaS architecture for **Restau
 ```mermaid
 graph TD
     User[Web Client] -->|Https Cookie| Gateway[Reverse Proxy / SSL Termination]
-    Gateway -->|Contextual Request| FastAPI[FastAPI Backend Application]
+    Gateway -->|Contextual Request| Fastify[Node.js / Fastify Backend Application]
     
-    subgraph FastAPI App [FastAPI Modular Monolith]
+    subgraph Fastify App [Node Modular Monolith]
         Auth[Auth Middleware]
         TenantContext[Tenant Context Resolver]
         RBAC[RBAC Service]
@@ -22,8 +22,8 @@ graph TD
     TenantContext --> RBAC
     RBAC --> Core
     
-    Core --> SQLAlchemy[SQLAlchemy 2.x ORM]
-    SQLAlchemy --> DB[(PostgreSQL Database)]
+    Core --> DBClient[pg Driver / Query Builder]
+    DBClient --> DB[(PostgreSQL Database)]
     
     subgraph PostgreSQL [PostgreSQL Tenant Partitioning]
         subgraph Tenant1 [Tenant: Restaurant A]
@@ -115,10 +115,9 @@ erDiagram
 
 - **Zero-Trust Client Context:** The backend **never** trusts incoming client requests specifying `tenant_id`, `restaurant_id`, or `location_id` in headers or body parameters for authorization.
 - **Context Derivation:** The backend session middleware extracts the authenticated `user_id` from the secure cookie, queries `restaurant_memberships` and `user_roles` to verify the user's active membership, and populates the request context (`request.state.tenant_id`, `request.state.location_id`).
-- **SQL Query Interceptor (Enforcement):**
-  - FastAPI dependency injection supplies a scoped SQLAlchemy database session.
-  - The session uses query interception or automatic filter logic (e.g., SQLAlchemy's `with_loader_criteria` or global filters) to append:
-    `WHERE tenant_id = request.state.tenant_id AND (location_id = request.state.location_id OR :is_restaurant_wide = true)`
+  - Fastify dependency injection/hooks supply a scoped database connection from the `pg` pool.
+  - The connection is initialized within a transaction block (`BEGIN`) where local RLS variables are set, meaning all subsequent queries natively enforce:
+    `WHERE tenant_id = request.state.tenant_id AND (location_id = request.state.location_id OR current_user_role = 'GM')`
   - If a resource does not exist under that tenant boundary, the API returns HTTP 404 to avoid exposing ID existence.
 
 ---
@@ -127,11 +126,11 @@ erDiagram
 
 ### Recommendation: Shared Database + Shared Schema with PostgreSQL Row Level Security (RLS)
 - **Why:** 
-  - Lowest operational overhead: Single database migrations (Alembic) apply to all tenants simultaneously.
+  - Lowest operational overhead: Single database migrations (Node scripts) apply to all tenants simultaneously.
   - Highly cost-effective for start-up scale (no need to manage separate DB connection pools per tenant).
   - RLS acts as a security defense-in-depth layer directly in the database, preventing developers from accidentally omitting `tenant_id` filters in complex SQL queries.
 - **How RLS is Enforced:**
-  1. For every query execution, FastAPI checks out a connection from the pool and sets session parameters:
+  1. For every protected route execution, Fastify checks out a connection from the `pg` pool and immediately sets session parameters in a transaction context:
      - `SET LOCAL app.current_tenant_id = 'restaurant-uuid';`
      - `SET LOCAL app.current_location_id = 'location-uuid';` (For a location-scoped user) OR `SET LOCAL app.current_location_id = '';` (For a restaurant-wide GM)
      - `SET LOCAL app.current_user_role = 'role-name';`

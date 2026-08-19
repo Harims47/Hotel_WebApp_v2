@@ -8,14 +8,14 @@ This document defines the testing pyramid, tools, and pass criteria for the **Re
 
 | Layer | Purpose | Scope | Preferred Tool | Run Frequency | Pass Criteria |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1. Unit Tests** | Verify correctness of individual functions (e.g. currency formatting, date parsing, utility helpers). | Pure JS/Python functions, isolated components. | Vitest / pytest | Commit & PR | 100% pass rate, >90% coverage |
-| **2. Service Tests** | Validate complex business calculations (taxes, stock ledger deltas, stock variances). | Service modules, mock databases. | pytest | Commit & PR | 100% pass rate |
-| **3. API Tests** | Validate request parsing, schema compliance, validation failures, and response structure. | FastAPI routing endpoints, auth middleware. | pytest + httpx | Commit & PR | 100% pass rate |
-| **4. Integration Tests** | Validate database transaction execution and rollback on failures. | Backend + PostgreSQL test database container. | pytest + Testcontainers | PR & Nightly | 100% pass rate |
+| **1. Unit Tests** | Verify correctness of individual functions (e.g. currency formatting, date parsing, utility helpers). | Pure JS/TS functions, isolated components. | Jest | Commit & PR | 100% pass rate, >90% coverage |
+| **2. Service Tests** | Validate complex business calculations (taxes, stock ledger deltas, stock variances). | Service modules, mock databases. | Jest | Commit & PR | 100% pass rate |
+| **3. API Tests** | Validate request parsing, schema compliance, validation failures, and response structure. | Fastify routing endpoints, auth middleware. | Jest + Supertest | Commit & PR | 100% pass rate |
+| **4. Integration Tests** | Validate database transaction execution and rollback on failures. | Backend + PostgreSQL test database container. | Jest + Testcontainers | PR & Nightly | 100% pass rate |
 | **5. E2E Tests** | Validate complete user workflows from user click to database write. | Frontend + Backend API + DB. | Playwright | Nightly & Release | No console warnings or failures |
 | **6. Security Tests** | Check for API resource exhaustion, validation injection, and dependency CVEs. | Running app APIs. | OWASP ZAP, safety, npm audit | Weekly & Release | No High/Medium vulnerability |
 | **7. Performance Tests** | Test response times under load (e.g., 50 waiters writing KOTs simultaneously). | Order placement and billing APIs. | Locust / k6 | Release | p95 latency < 200ms |
-| **8. Regression Tests**| Verify new changes do not break existing configurations or billing histories. | Automated billing suites. | pytest | PR & Release | 100% pass rate |
+| **8. Regression Tests**| Verify new changes do not break existing configurations or billing histories. | Automated billing suites. | Jest | PR & Release | 100% pass rate |
 | **9. Visual UI Tests** | Validate layout alignment, premium aesthetics, alerts, and charts. | UI Pages. | Playwright Screenshots | Release | Zero component mismatches |
 | **10. Smoke Tests** | Verify live server health check and network connectivity. | Staging / Production environment. | curl / light scripts | Post-Deployment | 200 OK responses |
 

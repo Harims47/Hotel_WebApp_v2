@@ -59,5 +59,5 @@ $$\text{Baseline} \rightarrow \text{Load Test} \rightarrow \text{Measure} \right
 | **WebSocket Broadcast** | 500 connections | `< 50ms` latency | `< 150ms` |
 
 - `[PERFORMANCE TARGET TO CONFIRM]`: **Materialized View Refresh Intervals:** Determine if GMs require real-time reporting metrics or if view refreshes scheduled every 4 hours are acceptable.
-- **Connection Pool Policy:** Database connections are pooled using SQLAlchemy `QueuePool` (limit 20 connections, max overflow 10).
+- **Connection Pool Policy:** Database connections are pooled using `pg.Pool` (limit 20 connections, max overflow 10).
 - **Index Strategy:** Every filter key used in multi-tenant queries (`restaurant_id`, `location_id`, `created_at`) carries an index.

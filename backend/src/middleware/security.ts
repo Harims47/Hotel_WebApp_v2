@@ -36,7 +36,7 @@ export async function securityPlugin(fastify: FastifyInstance) {
       });
     }
 
-    // Hide internal database and python stack traces
+    // Hide internal database and node stack traces
     return reply.status(status).send({
       success: false,
       data: null,

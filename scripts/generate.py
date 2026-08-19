@@ -49,5 +49,5 @@ with wave.open(buf, 'wb') as wf:
 encoded = base64.b64encode(buf.getvalue()).decode('utf-8')
 js_code = 'export const BEEP_SOUND = "data:audio/wav;base64,' + encoded + '";\n'
 
-with open('src/components/bellSound.js', 'w', encoding='utf-8') as f:
+with open('../frontend/src/components/bellSound.js', 'w', encoding='utf-8') as f:
     f.write(js_code)

@@ -12,16 +12,16 @@ This document defines the quality assurance framework and testing pyramid for **
            [Security Penetration Tests]            ← OWASP ZAP scanners & CVE checks
           [End-to-End Workflow Tests]             ← Playwright browser actions
          [Integration Database Tests]             ← Database transaction & rollbacks
-        [API Schema & Endpoint Tests]             ← Request/response matching (pytest + httpx)
+         [API Schema & Endpoint Tests]             ← Request/response matching (Jest + Supertest)
        [Service Logic & Calculation Tests]         ← Tax, inventory & ledger equations
       [Unit Helpers & Utility Function Tests]      ← Currency formatting, string parses
 ```
 
 ### Layer Scopes & Objectives
 
-- **Unit Tests:** Verify helper functions (e.g., date formats, rounding methods). Executed locally via Vitest/pytest.
+- **Unit Tests:** Verify helper functions (e.g., date formats, rounding methods). Executed locally via Jest.
 - **Service Tests:** Validate business rules (e.g., stock calculations, tax snapshotting).
-- **API Tests:** Ensure schema compliance and validation checks (FastAPI endpoint verification).
+- **API Tests:** Ensure schema compliance and validation checks (Fastify endpoint verification).
 - **Integration Tests:** Validate database transactions, checking that database transactions roll back if a query fails.
 - **E2E Tests:** Execute browser scenarios (Dine-in ordering, preparing food, KOT, and payment).
 - **Performance Tests:** Verify response times under load, targeting p95 latency < 200ms.

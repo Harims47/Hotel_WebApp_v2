@@ -23,12 +23,12 @@ global.localStorage = new LocalStorageMock();
 global.window = { location: { href: '' } };
 
 // Now we can safely import the application modules
-import { store } from './src/app/store/index.js';
-import { createTakeawayOrder, handoverTakeawayOrder, saveBillChanges, printBill, recordPayment, completeOrder } from './src/features/workflows/cashierWorkflow.js';
-import { startKOTPreparation, markItemReady } from './src/features/workflows/kitchenWorkflow.js';
-import { sendOrderToKOT, pickupItem, serveItem } from './src/features/workflows/waiterWorkflow.js';
-import { assignDeliveryBoy, pickupDeliveryOrder, startDelivery, confirmDelivery } from './src/features/workflows/deliveryWorkflow.js';
-import { login } from './src/features/auth/authSlice.js';
+import { store } from '../frontend/src/app/store/index.js';
+import { createTakeawayOrder, handoverTakeawayOrder, saveBillChanges, printBill, recordPayment, completeOrder } from '../frontend/src/features/workflows/cashierWorkflow.js';
+import { startKOTPreparation, markItemReady } from '../frontend/src/features/workflows/kitchenWorkflow.js';
+import { sendOrderToKOT, pickupItem, serveItem } from '../frontend/src/features/workflows/waiterWorkflow.js';
+import { assignDeliveryBoy, pickupDeliveryOrder, startDelivery, confirmDelivery } from '../frontend/src/features/workflows/deliveryWorkflow.js';
+import { login } from '../frontend/src/features/auth/authSlice.js';
 
 async function runTests() {
   console.log('--- Starting Stage 5 E2E Integration Tests ---\n');

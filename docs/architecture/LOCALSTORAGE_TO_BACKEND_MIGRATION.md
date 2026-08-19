@@ -1,12 +1,12 @@
 # LocalStorage to Backend Migration Strategy
 
-This document details the transition plan for migrating the client-side state (currently managed in Redux Toolkit and persisted via `localStorage`) to the production FastAPI + PostgreSQL backend.
+This document details the transition plan for migrating the client-side state (currently managed in Redux Toolkit and persisted via `localStorage`) to the production Node.js + Fastify + PostgreSQL backend.
 
 ---
 
 ## 1. State Mapping: Client to Server
 
-The current application relies on `saveState` and `loadState` in `src/services/persistence/localStorage.js` to serialize/deserialize all slices. In production, this mapping will transition:
+The current application relies on `saveState` and `loadState` in `frontend/src/services/persistence/localStorage.js` to serialize/deserialize all slices. In production, this mapping will transition:
 
 | LocalStorage Slice / Key | Production State Type | Primary Target Table(s) | Derived State / Notes |
 | :--- | :--- | :--- | :--- |
@@ -39,7 +39,7 @@ To transition Redux slices cleanly, we will replace the local synchronous reduce
 - **Action:** Form submit buttons must disable and show loading indicators to prevent duplicate submissions.
 
 ### B. Error Handling & Recoverability
-- **Validation Errors:** FastAPI return HTTP 422 Unprocessable Entity for schema validation failures. The client will parse these and display field-level messages via `react-hook-form` / Zod.
+- **Validation Errors:** Fastify return HTTP 422 Unprocessable Entity for schema validation failures. The client will parse these and display field-level messages via `react-hook-form` / Zod.
 - **Server Errors:** Return HTTP 500 or HTTP 502. The client will catch these and render general error alerts (using SweetAlert2 or Sonner toasts already in the project).
 - **Network Interruptions:** Implement retry logic (e.g. exponential backoff for GET requests) and toast alerts asking the user to check their connection.
 
